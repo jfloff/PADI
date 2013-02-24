@@ -9,8 +9,7 @@ Plataformas para Aplicações Distribuídas na Internet
 
 ### Lab 02
 
-**Enunciado:**
-
+**Enunciado:** http://groups.ist.utl.pt/~meic-padi.daemon/labs/aula2/
 
 ## Projecto
 
