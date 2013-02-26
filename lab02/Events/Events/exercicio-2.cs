@@ -6,46 +6,21 @@
 
 using System;
 // este delegate e' a base para o event Move do slider
-public delegate void MoveEventHandler(object source, MoveEventArgs e);
-
-// esta  classe contem os argumentos do evento move do slider
-public class MoveEventArgs : EventArgs {
-    int toMove;
-
-    public MoveEventArgs(int toMove) 
-    {
-        this.toMove = toMove; 
-    }
-
-    public int ToMove
-    {
-        set { toMove = value; }
-        get { return toMove; }
-    }
-}
-
-public class Listener
-{
-    private MoveEventHandler _e; // delegate com lista de subscritores
-    public event MoveEventHandler E
-    {
-        add { 
-            _e += value; 
-        }
-        
-        remove { 
-            if (_e != null) { 
-                _e -= value; 
-            } 
-        }
-    }
-}
-
 
 class Slider {
 	private int position;
-    public event MoveEventHandler E;
+    public delegate void MoveEventHandler(object source, MoveEventArgs e);
+    public event MoveEventHandler sliderMoved;
     public MoveEventArgs args = null;
+    
+    public void OnSliderMover(object sender, MoveEventArgs args)
+    {
+        // If there exist any subscribers call the event
+        if (sliderMoved != null)
+        {
+            sliderMoved(this, args);
+        }
+    }
 
 	public int Position {
 		get {
@@ -53,10 +28,22 @@ class Slider {
 		}
 	// e' este bloco que e' executado quando se move o slider
 		set {
+            int old_position = position;
 			position = value;
-            E(this, args);
+            OnSliderMover(this, new MoveEventArgs(position));
 		}
 	}
+}
+
+// esta  classe contem os argumentos do evento move do slider
+public class MoveEventArgs : EventArgs
+{
+    public int FinalMove { get; internal set; }
+
+    public MoveEventArgs(int FinalMove)
+    {
+        this.FinalMove = FinalMove;
+    }
 }
 
 class Form {
@@ -64,7 +51,8 @@ class Form {
 		Slider slider = new Slider( );
 
 		// TODO: register with the Move event
-        slider.E += new MoveEventHandler(slider_Move);
+        // internal delegate needs a 'new' --> is in fact only 'newing' a event handler
+        slider.sliderMoved += new Slider.MoveEventHandler(slider_Move);
 
 	    // estas sao as duas alteracoes simuladas no slider
 		slider.Position = 20;
@@ -74,7 +62,7 @@ class Form {
 	}
 
 	// este é o método que deve ser chamado quando o slider e' movido
-	static void slider_Move(object source, MoveEventArgs e) {
-        Console.WriteLine("It's ALIVE!");
+	static void slider_Move(object source, MoveEventArgs args) {
+        Console.WriteLine("It's ALIVE! Move to " + args.FinalMove.ToString());
 	}
 }
