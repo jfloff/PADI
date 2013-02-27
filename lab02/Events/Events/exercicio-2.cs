@@ -9,28 +9,28 @@ using System;
 
 class Slider {
 	private int position;
-    public delegate void MoveEventHandler(object source, MoveEventArgs e);
+    public delegate bool MoveEventHandler(object source, MoveEventArgs e);
     public event MoveEventHandler sliderMoved;
-    public MoveEventArgs args = null;
     
-    public void OnSliderMover(object sender, MoveEventArgs args)
+    public bool OnSliderMove(int newPosition)
     {
         // If there exist any subscribers call the event
         if (sliderMoved != null)
         {
-            sliderMoved(this, args);
+            return sliderMoved(this, new MoveEventArgs(newPosition));
         }
+
+        return true;
     }
 
 	public int Position {
 		get {
 			return position;
 		}
-	// e' este bloco que e' executado quando se move o slider
+	    // e' este bloco que e' executado quando se move o slider
 		set {
-            int old_position = position;
-			position = value;
-            OnSliderMover(this, new MoveEventArgs(position));
+            if (OnSliderMove(value))
+                this.position = value;
 		}
 	}
 }
@@ -56,13 +56,18 @@ class Form {
 
 	    // estas sao as duas alteracoes simuladas no slider
 		slider.Position = 20;
+        Console.WriteLine("Position = " + slider.Position);
 		slider.Position = 60;
+        Console.WriteLine("Position = " + slider.Position);
 
         Console.Read();
 	}
 
 	// este é o método que deve ser chamado quando o slider e' movido
-	static void slider_Move(object source, MoveEventArgs args) {
-        Console.WriteLine("It's ALIVE! Move to " + args.FinalMove.ToString());
+	static bool slider_Move(object source, MoveEventArgs args) {
+        if (args.FinalMove > 50)
+            return false;
+        else 
+            return true;
 	}
 }
