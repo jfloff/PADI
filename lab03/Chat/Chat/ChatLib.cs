@@ -9,11 +9,11 @@ namespace ChatLib
     public interface IChatServer
     {
         void send(String nick, String msg);
-        string connect(String nick, String url);
+        void connect(String nick, String url);
     }
 
     public interface IChatClient
     {
-        void broadcast(String msg);
+        void broadcast(String nick, String msg);
     }
 }

@@ -28,11 +28,9 @@
         /// </summary>
         private void InitializeComponent()
         {
-            this.urlLabel = new System.Windows.Forms.Label();
             this.portLabel = new System.Windows.Forms.Label();
             this.nickLabel = new System.Windows.Forms.Label();
             this.connectButton = new System.Windows.Forms.Button();
-            this.urlTextBox = new System.Windows.Forms.TextBox();
             this.portTextBox = new System.Windows.Forms.TextBox();
             this.nickTextBox = new System.Windows.Forms.TextBox();
             this.shapeContainer1 = new Microsoft.VisualBasic.PowerPacks.ShapeContainer();
@@ -41,15 +39,6 @@
             this.msgTextBox = new System.Windows.Forms.TextBox();
             this.sendButton = new System.Windows.Forms.Button();
             this.SuspendLayout();
-            // 
-            // urlLabel
-            // 
-            this.urlLabel.AutoSize = true;
-            this.urlLabel.Location = new System.Drawing.Point(12, 12);
-            this.urlLabel.Name = "urlLabel";
-            this.urlLabel.Size = new System.Drawing.Size(32, 13);
-            this.urlLabel.TabIndex = 0;
-            this.urlLabel.Text = "URL:";
             // 
             // portLabel
             // 
@@ -63,7 +52,7 @@
             // nickLabel
             // 
             this.nickLabel.AutoSize = true;
-            this.nickLabel.Location = new System.Drawing.Point(12, 40);
+            this.nickLabel.Location = new System.Drawing.Point(12, 12);
             this.nickLabel.Name = "nickLabel";
             this.nickLabel.Size = new System.Drawing.Size(32, 13);
             this.nickLabel.TabIndex = 2;
@@ -71,20 +60,13 @@
             // 
             // connectButton
             // 
-            this.connectButton.Location = new System.Drawing.Point(196, 35);
+            this.connectButton.Location = new System.Drawing.Point(99, 35);
             this.connectButton.Name = "connectButton";
-            this.connectButton.Size = new System.Drawing.Size(85, 23);
+            this.connectButton.Size = new System.Drawing.Size(108, 23);
             this.connectButton.TabIndex = 3;
             this.connectButton.Text = "Connect!";
             this.connectButton.UseVisualStyleBackColor = true;
             this.connectButton.Click += new System.EventHandler(this.connectButton_Click);
-            // 
-            // urlTextBox
-            // 
-            this.urlTextBox.Location = new System.Drawing.Point(51, 9);
-            this.urlTextBox.Name = "urlTextBox";
-            this.urlTextBox.Size = new System.Drawing.Size(136, 20);
-            this.urlTextBox.TabIndex = 4;
             // 
             // portTextBox
             // 
@@ -95,7 +77,7 @@
             // 
             // nickTextBox
             // 
-            this.nickTextBox.Location = new System.Drawing.Point(50, 37);
+            this.nickTextBox.Location = new System.Drawing.Point(50, 9);
             this.nickTextBox.Name = "nickTextBox";
             this.nickTextBox.Size = new System.Drawing.Size(136, 20);
             this.nickTextBox.TabIndex = 6;
@@ -154,11 +136,9 @@
             this.Controls.Add(this.chatWindowRichTextBox);
             this.Controls.Add(this.nickTextBox);
             this.Controls.Add(this.portTextBox);
-            this.Controls.Add(this.urlTextBox);
             this.Controls.Add(this.connectButton);
             this.Controls.Add(this.nickLabel);
             this.Controls.Add(this.portLabel);
-            this.Controls.Add(this.urlLabel);
             this.Controls.Add(this.shapeContainer1);
             this.Name = "ChatClientForm";
             this.Text = "Chat";
@@ -169,11 +149,9 @@
 
         #endregion
 
-        private System.Windows.Forms.Label urlLabel;
         private System.Windows.Forms.Label portLabel;
         private System.Windows.Forms.Label nickLabel;
         private System.Windows.Forms.Button connectButton;
-        private System.Windows.Forms.TextBox urlTextBox;
         private System.Windows.Forms.TextBox portTextBox;
         private System.Windows.Forms.TextBox nickTextBox;
         private Microsoft.VisualBasic.PowerPacks.ShapeContainer shapeContainer1;
