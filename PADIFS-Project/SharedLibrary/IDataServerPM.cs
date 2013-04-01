@@ -4,12 +4,11 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace ClientApplication
+namespace SharedLibrary
 {
-    class Program
+    public interface IDataServerPM : IServerPM
     {
-        static void Main(string[] args)
-        {
-        }
+        void freeze();
+        void unfreeze();
     }
 }

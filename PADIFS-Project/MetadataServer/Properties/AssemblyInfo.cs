@@ -5,11 +5,11 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("PuppetMaster")]
+[assembly: AssemblyTitle("MetadataServer")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("PuppetMaster")]
+[assembly: AssemblyProduct("MetadataServer")]
 [assembly: AssemblyCopyright("Copyright ©  2013")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
@@ -20,7 +20,7 @@ using System.Runtime.InteropServices;
 [assembly: ComVisible(false)]
 
 // The following GUID is for the ID of the typelib if this project is exposed to COM
-[assembly: Guid("60e8d86c-7506-4a8a-8a64-607e9701beb2")]
+[assembly: Guid("2919c02c-44ef-4a31-ba95-c8e75d2f4f96")]
 
 // Version information for an assembly consists of the following four values:
 //
