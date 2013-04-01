@@ -8,7 +8,7 @@ namespace SharedLibrary
 {
     public interface IDataServerPM : IServerPM
     {
-        void freeze();
-        void unfreeze();
+        void Freeze();
+        void Unfreeze();
     }
 }

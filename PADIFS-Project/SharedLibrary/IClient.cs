@@ -8,11 +8,11 @@ namespace SharedLibrary
 {
     public interface IClient
     {
-        void create();
-        void open();
-        void read();
-        void write();
-        void close();
-        void delete();
+        void Create(string fileName, int nbDataServers, int readQuorum, int writeQuorum);
+        void Open(string fileName);
+        void Close(string fileName);
+        void Delete(string fileName);
+        void Read();
+        void Write();
     }
 }

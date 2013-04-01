@@ -26,56 +26,57 @@ namespace Client
 
             Console.WriteLine("Client " + args[0] + " Started");
 
+            // Notify Metadata Server
+
             System.Console.ReadLine();
         }
 
-        public void create()
+        public void Create(string fileName, int nbDataServers, int readQuorum, int writeQuorum)
         {
             // HARD CODED TEST
             System.Console.WriteLine("CREATE CLIENT FILE");
             IMetadataServer metadata = (IMetadataServer)Activator.GetObject(typeof(IMetadataServer), "tcp://localhost:1/m-1");
-            metadata.create();
+            metadata.Create(fileName, nbDataServers, readQuorum, writeQuorum);
         }
 
-        public void open()
+        public void Open(string fileName)
         {
             // HARD CODED TEST
             System.Console.WriteLine("OPEN CLIENT FILE");
             IMetadataServer metadata = (IMetadataServer)Activator.GetObject(typeof(IMetadataServer), "tcp://localhost:1/m-1");
-            metadata.open();
+            metadata.Open(fileName);
         }
 
-        public void close()
+        public void Close(string fileName)
         {
             // HARD CODED TEST
             System.Console.WriteLine("CLOSE CLIENT FILE");
             IMetadataServer metadata = (IMetadataServer)Activator.GetObject(typeof(IMetadataServer), "tcp://localhost:1/m-1");
-            metadata.close();
+            metadata.Close(fileName);
         }
 
-        public void delete()
+        public void Delete(string fileName)
         {
             // HARD CODED TEST
             System.Console.WriteLine("DELETE CLIENT FILE");
             IMetadataServer metadata = (IMetadataServer)Activator.GetObject(typeof(IMetadataServer), "tcp://localhost:1/m-1");
-            metadata.delete();
+            metadata.Delete(fileName);
         }
 
-        public void read()
+        public void Read()
         {
             // HARD CODED TEST
             System.Console.WriteLine("READ CLIENT FILE");
             IDataServer data = (IDataServer)Activator.GetObject(typeof(IDataServer), "tcp://localhost:9/d-1");
-            data.read();
+            data.Read();
         }
 
-        public void write()
+        public void Write()
         {
             // HARD CODED TEST
             System.Console.WriteLine("WRITE CLIENT FILE");
             IDataServer data = (IDataServer)Activator.GetObject(typeof(IDataServer), "tcp://localhost:9/d-1");
-            data.write();
+            data.Write();
         }
-
     }
 }

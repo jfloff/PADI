@@ -27,35 +27,37 @@ namespace DataServer
 
             Console.WriteLine("Data Server " + args[0] + " Started");
 
+            // Notify Metadata Server
+
             System.Console.ReadLine();
         }
 
-        public void freeze()
+        public void Freeze()
         {
             Console.WriteLine("FREEZE DATA SERVER");
         }
 
-        public void unfreeze()
+        public void Unfreeze()
         {
             Console.WriteLine("UNFREEZE DATA SERVER");
         }
 
-        public void fail()
+        public void Fail()
         {
             Console.WriteLine("FAIL DATA SERVER");
         }
 
-        public void recover()
+        public void Recover()
         {
             Console.WriteLine("RECOVER DATA SERVER");
         }
 
-        public void read()
+        public void Read()
         {
             Console.WriteLine("READ DATA SERVER FILE");
         }
 
-        public void write()
+        public void Write()
         {
             Console.WriteLine("WRITE DATA SERVER FILE");
         }

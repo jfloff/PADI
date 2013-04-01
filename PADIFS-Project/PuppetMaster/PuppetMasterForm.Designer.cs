@@ -51,11 +51,31 @@
             this.portLabel = new System.Windows.Forms.Label();
             this.startMetadataButton = new System.Windows.Forms.Button();
             this.startDataServerButton = new System.Windows.Forms.Button();
+            this.fileRegister1Label = new System.Windows.Forms.Label();
+            this.semanticsLabel = new System.Windows.Forms.Label();
+            this.semanticsBox = new System.Windows.Forms.TextBox();
+            this.fileRegister1Box = new System.Windows.Forms.TextBox();
+            this.byteArrayRegisterBox = new System.Windows.Forms.TextBox();
+            this.byteArrayRegisterLabel = new System.Windows.Forms.Label();
+            this.contentsLabel = new System.Windows.Forms.Label();
+            this.contentsBox = new System.Windows.Forms.TextBox();
+            this.fileRegister2Label = new System.Windows.Forms.Label();
+            this.fileRegister2Box = new System.Windows.Forms.TextBox();
+            this.saltLabel = new System.Windows.Forms.Label();
+            this.saltBox = new System.Windows.Forms.TextBox();
+            this.readButton = new System.Windows.Forms.Button();
+            this.writeButton = new System.Windows.Forms.Button();
+            this.writeContentsButton = new System.Windows.Forms.Button();
+            this.copyButton = new System.Windows.Forms.Button();
+            this.executeScriptButton = new System.Windows.Forms.Button();
+            this.scriptNameBox = new System.Windows.Forms.TextBox();
+            this.scriptNameLabel = new System.Windows.Forms.Label();
+            this.dumpButton = new System.Windows.Forms.Button();
             this.SuspendLayout();
             // 
             // failButton
             // 
-            this.failButton.Location = new System.Drawing.Point(13, 166);
+            this.failButton.Location = new System.Drawing.Point(12, 166);
             this.failButton.Name = "failButton";
             this.failButton.Size = new System.Drawing.Size(75, 23);
             this.failButton.TabIndex = 0;
@@ -65,7 +85,7 @@
             // 
             // recoverButton
             // 
-            this.recoverButton.Location = new System.Drawing.Point(94, 166);
+            this.recoverButton.Location = new System.Drawing.Point(99, 166);
             this.recoverButton.Name = "recoverButton";
             this.recoverButton.Size = new System.Drawing.Size(75, 23);
             this.recoverButton.TabIndex = 1;
@@ -103,7 +123,7 @@
             // 
             // unfreezeButton
             // 
-            this.unfreezeButton.Location = new System.Drawing.Point(94, 195);
+            this.unfreezeButton.Location = new System.Drawing.Point(99, 195);
             this.unfreezeButton.Name = "unfreezeButton";
             this.unfreezeButton.Size = new System.Drawing.Size(75, 23);
             this.unfreezeButton.TabIndex = 7;
@@ -113,7 +133,7 @@
             // 
             // createButton
             // 
-            this.createButton.Location = new System.Drawing.Point(11, 324);
+            this.createButton.Location = new System.Drawing.Point(207, 108);
             this.createButton.Name = "createButton";
             this.createButton.Size = new System.Drawing.Size(156, 23);
             this.createButton.TabIndex = 8;
@@ -123,7 +143,7 @@
             // 
             // freezeButton
             // 
-            this.freezeButton.Location = new System.Drawing.Point(13, 195);
+            this.freezeButton.Location = new System.Drawing.Point(12, 195);
             this.freezeButton.Name = "freezeButton";
             this.freezeButton.Size = new System.Drawing.Size(75, 23);
             this.freezeButton.TabIndex = 9;
@@ -142,7 +162,7 @@
             // 
             // filenameBox
             // 
-            this.filenameBox.Location = new System.Drawing.Point(12, 257);
+            this.filenameBox.Location = new System.Drawing.Point(205, 25);
             this.filenameBox.Name = "filenameBox";
             this.filenameBox.Size = new System.Drawing.Size(74, 20);
             this.filenameBox.TabIndex = 11;
@@ -150,7 +170,7 @@
             // filenameLabel
             // 
             this.filenameLabel.AutoSize = true;
-            this.filenameLabel.Location = new System.Drawing.Point(12, 241);
+            this.filenameLabel.Location = new System.Drawing.Point(205, 9);
             this.filenameLabel.Name = "filenameLabel";
             this.filenameLabel.Size = new System.Drawing.Size(54, 13);
             this.filenameLabel.TabIndex = 12;
@@ -158,21 +178,21 @@
             // 
             // NbDataServersBox
             // 
-            this.NbDataServersBox.Location = new System.Drawing.Point(93, 257);
+            this.NbDataServersBox.Location = new System.Drawing.Point(286, 25);
             this.NbDataServersBox.Name = "NbDataServersBox";
             this.NbDataServersBox.Size = new System.Drawing.Size(74, 20);
             this.NbDataServersBox.TabIndex = 13;
             // 
             // readQuorumBox
             // 
-            this.readQuorumBox.Location = new System.Drawing.Point(12, 298);
+            this.readQuorumBox.Location = new System.Drawing.Point(205, 74);
             this.readQuorumBox.Name = "readQuorumBox";
             this.readQuorumBox.Size = new System.Drawing.Size(74, 20);
             this.readQuorumBox.TabIndex = 14;
             // 
             // writeQuorumBox
             // 
-            this.writeQuorumBox.Location = new System.Drawing.Point(93, 298);
+            this.writeQuorumBox.Location = new System.Drawing.Point(286, 74);
             this.writeQuorumBox.Name = "writeQuorumBox";
             this.writeQuorumBox.Size = new System.Drawing.Size(74, 20);
             this.writeQuorumBox.TabIndex = 15;
@@ -180,7 +200,7 @@
             // NbDataServersLabel
             // 
             this.NbDataServersLabel.AutoSize = true;
-            this.NbDataServersLabel.Location = new System.Drawing.Point(90, 241);
+            this.NbDataServersLabel.Location = new System.Drawing.Point(283, 9);
             this.NbDataServersLabel.Name = "NbDataServersLabel";
             this.NbDataServersLabel.Size = new System.Drawing.Size(83, 13);
             this.NbDataServersLabel.TabIndex = 16;
@@ -189,7 +209,7 @@
             // readQuorumLabel
             // 
             this.readQuorumLabel.AutoSize = true;
-            this.readQuorumLabel.Location = new System.Drawing.Point(9, 282);
+            this.readQuorumLabel.Location = new System.Drawing.Point(202, 58);
             this.readQuorumLabel.Name = "readQuorumLabel";
             this.readQuorumLabel.Size = new System.Drawing.Size(73, 13);
             this.readQuorumLabel.TabIndex = 17;
@@ -198,7 +218,7 @@
             // writeQuorumLabel
             // 
             this.writeQuorumLabel.AutoSize = true;
-            this.writeQuorumLabel.Location = new System.Drawing.Point(90, 282);
+            this.writeQuorumLabel.Location = new System.Drawing.Point(283, 58);
             this.writeQuorumLabel.Name = "writeQuorumLabel";
             this.writeQuorumLabel.Size = new System.Drawing.Size(69, 13);
             this.writeQuorumLabel.TabIndex = 18;
@@ -206,7 +226,7 @@
             // 
             // deleteButton
             // 
-            this.deleteButton.Location = new System.Drawing.Point(11, 353);
+            this.deleteButton.Location = new System.Drawing.Point(207, 137);
             this.deleteButton.Name = "deleteButton";
             this.deleteButton.Size = new System.Drawing.Size(156, 23);
             this.deleteButton.TabIndex = 19;
@@ -216,7 +236,7 @@
             // 
             // openButton
             // 
-            this.openButton.Location = new System.Drawing.Point(12, 382);
+            this.openButton.Location = new System.Drawing.Point(208, 166);
             this.openButton.Name = "openButton";
             this.openButton.Size = new System.Drawing.Size(156, 23);
             this.openButton.TabIndex = 20;
@@ -226,7 +246,7 @@
             // 
             // closeButton
             // 
-            this.closeButton.Location = new System.Drawing.Point(11, 411);
+            this.closeButton.Location = new System.Drawing.Point(207, 195);
             this.closeButton.Name = "closeButton";
             this.closeButton.Size = new System.Drawing.Size(156, 23);
             this.closeButton.TabIndex = 21;
@@ -280,11 +300,193 @@
             this.startDataServerButton.UseVisualStyleBackColor = true;
             this.startDataServerButton.Click += new System.EventHandler(this.startDataServer_click);
             // 
+            // fileRegister1Label
+            // 
+            this.fileRegister1Label.Location = new System.Drawing.Point(12, 243);
+            this.fileRegister1Label.Name = "fileRegister1Label";
+            this.fileRegister1Label.Size = new System.Drawing.Size(56, 48);
+            this.fileRegister1Label.TabIndex = 27;
+            this.fileRegister1Label.Text = "File Register 1";
+            // 
+            // semanticsLabel
+            // 
+            this.semanticsLabel.AutoSize = true;
+            this.semanticsLabel.Location = new System.Drawing.Point(74, 260);
+            this.semanticsLabel.Name = "semanticsLabel";
+            this.semanticsLabel.Size = new System.Drawing.Size(56, 13);
+            this.semanticsLabel.TabIndex = 28;
+            this.semanticsLabel.Text = "Semantics";
+            // 
+            // semanticsBox
+            // 
+            this.semanticsBox.Location = new System.Drawing.Point(77, 276);
+            this.semanticsBox.Name = "semanticsBox";
+            this.semanticsBox.Size = new System.Drawing.Size(82, 20);
+            this.semanticsBox.TabIndex = 30;
+            // 
+            // fileRegister1Box
+            // 
+            this.fileRegister1Box.Location = new System.Drawing.Point(15, 276);
+            this.fileRegister1Box.Name = "fileRegister1Box";
+            this.fileRegister1Box.Size = new System.Drawing.Size(53, 20);
+            this.fileRegister1Box.TabIndex = 32;
+            // 
+            // byteArrayRegisterBox
+            // 
+            this.byteArrayRegisterBox.Location = new System.Drawing.Point(172, 276);
+            this.byteArrayRegisterBox.Name = "byteArrayRegisterBox";
+            this.byteArrayRegisterBox.Size = new System.Drawing.Size(54, 20);
+            this.byteArrayRegisterBox.TabIndex = 33;
+            // 
+            // byteArrayRegisterLabel
+            // 
+            this.byteArrayRegisterLabel.Location = new System.Drawing.Point(169, 243);
+            this.byteArrayRegisterLabel.Name = "byteArrayRegisterLabel";
+            this.byteArrayRegisterLabel.Size = new System.Drawing.Size(57, 30);
+            this.byteArrayRegisterLabel.TabIndex = 34;
+            this.byteArrayRegisterLabel.Text = "Byte-Array Register";
+            // 
+            // contentsLabel
+            // 
+            this.contentsLabel.Location = new System.Drawing.Point(153, 309);
+            this.contentsLabel.Name = "contentsLabel";
+            this.contentsLabel.Size = new System.Drawing.Size(57, 14);
+            this.contentsLabel.TabIndex = 35;
+            this.contentsLabel.Text = "Contents";
+            // 
+            // contentsBox
+            // 
+            this.contentsBox.Location = new System.Drawing.Point(15, 326);
+            this.contentsBox.Name = "contentsBox";
+            this.contentsBox.Size = new System.Drawing.Size(345, 20);
+            this.contentsBox.TabIndex = 36;
+            // 
+            // fileRegister2Label
+            // 
+            this.fileRegister2Label.Location = new System.Drawing.Point(244, 243);
+            this.fileRegister2Label.Name = "fileRegister2Label";
+            this.fileRegister2Label.Size = new System.Drawing.Size(62, 48);
+            this.fileRegister2Label.TabIndex = 37;
+            this.fileRegister2Label.Text = "File Register 2";
+            // 
+            // fileRegister2Box
+            // 
+            this.fileRegister2Box.Location = new System.Drawing.Point(246, 276);
+            this.fileRegister2Box.Name = "fileRegister2Box";
+            this.fileRegister2Box.Size = new System.Drawing.Size(47, 20);
+            this.fileRegister2Box.TabIndex = 38;
+            // 
+            // saltLabel
+            // 
+            this.saltLabel.AutoSize = true;
+            this.saltLabel.Location = new System.Drawing.Point(312, 260);
+            this.saltLabel.Name = "saltLabel";
+            this.saltLabel.Size = new System.Drawing.Size(25, 13);
+            this.saltLabel.TabIndex = 39;
+            this.saltLabel.Text = "Salt";
+            // 
+            // saltBox
+            // 
+            this.saltBox.Location = new System.Drawing.Point(312, 276);
+            this.saltBox.Name = "saltBox";
+            this.saltBox.Size = new System.Drawing.Size(51, 20);
+            this.saltBox.TabIndex = 40;
+            // 
+            // readButton
+            // 
+            this.readButton.Location = new System.Drawing.Point(18, 352);
+            this.readButton.Name = "readButton";
+            this.readButton.Size = new System.Drawing.Size(156, 23);
+            this.readButton.TabIndex = 41;
+            this.readButton.Text = "Read";
+            this.readButton.UseVisualStyleBackColor = true;
+            // 
+            // writeButton
+            // 
+            this.writeButton.Location = new System.Drawing.Point(18, 381);
+            this.writeButton.Name = "writeButton";
+            this.writeButton.Size = new System.Drawing.Size(156, 23);
+            this.writeButton.TabIndex = 42;
+            this.writeButton.Text = "Write";
+            this.writeButton.UseVisualStyleBackColor = true;
+            // 
+            // writeContentsButton
+            // 
+            this.writeContentsButton.Location = new System.Drawing.Point(205, 352);
+            this.writeContentsButton.Name = "writeContentsButton";
+            this.writeContentsButton.Size = new System.Drawing.Size(156, 23);
+            this.writeContentsButton.TabIndex = 43;
+            this.writeContentsButton.Text = "Write Contents";
+            this.writeContentsButton.UseVisualStyleBackColor = true;
+            // 
+            // copyButton
+            // 
+            this.copyButton.Location = new System.Drawing.Point(205, 381);
+            this.copyButton.Name = "copyButton";
+            this.copyButton.Size = new System.Drawing.Size(156, 23);
+            this.copyButton.TabIndex = 44;
+            this.copyButton.Text = "Copy";
+            this.copyButton.UseVisualStyleBackColor = true;
+            // 
+            // executeScriptButton
+            // 
+            this.executeScriptButton.Location = new System.Drawing.Point(18, 468);
+            this.executeScriptButton.Name = "executeScriptButton";
+            this.executeScriptButton.Size = new System.Drawing.Size(156, 23);
+            this.executeScriptButton.TabIndex = 45;
+            this.executeScriptButton.Text = "Execute Script";
+            this.executeScriptButton.UseVisualStyleBackColor = true;
+            // 
+            // scriptNameBox
+            // 
+            this.scriptNameBox.Location = new System.Drawing.Point(18, 442);
+            this.scriptNameBox.Name = "scriptNameBox";
+            this.scriptNameBox.Size = new System.Drawing.Size(156, 20);
+            this.scriptNameBox.TabIndex = 46;
+            // 
+            // scriptNameLabel
+            // 
+            this.scriptNameLabel.AutoSize = true;
+            this.scriptNameLabel.Location = new System.Drawing.Point(19, 421);
+            this.scriptNameLabel.Name = "scriptNameLabel";
+            this.scriptNameLabel.Size = new System.Drawing.Size(65, 13);
+            this.scriptNameLabel.TabIndex = 47;
+            this.scriptNameLabel.Text = "Script Name";
+            // 
+            // dumpButton
+            // 
+            this.dumpButton.Location = new System.Drawing.Point(205, 439);
+            this.dumpButton.Name = "dumpButton";
+            this.dumpButton.Size = new System.Drawing.Size(155, 52);
+            this.dumpButton.TabIndex = 48;
+            this.dumpButton.Text = "Dump";
+            this.dumpButton.UseVisualStyleBackColor = true;
+            // 
             // PuppetMasterForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(183, 469);
+            this.ClientSize = new System.Drawing.Size(379, 515);
+            this.Controls.Add(this.dumpButton);
+            this.Controls.Add(this.scriptNameLabel);
+            this.Controls.Add(this.scriptNameBox);
+            this.Controls.Add(this.executeScriptButton);
+            this.Controls.Add(this.copyButton);
+            this.Controls.Add(this.writeContentsButton);
+            this.Controls.Add(this.writeButton);
+            this.Controls.Add(this.readButton);
+            this.Controls.Add(this.saltBox);
+            this.Controls.Add(this.saltLabel);
+            this.Controls.Add(this.fileRegister2Box);
+            this.Controls.Add(this.fileRegister2Label);
+            this.Controls.Add(this.contentsBox);
+            this.Controls.Add(this.contentsLabel);
+            this.Controls.Add(this.byteArrayRegisterLabel);
+            this.Controls.Add(this.byteArrayRegisterBox);
+            this.Controls.Add(this.fileRegister1Box);
+            this.Controls.Add(this.semanticsBox);
+            this.Controls.Add(this.semanticsLabel);
+            this.Controls.Add(this.fileRegister1Label);
             this.Controls.Add(this.startDataServerButton);
             this.Controls.Add(this.startMetadataButton);
             this.Controls.Add(this.portLabel);
@@ -340,6 +542,26 @@
         private System.Windows.Forms.Label portLabel;
         private System.Windows.Forms.Button startMetadataButton;
         private System.Windows.Forms.Button startDataServerButton;
+        private System.Windows.Forms.Label fileRegister1Label;
+        private System.Windows.Forms.Label semanticsLabel;
+        private System.Windows.Forms.TextBox semanticsBox;
+        private System.Windows.Forms.TextBox fileRegister1Box;
+        private System.Windows.Forms.TextBox byteArrayRegisterBox;
+        private System.Windows.Forms.Label byteArrayRegisterLabel;
+        private System.Windows.Forms.Label contentsLabel;
+        private System.Windows.Forms.TextBox contentsBox;
+        private System.Windows.Forms.Label fileRegister2Label;
+        private System.Windows.Forms.TextBox fileRegister2Box;
+        private System.Windows.Forms.Label saltLabel;
+        private System.Windows.Forms.TextBox saltBox;
+        private System.Windows.Forms.Button readButton;
+        private System.Windows.Forms.Button writeButton;
+        private System.Windows.Forms.Button writeContentsButton;
+        private System.Windows.Forms.Button copyButton;
+        private System.Windows.Forms.Button executeScriptButton;
+        private System.Windows.Forms.TextBox scriptNameBox;
+        private System.Windows.Forms.Label scriptNameLabel;
+        private System.Windows.Forms.Button dumpButton;
 
     }
 }

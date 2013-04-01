@@ -8,7 +8,7 @@ namespace SharedLibrary
 {
     public interface IServerPM
     {
-        void fail();
-        void recover();
+        void Fail();
+        void Recover();
     }
 }

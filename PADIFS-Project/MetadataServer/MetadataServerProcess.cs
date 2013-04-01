@@ -30,34 +30,49 @@ namespace MetadataServer
         }
 
 
-        public void open()
+        public void Open(string fileName)
         {
             Console.WriteLine("OPEN METADATA FILE");
+            Console.WriteLine("FILENAME " + fileName);
         }
 
-        public void close()
+        public void Close(string fileName)
         {
             Console.WriteLine("CLOSE METADATA FILE");
+            Console.WriteLine("FILENAME " + fileName);
         }
 
-        public void create()
+        public void Create(string fileName, int nbDataServers, int readQuorum, int writeQuorum)
         {
             Console.WriteLine("CREATE METADATA FILE");
+            Console.WriteLine("FILENAME: " + fileName + " NBDATASERVERS: " + nbDataServers + " READQUORUM: " + readQuorum + " WRITEQUORUM: " + writeQuorum);
         }
 
-        public void delete()
+        public void Delete(string fileName)
         {
             Console.WriteLine("DELETE METADATA FILE");
+            Console.WriteLine("FILENAME " + fileName);
         }
 
-        public void fail()
+        public void Fail()
         {
             Console.WriteLine("FAIL METADATA");
         }
 
-        public void recover()
+        public void Recover()
         {
             Console.WriteLine("RECOVER METADATA");
         }
-    }
+
+
+        public void RegisterClient()
+        {
+            Console.WriteLine("REGISTER CLIENT");
+        }
+
+        public void RegisterDataServer()
+        {
+            Console.WriteLine("REGISTER DATA SERVER");
+        }
+    }   
 }

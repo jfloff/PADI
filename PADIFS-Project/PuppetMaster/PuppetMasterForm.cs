@@ -30,58 +30,102 @@ namespace PuppetMaster
 
         private void recover_click(object sender, EventArgs e)
         {
-            IServerPM server = (IServerPM)this.processes[this.processBox.Text];
-            server.recover();
+            string serverID = this.processBox.Text;
+            if (!serverID.Equals(string.Empty) && this.processes.Contains(serverID))
+            {
+                IServerPM server = (IServerPM)this.processes[serverID];
+                server.Recover();
+            }
         }
 
         private void fail_click(object sender, EventArgs e)
         {
-            IServerPM server = (IServerPM)this.processes[this.processBox.Text];
-            server.fail();
+            string serverID = this.processBox.Text;
+            if (!serverID.Equals(string.Empty) && this.processes.Contains(serverID))
+            {
+                IServerPM server = (IServerPM)this.processes[serverID];
+                server.Fail();
+            }
         }
 
         private void unfreeze_click(object sender, EventArgs e)
         {
-            IDataServerPM server = (IDataServerPM)this.processes[this.processBox.Text];
-            server.unfreeze();
+            string serverID = this.processBox.Text;
+            if (!serverID.Equals(string.Empty) && this.processes.Contains(serverID))
+            {
+                // Verificar se é um metadata server or data server (apenas data servers podem fazer unfreeze)
+                IDataServerPM server = (IDataServerPM)this.processes[serverID];
+                server.Unfreeze();
+            }
         }
 
         private void freeze_click(object sender, EventArgs e)
         {
-            IDataServerPM server = (IDataServerPM)this.processes[this.processBox.Text];
-            server.freeze();
+            string serverID = this.processBox.Text;
+            if (!serverID.Equals(string.Empty) && this.processes.Contains(serverID))
+            {
+                // Verificar se é um metadata server or data server (apenas data servers podem fazer freeze)
+                IDataServerPM server = (IDataServerPM)this.processes[serverID];
+                server.Freeze();
+            }
         }
 
         private void create_click(object sender, EventArgs e)
         {
-            IClient client = (IClient)this.processes[this.processBox.Text];
-            client.create();
-        }
+            string clientID = this.processBox.Text;
+            string fileName = this.filenameBox.Text;
+            string nbData = this.NbDataServersBox.Text;
+            string readq = this.readQuorumBox.Text;
+            string writeq = this.writeQuorumBox.Text;
 
-        private void delete_click(object sender, EventArgs e)
-        {
-            IClient client = (IClient)this.processes[this.processBox.Text];
-            client.delete();
+            if (!fileName.Equals(string.Empty) && !nbData.Equals(string.Empty)
+                && !readq.Equals(string.Empty) && !writeq.Equals(string.Empty)
+                && !clientID.Equals(string.Empty) && this.processes.Contains(clientID))
+            {
+                IClient client = (IClient)this.processes[clientID];
+                client.Create(fileName, Convert.ToInt32(nbData), Convert.ToInt32(readq), Convert.ToInt32(writeq));
+            }
         }
 
         private void open_click(object sender, EventArgs e)
         {
-            IClient client = (IClient)this.processes[this.processBox.Text];
-            client.open();
+            string clientID = this.processBox.Text;
+            string fileName = this.filenameBox.Text;
+            if (!clientID.Equals(string.Empty) && !fileName.Equals(string.Empty) && this.processes.Contains(clientID))
+            {
+                IClient client = (IClient)this.processes[clientID];
+                client.Open(fileName);
+            }
+        }
+
+        private void delete_click(object sender, EventArgs e)
+        {
+            string clientID = this.processBox.Text;
+            string fileName = this.filenameBox.Text;
+            if (!clientID.Equals(string.Empty) && !fileName.Equals(string.Empty) && this.processes.Contains(clientID))
+            {
+                IClient client = (IClient)this.processes[clientID];
+                client.Delete(fileName);
+            }
         }
 
         private void close_click(object sender, EventArgs e)
         {
-            IClient client = (IClient)this.processes[this.processBox.Text];
-            client.close();
+            string clientID = this.processBox.Text;
+            string fileName = this.filenameBox.Text;
+            if (!clientID.Equals(string.Empty) && !fileName.Equals(string.Empty) && this.processes.Contains(clientID))
+            {
+                IClient client = (IClient)this.processes[clientID];
+                client.Close(fileName);
+            }
         }
 
         private void startClient_click(object sender, EventArgs e)
         {
-            String clientID = this.processBox.Text;
-            String port = this.portBox.Text;
+            string clientID = this.processBox.Text;
+            string port = this.portBox.Text;
 
-            if (!this.processes.Contains(clientID))
+            if (!clientID.Equals(string.Empty) && !port.Equals(string.Empty) && !this.processes.Contains(clientID))
             {
                 Process.Start("Client.exe", clientID + " " + port);
                 IClient client = (IClient)Activator.GetObject(typeof(IClient), "tcp://localhost:" + port + "/" + clientID);
@@ -97,10 +141,10 @@ namespace PuppetMaster
 
         private void startMetadata_click(object sender, EventArgs e)
         {
-            String metadataID = this.processBox.Text;
-            String port = this.portBox.Text;
+            string metadataID = this.processBox.Text;
+            string port = this.portBox.Text;
 
-            if (!this.processes.Contains(metadataID))
+            if (!metadataID.Equals(string.Empty) && !port.Equals(string.Empty) && !this.processes.Contains(metadataID))
             {
                 Process.Start("MetadataServer.exe", metadataID + " " + port);
                 IServerPM metadata = (IServerPM)Activator.GetObject(typeof(IServerPM), "tcp://localhost:" + port + "/" + metadataID);
@@ -117,16 +161,17 @@ namespace PuppetMaster
 
         private void startDataServer_click(object sender, EventArgs e)
         {
-            String dataID = this.processBox.Text;
-            String port = this.portBox.Text;
+            string dataID = this.processBox.Text;
+            string port = this.portBox.Text;
 
-            if (!this.processes.Contains(dataID))
+            if (!dataID.Equals(string.Empty) && !port.Equals(string.Empty) && !this.processes.Contains(dataID))
             {
                 Process.Start("DataServer.exe", dataID + " " + port);
-                IDataServerPM metadata = (IDataServerPM)Activator.GetObject(typeof(IDataServerPM), "tcp://localhost:" + port + "/" + dataID);
-                this.processes.Add(dataID, metadata);
+                IDataServerPM dataServer = (IDataServerPM)Activator.GetObject(typeof(IDataServerPM), "tcp://localhost:" + port + "/" + dataID);
+                this.processes.Add(dataID, dataServer);
                 this.processBox.Clear();
                 this.portBox.Clear();
+              
             }
             else
             {

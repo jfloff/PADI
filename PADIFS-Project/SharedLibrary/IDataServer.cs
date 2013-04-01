@@ -8,7 +8,7 @@ namespace SharedLibrary
 {
     public interface IDataServer
     {
-        void read();
-        void write();
+        void Read();
+        void Write();
     }
 }
