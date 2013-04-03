@@ -40,8 +40,9 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Config.cs" />
-    <Compile Include="FileAlreadyExistsException.cs" />
-    <Compile Include="FileDoesNotExistException.cs" />
+    <Compile Include="Exceptions\FileAlreadyExistsException.cs" />
+    <Compile Include="FileData.cs" />
+    <Compile Include="Exceptions\FileDoesNotExistException.cs" />
     <Compile Include="FileMetadata.cs" />
     <Compile Include="Heartbeat.cs" />
     <Compile Include="IClientToPM.cs" />
