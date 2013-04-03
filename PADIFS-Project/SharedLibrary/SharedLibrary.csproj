@@ -39,7 +39,11 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="IClient.cs" />
+    <Compile Include="Config.cs" />
+    <Compile Include="FileAlreadyExistsException.cs" />
+    <Compile Include="FileDoesNotExistException.cs" />
+    <Compile Include="FileMetadata.cs" />
+    <Compile Include="IClientPM.cs" />
     <Compile Include="IDataServer.cs" />
     <Compile Include="IDataServerPM.cs" />
     <Compile Include="IMetadataServer.cs" />

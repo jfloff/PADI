@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace SharedLibrary
 {
-    public interface IClient
+    public interface IClientPM
     {
         void Create(string fileName, int nbDataServers, int readQuorum, int writeQuorum);
         void Open(string fileName);

@@ -78,7 +78,7 @@
             this.failButton.Location = new System.Drawing.Point(12, 166);
             this.failButton.Name = "failButton";
             this.failButton.Size = new System.Drawing.Size(75, 23);
-            this.failButton.TabIndex = 0;
+            this.failButton.TabIndex = 26;
             this.failButton.Text = "Fail";
             this.failButton.UseVisualStyleBackColor = true;
             this.failButton.Click += new System.EventHandler(this.fail_click);
@@ -88,7 +88,7 @@
             this.recoverButton.Location = new System.Drawing.Point(99, 166);
             this.recoverButton.Name = "recoverButton";
             this.recoverButton.Size = new System.Drawing.Size(75, 23);
-            this.recoverButton.TabIndex = 1;
+            this.recoverButton.TabIndex = 28;
             this.recoverButton.Text = "Recover";
             this.recoverButton.UseVisualStyleBackColor = true;
             this.recoverButton.Click += new System.EventHandler(this.recover_click);
@@ -119,14 +119,14 @@
             this.processBox.Location = new System.Drawing.Point(12, 25);
             this.processBox.Name = "processBox";
             this.processBox.Size = new System.Drawing.Size(81, 20);
-            this.processBox.TabIndex = 2;
+            this.processBox.TabIndex = 0;
             // 
             // unfreezeButton
             // 
             this.unfreezeButton.Location = new System.Drawing.Point(99, 195);
             this.unfreezeButton.Name = "unfreezeButton";
             this.unfreezeButton.Size = new System.Drawing.Size(75, 23);
-            this.unfreezeButton.TabIndex = 7;
+            this.unfreezeButton.TabIndex = 29;
             this.unfreezeButton.Text = "Unfreeze";
             this.unfreezeButton.UseVisualStyleBackColor = true;
             this.unfreezeButton.Click += new System.EventHandler(this.unfreeze_click);
@@ -136,17 +136,17 @@
             this.createButton.Location = new System.Drawing.Point(207, 108);
             this.createButton.Name = "createButton";
             this.createButton.Size = new System.Drawing.Size(156, 23);
-            this.createButton.TabIndex = 8;
+            this.createButton.TabIndex = 9;
             this.createButton.Text = "Create";
             this.createButton.UseVisualStyleBackColor = true;
-            this.createButton.Click += new System.EventHandler(this.create_click);
+            this.createButton.Click += new System.EventHandler(this.Create_click);
             // 
             // freezeButton
             // 
             this.freezeButton.Location = new System.Drawing.Point(12, 195);
             this.freezeButton.Name = "freezeButton";
             this.freezeButton.Size = new System.Drawing.Size(75, 23);
-            this.freezeButton.TabIndex = 9;
+            this.freezeButton.TabIndex = 27;
             this.freezeButton.Text = "Freeze";
             this.freezeButton.UseVisualStyleBackColor = true;
             this.freezeButton.Click += new System.EventHandler(this.freeze_click);
@@ -165,7 +165,7 @@
             this.filenameBox.Location = new System.Drawing.Point(205, 25);
             this.filenameBox.Name = "filenameBox";
             this.filenameBox.Size = new System.Drawing.Size(74, 20);
-            this.filenameBox.TabIndex = 11;
+            this.filenameBox.TabIndex = 5;
             // 
             // filenameLabel
             // 
@@ -181,21 +181,21 @@
             this.NbDataServersBox.Location = new System.Drawing.Point(286, 25);
             this.NbDataServersBox.Name = "NbDataServersBox";
             this.NbDataServersBox.Size = new System.Drawing.Size(74, 20);
-            this.NbDataServersBox.TabIndex = 13;
+            this.NbDataServersBox.TabIndex = 6;
             // 
             // readQuorumBox
             // 
             this.readQuorumBox.Location = new System.Drawing.Point(205, 74);
             this.readQuorumBox.Name = "readQuorumBox";
             this.readQuorumBox.Size = new System.Drawing.Size(74, 20);
-            this.readQuorumBox.TabIndex = 14;
+            this.readQuorumBox.TabIndex = 7;
             // 
             // writeQuorumBox
             // 
             this.writeQuorumBox.Location = new System.Drawing.Point(286, 74);
             this.writeQuorumBox.Name = "writeQuorumBox";
             this.writeQuorumBox.Size = new System.Drawing.Size(74, 20);
-            this.writeQuorumBox.TabIndex = 15;
+            this.writeQuorumBox.TabIndex = 8;
             // 
             // NbDataServersLabel
             // 
@@ -229,7 +229,7 @@
             this.deleteButton.Location = new System.Drawing.Point(207, 137);
             this.deleteButton.Name = "deleteButton";
             this.deleteButton.Size = new System.Drawing.Size(156, 23);
-            this.deleteButton.TabIndex = 19;
+            this.deleteButton.TabIndex = 10;
             this.deleteButton.Text = "Delete";
             this.deleteButton.UseVisualStyleBackColor = true;
             this.deleteButton.Click += new System.EventHandler(this.delete_click);
@@ -239,7 +239,7 @@
             this.openButton.Location = new System.Drawing.Point(208, 166);
             this.openButton.Name = "openButton";
             this.openButton.Size = new System.Drawing.Size(156, 23);
-            this.openButton.TabIndex = 20;
+            this.openButton.TabIndex = 11;
             this.openButton.Text = "Open";
             this.openButton.UseVisualStyleBackColor = true;
             this.openButton.Click += new System.EventHandler(this.open_click);
@@ -249,7 +249,7 @@
             this.closeButton.Location = new System.Drawing.Point(207, 195);
             this.closeButton.Name = "closeButton";
             this.closeButton.Size = new System.Drawing.Size(156, 23);
-            this.closeButton.TabIndex = 21;
+            this.closeButton.TabIndex = 12;
             this.closeButton.Text = "Close";
             this.closeButton.UseVisualStyleBackColor = true;
             this.closeButton.Click += new System.EventHandler(this.close_click);
@@ -259,7 +259,7 @@
             this.startClientButton.Location = new System.Drawing.Point(13, 117);
             this.startClientButton.Name = "startClientButton";
             this.startClientButton.Size = new System.Drawing.Size(162, 27);
-            this.startClientButton.TabIndex = 22;
+            this.startClientButton.TabIndex = 5;
             this.startClientButton.Text = "Start Client";
             this.startClientButton.UseVisualStyleBackColor = true;
             this.startClientButton.Click += new System.EventHandler(this.startClient_click);
@@ -269,7 +269,7 @@
             this.portBox.Location = new System.Drawing.Point(100, 25);
             this.portBox.Name = "portBox";
             this.portBox.Size = new System.Drawing.Size(74, 20);
-            this.portBox.TabIndex = 23;
+            this.portBox.TabIndex = 1;
             // 
             // portLabel
             // 
@@ -285,7 +285,7 @@
             this.startMetadataButton.Location = new System.Drawing.Point(12, 51);
             this.startMetadataButton.Name = "startMetadataButton";
             this.startMetadataButton.Size = new System.Drawing.Size(162, 27);
-            this.startMetadataButton.TabIndex = 25;
+            this.startMetadataButton.TabIndex = 3;
             this.startMetadataButton.Text = "Start Metadata";
             this.startMetadataButton.UseVisualStyleBackColor = true;
             this.startMetadataButton.Click += new System.EventHandler(this.startMetadata_click);
@@ -295,7 +295,7 @@
             this.startDataServerButton.Location = new System.Drawing.Point(12, 84);
             this.startDataServerButton.Name = "startDataServerButton";
             this.startDataServerButton.Size = new System.Drawing.Size(162, 27);
-            this.startDataServerButton.TabIndex = 26;
+            this.startDataServerButton.TabIndex = 4;
             this.startDataServerButton.Text = "Start Data Server";
             this.startDataServerButton.UseVisualStyleBackColor = true;
             this.startDataServerButton.Click += new System.EventHandler(this.startDataServer_click);
@@ -322,21 +322,21 @@
             this.semanticsBox.Location = new System.Drawing.Point(77, 276);
             this.semanticsBox.Name = "semanticsBox";
             this.semanticsBox.Size = new System.Drawing.Size(82, 20);
-            this.semanticsBox.TabIndex = 30;
+            this.semanticsBox.TabIndex = 14;
             // 
             // fileRegister1Box
             // 
             this.fileRegister1Box.Location = new System.Drawing.Point(15, 276);
             this.fileRegister1Box.Name = "fileRegister1Box";
             this.fileRegister1Box.Size = new System.Drawing.Size(53, 20);
-            this.fileRegister1Box.TabIndex = 32;
+            this.fileRegister1Box.TabIndex = 13;
             // 
             // byteArrayRegisterBox
             // 
             this.byteArrayRegisterBox.Location = new System.Drawing.Point(172, 276);
             this.byteArrayRegisterBox.Name = "byteArrayRegisterBox";
             this.byteArrayRegisterBox.Size = new System.Drawing.Size(54, 20);
-            this.byteArrayRegisterBox.TabIndex = 33;
+            this.byteArrayRegisterBox.TabIndex = 15;
             // 
             // byteArrayRegisterLabel
             // 
@@ -359,7 +359,7 @@
             this.contentsBox.Location = new System.Drawing.Point(15, 326);
             this.contentsBox.Name = "contentsBox";
             this.contentsBox.Size = new System.Drawing.Size(345, 20);
-            this.contentsBox.TabIndex = 36;
+            this.contentsBox.TabIndex = 18;
             // 
             // fileRegister2Label
             // 
@@ -374,7 +374,7 @@
             this.fileRegister2Box.Location = new System.Drawing.Point(246, 276);
             this.fileRegister2Box.Name = "fileRegister2Box";
             this.fileRegister2Box.Size = new System.Drawing.Size(47, 20);
-            this.fileRegister2Box.TabIndex = 38;
+            this.fileRegister2Box.TabIndex = 16;
             // 
             // saltLabel
             // 
@@ -390,14 +390,14 @@
             this.saltBox.Location = new System.Drawing.Point(312, 276);
             this.saltBox.Name = "saltBox";
             this.saltBox.Size = new System.Drawing.Size(51, 20);
-            this.saltBox.TabIndex = 40;
+            this.saltBox.TabIndex = 17;
             // 
             // readButton
             // 
             this.readButton.Location = new System.Drawing.Point(18, 352);
             this.readButton.Name = "readButton";
             this.readButton.Size = new System.Drawing.Size(156, 23);
-            this.readButton.TabIndex = 41;
+            this.readButton.TabIndex = 19;
             this.readButton.Text = "Read";
             this.readButton.UseVisualStyleBackColor = true;
             // 
@@ -406,7 +406,7 @@
             this.writeButton.Location = new System.Drawing.Point(18, 381);
             this.writeButton.Name = "writeButton";
             this.writeButton.Size = new System.Drawing.Size(156, 23);
-            this.writeButton.TabIndex = 42;
+            this.writeButton.TabIndex = 20;
             this.writeButton.Text = "Write";
             this.writeButton.UseVisualStyleBackColor = true;
             // 
@@ -415,7 +415,7 @@
             this.writeContentsButton.Location = new System.Drawing.Point(205, 352);
             this.writeContentsButton.Name = "writeContentsButton";
             this.writeContentsButton.Size = new System.Drawing.Size(156, 23);
-            this.writeContentsButton.TabIndex = 43;
+            this.writeContentsButton.TabIndex = 21;
             this.writeContentsButton.Text = "Write Contents";
             this.writeContentsButton.UseVisualStyleBackColor = true;
             // 
@@ -424,7 +424,7 @@
             this.copyButton.Location = new System.Drawing.Point(205, 381);
             this.copyButton.Name = "copyButton";
             this.copyButton.Size = new System.Drawing.Size(156, 23);
-            this.copyButton.TabIndex = 44;
+            this.copyButton.TabIndex = 22;
             this.copyButton.Text = "Copy";
             this.copyButton.UseVisualStyleBackColor = true;
             // 
@@ -433,7 +433,7 @@
             this.executeScriptButton.Location = new System.Drawing.Point(18, 468);
             this.executeScriptButton.Name = "executeScriptButton";
             this.executeScriptButton.Size = new System.Drawing.Size(156, 23);
-            this.executeScriptButton.TabIndex = 45;
+            this.executeScriptButton.TabIndex = 24;
             this.executeScriptButton.Text = "Execute Script";
             this.executeScriptButton.UseVisualStyleBackColor = true;
             // 
@@ -442,7 +442,7 @@
             this.scriptNameBox.Location = new System.Drawing.Point(18, 442);
             this.scriptNameBox.Name = "scriptNameBox";
             this.scriptNameBox.Size = new System.Drawing.Size(156, 20);
-            this.scriptNameBox.TabIndex = 46;
+            this.scriptNameBox.TabIndex = 23;
             // 
             // scriptNameLabel
             // 
@@ -458,7 +458,7 @@
             this.dumpButton.Location = new System.Drawing.Point(205, 439);
             this.dumpButton.Name = "dumpButton";
             this.dumpButton.Size = new System.Drawing.Size(155, 52);
-            this.dumpButton.TabIndex = 48;
+            this.dumpButton.TabIndex = 25;
             this.dumpButton.Text = "Dump";
             this.dumpButton.UseVisualStyleBackColor = true;
             // 
@@ -511,6 +511,7 @@
             this.Controls.Add(this.recoverButton);
             this.Controls.Add(this.failButton);
             this.Name = "PuppetMasterForm";
+            this.StartPosition = System.Windows.Forms.FormStartPosition.Manual;
             this.Text = "PuppetMaster";
             this.ResumeLayout(false);
             this.PerformLayout();

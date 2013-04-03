@@ -7,11 +7,19 @@ using SharedLibrary;
 using System.Runtime.Remoting;
 using System.Runtime.Remoting.Channels.Tcp;
 using System.Runtime.Remoting.Channels;
+using System.Collections;
 
-namespace MetadataServer
+namespace SharedLibrary
 {
     class MetadataServerProcess : MarshalByRefObject, IMetadataServer, IServerPM
     {
+
+        private static Dictionary<string, FileMetadata> fileMetadataTable = new Dictionary<string, FileMetadata>();
+
+        public bool hasFile(string fileName) {
+            return fileMetadataTable.ContainsKey(fileName);
+        }
+        
         public static void Main(string[] args)
         {
             if (args.Length != 2)
@@ -30,28 +38,50 @@ namespace MetadataServer
         }
 
 
-        public void Open(string fileName)
+        public FileMetadata Open(string fileName)
         {
-            Console.WriteLine("OPEN METADATA FILE");
-            Console.WriteLine("FILENAME " + fileName);
+            Console.WriteLine("OPEN METADATA FILE " + fileName);
+
+            if (!hasFile(fileName))
+                throw new FileDoesNotExistException(fileName);
+
+            return fileMetadataTable[fileName];
         }
 
+        // recheck
         public void Close(string fileName)
         {
-            Console.WriteLine("CLOSE METADATA FILE");
-            Console.WriteLine("FILENAME " + fileName);
+            Console.WriteLine("CLOSE METADATA FILE " + fileName);
+
+            if (!hasFile(fileName))
+                throw new FileDoesNotExistException(fileName);
         }
 
-        public void Create(string fileName, int nbDataServers, int readQuorum, int writeQuorum)
+        public FileMetadata Create(string fileName, int nbDataServers, int readQuorum, int writeQuorum)
         {
             Console.WriteLine("CREATE METADATA FILE");
             Console.WriteLine("FILENAME: " + fileName + " NBDATASERVERS: " + nbDataServers + " READQUORUM: " + readQuorum + " WRITEQUORUM: " + writeQuorum);
+
+            if (hasFile(fileName))
+                throw new FileAlreadyExistsException(fileName);
+
+            //Missing: selecionar data servers
+            List<string> dataServersList = new List<string>();
+            FileMetadata fileMetadata = new FileMetadata(fileName, nbDataServers, readQuorum, writeQuorum, dataServersList);
+            fileMetadataTable.Add(fileName, fileMetadata);
+
+            return fileMetadata;
         }
 
         public void Delete(string fileName)
         {
-            Console.WriteLine("DELETE METADATA FILE");
-            Console.WriteLine("FILENAME " + fileName);
+            Console.WriteLine("DELETE METADATA FILE " + fileName);
+
+            if (!hasFile(fileName))
+                throw new FileDoesNotExistException(fileName);
+
+            //data servers updates (delete files)
+            fileMetadataTable.Remove(fileName);
         }
 
         public void Fail()

@@ -7,7 +7,7 @@
     <ProjectGuid>{EFC72FBD-08D3-4BBF-B616-82C48190D652}</ProjectGuid>
     <OutputType>Exe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>MetadataServer</RootNamespace>
+    <RootNamespace>SharedLibrary</RootNamespace>
     <AssemblyName>MetadataServer</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>

@@ -8,10 +8,11 @@ namespace SharedLibrary
 {
     public interface IMetadataServer
     {
-        void Open(string fileName);
+        FileMetadata Open(string fileName);
         void Close(string fileName);
-        void Create(string fileName, int nbDataServers, int readQuorum, int writeQuorum);
+        FileMetadata Create(string fileName, int nbDataServers, int readQuorum, int writeQuorum);
         void Delete(string fileName);
+        // To decide
         void RegisterClient();
         void RegisterDataServer();
     }

@@ -18,7 +18,7 @@ namespace PuppetMaster
 {
     public partial class PuppetMasterForm : Form
     {
-        Hashtable processes;
+        private Hashtable processes;
 
         public PuppetMasterForm()
         {
@@ -70,7 +70,7 @@ namespace PuppetMaster
             }
         }
 
-        private void create_click(object sender, EventArgs e)
+        private void Create_click(object sender, EventArgs e)
         {
             string clientID = this.processBox.Text;
             string fileName = this.filenameBox.Text;
@@ -82,7 +82,7 @@ namespace PuppetMaster
                 && !readq.Equals(string.Empty) && !writeq.Equals(string.Empty)
                 && !clientID.Equals(string.Empty) && this.processes.Contains(clientID))
             {
-                IClient client = (IClient)this.processes[clientID];
+                IClientPM client = (IClientPM)this.processes[clientID];
                 client.Create(fileName, Convert.ToInt32(nbData), Convert.ToInt32(readq), Convert.ToInt32(writeq));
             }
         }
@@ -93,7 +93,7 @@ namespace PuppetMaster
             string fileName = this.filenameBox.Text;
             if (!clientID.Equals(string.Empty) && !fileName.Equals(string.Empty) && this.processes.Contains(clientID))
             {
-                IClient client = (IClient)this.processes[clientID];
+                IClientPM client = (IClientPM)this.processes[clientID];
                 client.Open(fileName);
             }
         }
@@ -104,7 +104,7 @@ namespace PuppetMaster
             string fileName = this.filenameBox.Text;
             if (!clientID.Equals(string.Empty) && !fileName.Equals(string.Empty) && this.processes.Contains(clientID))
             {
-                IClient client = (IClient)this.processes[clientID];
+                IClientPM client = (IClientPM)this.processes[clientID];
                 client.Delete(fileName);
             }
         }
@@ -115,7 +115,7 @@ namespace PuppetMaster
             string fileName = this.filenameBox.Text;
             if (!clientID.Equals(string.Empty) && !fileName.Equals(string.Empty) && this.processes.Contains(clientID))
             {
-                IClient client = (IClient)this.processes[clientID];
+                IClientPM client = (IClientPM)this.processes[clientID];
                 client.Close(fileName);
             }
         }
@@ -128,7 +128,7 @@ namespace PuppetMaster
             if (!clientID.Equals(string.Empty) && !port.Equals(string.Empty) && !this.processes.Contains(clientID))
             {
                 Process.Start("Client.exe", clientID + " " + port);
-                IClient client = (IClient)Activator.GetObject(typeof(IClient), "tcp://localhost:" + port + "/" + clientID);
+                IClientPM client = (IClientPM)Activator.GetObject(typeof(IClientPM), "tcp://localhost:" + port + "/" + clientID);
                 this.processes.Add(clientID, client);
                 this.processBox.Clear();
                 this.portBox.Clear();
