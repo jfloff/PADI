@@ -10,12 +10,13 @@ using System.Runtime.Remoting;
 
 namespace DataServer
 {
-    class DataServerProcess : MarshalByRefObject, IDataServer, IDataServerPM
+    class DataServerProcess : MarshalByRefObject, IDataServerToClient, IDataServerToPM, IDataServerToMetadataServer
     {
+        private static string dataServerStartedTemplate = "Data Server {0} has started.";
         public static void Main(string[] args)
         {
             if (args.Length != 2)
-                throw new Exception();
+                throw new Exception("Wrong Arguments");
 
             TcpChannel channel = new TcpChannel(Convert.ToInt32(args[1]));
             ChannelServices.RegisterChannel(channel, true);
@@ -25,7 +26,7 @@ namespace DataServer
                 args[0],
                 WellKnownObjectMode.Singleton);
 
-            Console.WriteLine("Data Server " + args[0] + " Started");
+            Console.WriteLine(string.Format(dataServerStartedTemplate, args[0]));
 
             // Notify Metadata Server
 
@@ -60,6 +61,16 @@ namespace DataServer
         public void Write()
         {
             Console.WriteLine("WRITE DATA SERVER FILE");
+        }
+
+        public void Create(string fileName)
+        {
+            Console.WriteLine("CREATE FILE " + fileName);
+        }
+
+        public void Delete(string fileName)
+        {
+            Console.WriteLine("DELETE FILE " + fileName);
         }
     }
 }

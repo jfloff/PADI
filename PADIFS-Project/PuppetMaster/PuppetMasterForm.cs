@@ -18,6 +18,8 @@ namespace PuppetMaster
 {
     public partial class PuppetMasterForm : Form
     {
+        private string urlTemplate = "tcp://localhost:{0}/{1}";
+        private List<string> metadataServersLocation;
         private Hashtable processes;
 
         public PuppetMasterForm()
@@ -26,6 +28,7 @@ namespace PuppetMaster
             TcpChannel channel = new TcpChannel(8080);
             ChannelServices.RegisterChannel(channel, true);
             this.processes = new Hashtable();
+            this.metadataServersLocation = new List<string>();
         }
 
         private void recover_click(object sender, EventArgs e)
@@ -33,7 +36,7 @@ namespace PuppetMaster
             string serverID = this.processBox.Text;
             if (!serverID.Equals(string.Empty) && this.processes.Contains(serverID))
             {
-                IServerPM server = (IServerPM)this.processes[serverID];
+                IServerToPM server = (IServerToPM)this.processes[serverID];
                 server.Recover();
             }
         }
@@ -43,7 +46,7 @@ namespace PuppetMaster
             string serverID = this.processBox.Text;
             if (!serverID.Equals(string.Empty) && this.processes.Contains(serverID))
             {
-                IServerPM server = (IServerPM)this.processes[serverID];
+                IServerToPM server = (IServerToPM)this.processes[serverID];
                 server.Fail();
             }
         }
@@ -54,7 +57,7 @@ namespace PuppetMaster
             if (!serverID.Equals(string.Empty) && this.processes.Contains(serverID))
             {
                 // Verificar se é um metadata server or data server (apenas data servers podem fazer unfreeze)
-                IDataServerPM server = (IDataServerPM)this.processes[serverID];
+                IDataServerToPM server = (IDataServerToPM)this.processes[serverID];
                 server.Unfreeze();
             }
         }
@@ -65,7 +68,7 @@ namespace PuppetMaster
             if (!serverID.Equals(string.Empty) && this.processes.Contains(serverID))
             {
                 // Verificar se é um metadata server or data server (apenas data servers podem fazer freeze)
-                IDataServerPM server = (IDataServerPM)this.processes[serverID];
+                IDataServerToPM server = (IDataServerToPM)this.processes[serverID];
                 server.Freeze();
             }
         }
@@ -82,7 +85,7 @@ namespace PuppetMaster
                 && !readq.Equals(string.Empty) && !writeq.Equals(string.Empty)
                 && !clientID.Equals(string.Empty) && this.processes.Contains(clientID))
             {
-                IClientPM client = (IClientPM)this.processes[clientID];
+                IClientToPM client = (IClientToPM)this.processes[clientID];
                 client.Create(fileName, Convert.ToInt32(nbData), Convert.ToInt32(readq), Convert.ToInt32(writeq));
             }
         }
@@ -93,7 +96,7 @@ namespace PuppetMaster
             string fileName = this.filenameBox.Text;
             if (!clientID.Equals(string.Empty) && !fileName.Equals(string.Empty) && this.processes.Contains(clientID))
             {
-                IClientPM client = (IClientPM)this.processes[clientID];
+                IClientToPM client = (IClientToPM)this.processes[clientID];
                 client.Open(fileName);
             }
         }
@@ -104,7 +107,7 @@ namespace PuppetMaster
             string fileName = this.filenameBox.Text;
             if (!clientID.Equals(string.Empty) && !fileName.Equals(string.Empty) && this.processes.Contains(clientID))
             {
-                IClientPM client = (IClientPM)this.processes[clientID];
+                IClientToPM client = (IClientToPM)this.processes[clientID];
                 client.Delete(fileName);
             }
         }
@@ -115,7 +118,7 @@ namespace PuppetMaster
             string fileName = this.filenameBox.Text;
             if (!clientID.Equals(string.Empty) && !fileName.Equals(string.Empty) && this.processes.Contains(clientID))
             {
-                IClientPM client = (IClientPM)this.processes[clientID];
+                IClientToPM client = (IClientToPM)this.processes[clientID];
                 client.Close(fileName);
             }
         }
@@ -128,12 +131,12 @@ namespace PuppetMaster
             if (!clientID.Equals(string.Empty) && !port.Equals(string.Empty) && !this.processes.Contains(clientID))
             {
                 Process.Start("Client.exe", clientID + " " + port);
-                IClientPM client = (IClientPM)Activator.GetObject(typeof(IClientPM), "tcp://localhost:" + port + "/" + clientID);
+                IClientToPM client = (IClientToPM)Activator.GetObject(typeof(IClientToPM), string.Format(urlTemplate, port, clientID));
                 this.processes.Add(clientID, client);
-                this.processBox.Clear();
-                this.portBox.Clear();
+                client.ReceiveMetadataServersLocations(this.metadataServersLocation);
             }
-            else { 
+            else
+            {
                 // Caso em que o identificador já está a ser usado por outro processo
                 // Lançar uma excepção e/ou alerta no form
             }
@@ -147,10 +150,10 @@ namespace PuppetMaster
             if (!metadataID.Equals(string.Empty) && !port.Equals(string.Empty) && !this.processes.Contains(metadataID))
             {
                 Process.Start("MetadataServer.exe", metadataID + " " + port);
-                IServerPM metadata = (IServerPM)Activator.GetObject(typeof(IServerPM), "tcp://localhost:" + port + "/" + metadataID);
+                string url = string.Format(urlTemplate, port, metadataID);
+                IServerToPM metadata = (IServerToPM)Activator.GetObject(typeof(IServerToPM), url);
                 this.processes.Add(metadataID, metadata);
-                this.processBox.Clear();
-                this.portBox.Clear();
+                this.metadataServersLocation.Add(url);
             }
             else
             {
@@ -167,11 +170,8 @@ namespace PuppetMaster
             if (!dataID.Equals(string.Empty) && !port.Equals(string.Empty) && !this.processes.Contains(dataID))
             {
                 Process.Start("DataServer.exe", dataID + " " + port);
-                IDataServerPM dataServer = (IDataServerPM)Activator.GetObject(typeof(IDataServerPM), "tcp://localhost:" + port + "/" + dataID);
+                IDataServerToPM dataServer = (IDataServerToPM)Activator.GetObject(typeof(IDataServerToPM), string.Format(urlTemplate, port, dataID));
                 this.processes.Add(dataID, dataServer);
-                this.processBox.Clear();
-                this.portBox.Clear();
-              
             }
             else
             {

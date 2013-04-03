@@ -43,11 +43,14 @@
     <Compile Include="FileAlreadyExistsException.cs" />
     <Compile Include="FileDoesNotExistException.cs" />
     <Compile Include="FileMetadata.cs" />
-    <Compile Include="IClientPM.cs" />
-    <Compile Include="IDataServer.cs" />
-    <Compile Include="IDataServerPM.cs" />
-    <Compile Include="IMetadataServer.cs" />
-    <Compile Include="IServerPM.cs" />
+    <Compile Include="Heartbeat.cs" />
+    <Compile Include="IClientToPM.cs" />
+    <Compile Include="IDataServerToClient.cs" />
+    <Compile Include="IDataServerToMetadataServer.cs" />
+    <Compile Include="IDataServerToPM.cs" />
+    <Compile Include="IMetadataServerToClient.cs" />
+    <Compile Include="IMetadataServerToDataServer.cs" />
+    <Compile Include="IServerToPM.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

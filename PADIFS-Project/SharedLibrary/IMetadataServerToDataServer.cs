@@ -6,8 +6,9 @@ using System.Threading.Tasks;
 
 namespace SharedLibrary
 {
-    public class Config
+    public interface IMetadataServerToDataServer
     {
-        public const int MAX_FILE_REGISTERS = 10;
+        Heartbeat Heartbeat();
+        bool RegisterDataServer(string dataServerName);
     }
 }

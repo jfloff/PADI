@@ -11,9 +11,9 @@ using System.Collections;
 
 namespace SharedLibrary
 {
-    class MetadataServerProcess : MarshalByRefObject, IMetadataServer, IServerPM
+    class MetadataServerProcess : MarshalByRefObject, IMetadataServerToClient, IServerToPM, IMetadataServerToDataServer
     {
-
+        private static string metadataStartedTemplate = "Metadata Server {0} has started."; 
         private static Dictionary<string, FileMetadata> fileMetadataTable = new Dictionary<string, FileMetadata>();
 
         public bool hasFile(string fileName) {
@@ -23,7 +23,7 @@ namespace SharedLibrary
         public static void Main(string[] args)
         {
             if (args.Length != 2)
-                throw new Exception();
+                throw new Exception("Wrong Arguments");
 
             TcpChannel channel = new TcpChannel(Convert.ToInt32(args[1]));
             ChannelServices.RegisterChannel(channel, true);
@@ -32,11 +32,10 @@ namespace SharedLibrary
                 args[0],
                 WellKnownObjectMode.Singleton);
 
-            Console.WriteLine("Metadata Server " + args[0] + " Started");
+            Console.WriteLine(string.Format(metadataStartedTemplate, args[0]));
 
             System.Console.ReadLine();
         }
-
 
         public FileMetadata Open(string fileName)
         {
@@ -95,14 +94,22 @@ namespace SharedLibrary
         }
 
 
-        public void RegisterClient()
+        public bool RegisterClient(string clientName)
         {
-            Console.WriteLine("REGISTER CLIENT");
+            Console.WriteLine("REGISTER CLIENT " + clientName);
+            return true;
         }
 
-        public void RegisterDataServer()
+        public Heartbeat Heartbeat()
         {
-            Console.WriteLine("REGISTER DATA SERVER");
+            Console.WriteLine("HEARTBEAT");
+            return null;
+        }
+
+        public bool RegisterDataServer(string dataServerName)
+        {
+            Console.WriteLine("REGISTER DATA SERVER " + dataServerName);
+            return true;
         }
     }   
 }

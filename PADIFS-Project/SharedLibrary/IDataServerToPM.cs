@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace SharedLibrary
 {
-    public interface IDataServerPM : IServerPM
+    public interface IDataServerToPM : IServerToPM
     {
         void Freeze();
         void Unfreeze();

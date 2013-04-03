@@ -6,9 +6,7 @@ using System.Threading.Tasks;
 
 namespace SharedLibrary
 {
-    public interface IDataServer
+    public class Heartbeat
     {
-        void Read();
-        void Write();
     }
 }
