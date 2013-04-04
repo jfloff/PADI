@@ -19,7 +19,7 @@ namespace SharedLibrary
         private static string metadataStartedTemplate = "Metadata Server {0} has started.";
         private static Dictionary<string, FileMetadata> fileMetadataTable = new Dictionary<string, FileMetadata>();
         private static Dictionary<string, IDataServerToMetadataServer> dataServers = new Dictionary<string, IDataServerToMetadataServer>();
-        private static List<string> clients;
+        private static List<string> clients = new List<string>();
         private static string metadataServerName;
         private static int metadataServerPort;
 
