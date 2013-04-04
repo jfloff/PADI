@@ -6,9 +6,9 @@ using System.Threading.Tasks;
 
 namespace SharedLibrary
 {
-    public interface IDataServer
+    public interface IMetadataServerToDataServer
     {
-        void Read();
-        void Write();
+        Heartbeat Heartbeat();
+        bool RegisterDataServer(string dataServerName, string urlLocation);
     }
 }

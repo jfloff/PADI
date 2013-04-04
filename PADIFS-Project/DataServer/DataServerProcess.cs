@@ -7,59 +7,93 @@ using SharedLibrary;
 using System.Runtime.Remoting.Channels.Tcp;
 using System.Runtime.Remoting.Channels;
 using System.Runtime.Remoting;
+using SharedLibrary.Exceptions;
 
 namespace DataServer
 {
-    class DataServerProcess : MarshalByRefObject, IDataServer, IDataServerPM
+    class DataServerProcess : MarshalByRefObject, IDataServerToClient, IDataServerToPM, IDataServerToMetadataServer
     {
+        private static string dataServerStartedTemplate = "Data Server {0} has started.";
+        private static List<Tuple<IMetadataServerToDataServer, string>> metadataServers;
+        private static string dataServerName;
+        private static int dataServerPort;
+
         public static void Main(string[] args)
         {
             if (args.Length != 2)
-                throw new Exception();
+                throw new Exception("Wrong Arguments");
 
-            TcpChannel channel = new TcpChannel(Convert.ToInt32(args[1]));
+            dataServerName = args[0];
+            dataServerPort = Convert.ToInt32(args[1]);
+
+            TcpChannel channel = new TcpChannel(dataServerPort);
             ChannelServices.RegisterChannel(channel, true);
-            Console.WriteLine(args[0]);
             RemotingConfiguration.RegisterWellKnownServiceType(
                 typeof(DataServerProcess),
-                args[0],
+                dataServerName,
                 WellKnownObjectMode.Singleton);
 
-            Console.WriteLine("Data Server " + args[0] + " Started");
+            Console.WriteLine(string.Format(dataServerStartedTemplate, dataServerName));
 
-            // Notify Metadata Server
+            //metadataServers = new Tuple<IMetadataServerToDataServer, string>();
 
             System.Console.ReadLine();
         }
 
         public void Freeze()
         {
-            Console.WriteLine("FREEZE DATA SERVER");
+            Console.WriteLine("FREEZE DATA SERVER " + dataServerName);
         }
 
         public void Unfreeze()
         {
-            Console.WriteLine("UNFREEZE DATA SERVER");
+            Console.WriteLine("UNFREEZE DATA SERVER " + dataServerName);
         }
 
         public void Fail()
         {
-            Console.WriteLine("FAIL DATA SERVER");
+            Console.WriteLine("FAIL DATA SERVER " + dataServerName);
         }
 
         public void Recover()
         {
-            Console.WriteLine("RECOVER DATA SERVER");
+            Console.WriteLine("RECOVER DATA SERVER " + dataServerName);
         }
 
         public void Read()
         {
-            Console.WriteLine("READ DATA SERVER FILE");
+            Console.WriteLine("READ DATA SERVER FILE " + dataServerName);
         }
 
         public void Write()
         {
-            Console.WriteLine("WRITE DATA SERVER FILE");
+            Console.WriteLine("WRITE DATA SERVER FILE  " + dataServerName);
+        }
+
+        public void Create(string fileName)
+        {
+            Console.WriteLine("CREATE FILE " + fileName);
+        }
+
+        public void Delete(string fileName)
+        {
+            Console.WriteLine("DELETE FILE " + fileName);
+        }
+
+
+        public void ReceiveMetadataServersLocations(List<string> metadataServerList)
+        {
+            for (int i = 0; i < metadataServerList.Count; i++)
+            {   
+                string urlLocation = metadataServerList.ElementAt(i);
+                IMetadataServerToDataServer metadata = (IMetadataServerToDataServer)Activator.GetObject(typeof(IMetadataServerToDataServer), urlLocation);
+                metadataServers.Add(Tuple.Create(metadata, urlLocation));
+            }
+
+            //Notify Primary Metadata Server
+            Tuple<IMetadataServerToDataServer,string> metadataServerTuple = metadataServers.First();
+            if (!metadataServerTuple.Item1.RegisterDataServer(dataServerName, metadataServerTuple.Item2))
+                throw new CouldNotRegistOnMetadataServer(dataServerName);
         }
     }
 }

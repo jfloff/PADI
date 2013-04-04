@@ -13,14 +13,15 @@ namespace SharedLibrary
         private int nbDataServers;
         private int readQuorum;
         private int writeQuorum;
-        private List<string> dataServers;
+        private Dictionary<string,string> dataServersLocalFiles;
 
-        public FileMetadata(string fileName, int nbDataServers, int readQuorum, int writeQuorum, List<string> dataServers) {
+        public FileMetadata(string fileName, int nbDataServers, int readQuorum, int writeQuorum, Dictionary<string, string> dataServersLocalFiles)
+        {
             this.fileName = fileName;
             this.nbDataServers = nbDataServers;
             this.readQuorum = readQuorum;
             this.writeQuorum = writeQuorum;
-            this.dataServers = dataServers;
+            this.dataServersLocalFiles = dataServersLocalFiles;
         }
 
         public string FileName
@@ -47,24 +48,24 @@ namespace SharedLibrary
             set { this.writeQuorum = value; }
         }
 
-        public List<string> DataServers
+        public Dictionary<string, string> DataServers
         {
-            get { return this.dataServers; }
-            set { this.dataServers = value; }
+            get { return this.dataServersLocalFiles; }
+            set { this.dataServersLocalFiles = value; }
         }
 
-        public void addDataServer(string dataServerName) {
-            this.dataServers.Add(dataServerName);
+        public void addDataServer(string dataServerName,string localFileName) {
+            this.dataServersLocalFiles.Add(dataServerName,localFileName);
         }
 
         public void removeDataServer(string dataServerName)
         {
-            this.dataServers.Remove(dataServerName);
+            this.dataServersLocalFiles.Remove(dataServerName);
         }
 
         public bool hasDataServer(string dataServerName)
         {
-            return this.dataServers.Contains(dataServerName);
+            return this.dataServersLocalFiles.ContainsKey(dataServerName);
         }
 
     }

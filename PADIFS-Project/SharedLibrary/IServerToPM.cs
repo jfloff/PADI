@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace SharedLibrary
 {
-    public interface IServerPM
+    public interface IServerToPM
     {
         void Fail();
         void Recover();

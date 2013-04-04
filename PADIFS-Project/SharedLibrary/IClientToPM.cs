@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace SharedLibrary
 {
-    public interface IClientPM
+    public interface IClientToPM
     {
         void Create(string fileName, int nbDataServers, int readQuorum, int writeQuorum);
         void Open(string fileName);
@@ -14,5 +14,6 @@ namespace SharedLibrary
         void Delete(string fileName);
         void Read();
         void Write();
+        void ReceiveMetadataServersLocations(List<string> metadataServerList);
     }
 }

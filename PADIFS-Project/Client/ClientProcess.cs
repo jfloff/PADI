@@ -7,50 +7,71 @@ using System.Threading.Tasks;
 using System.Runtime.Remoting;
 using System.Runtime.Remoting.Channels;
 using System.Runtime.Remoting.Channels.Tcp;
+using SharedLibrary.Exceptions;
 
 namespace Client
 {
-    public class ClientProcess : MarshalByRefObject, IClientPM
+    public class ClientProcess : MarshalByRefObject, IClientToPM
     {
+        private static string clientStartedTemplate = "Client {0} has started.";
+        private static string fileAlreadyCreatedTemplate = "File {0} was already created.";
+        private static string fileNotOpenedTemplate = "File {0} is not opened.";
+        private static string fileIsOpenedTemplate = "File {0} is opened. Please close the file first.";
         private static Dictionary<string, FileMetadata> openedFilesMetadata;
-        
+        private static List<IMetadataServerToClient> metadataServers;
+        private static string clientName;
+        private static int clientPort;
+
         public static void Main(string[] args)
         {
             if (args.Length != 2)
-                throw new Exception();
+                throw new Exception("Wrong arguments");
 
-            TcpChannel channel = new TcpChannel(Convert.ToInt32(args[1]));
+            clientName = args[0];
+            clientPort = Convert.ToInt32(args[1]);
+
+            TcpChannel channel = new TcpChannel(clientPort);
             ChannelServices.RegisterChannel(channel, true);
             RemotingConfiguration.RegisterWellKnownServiceType(
                 typeof(ClientProcess),
-                args[0],
+                clientName,
                 WellKnownObjectMode.Singleton);
 
-            Console.WriteLine("Client " + args[0] + " Started");
+            Console.WriteLine(string.Format(clientStartedTemplate,clientName));
 
             openedFilesMetadata = new Dictionary<string, FileMetadata>(Config.MAX_FILE_REGISTERS);
-
-            // Missing: Notify Metadata Server
+            metadataServers = new List<IMetadataServerToClient>();
 
             System.Console.ReadLine();
         }
 
+        public void ReceiveMetadataServersLocations(List<string> metadataServerList)
+        {
+            for (int i = 0; i < metadataServerList.Count; i++)
+            {
+                IMetadataServerToClient metadata = (IMetadataServerToClient)Activator.GetObject(typeof(IMetadataServerToClient), metadataServerList.ElementAt(i));
+                metadataServers.Add(metadata);
+            }
+
+            //Notify Primary Metadata Server
+            if (!metadataServers.First().RegisterClient(clientName))
+                throw new CouldNotRegistOnMetadataServer(clientName);
+        }
+
         public void Create(string fileName, int nbDataServers, int readQuorum, int writeQuorum)
         {
-            // HARD CODED TEST
-            System.Console.WriteLine("CREATE CLIENT FILE");
+            System.Console.WriteLine("CREATE CLIENT FILE " + fileName);
             try
             {
                 if (!openedFilesMetadata.ContainsKey(fileName))
                 {
-                    IMetadataServer metadata = (IMetadataServer)Activator.GetObject(typeof(IMetadataServer), "tcp://localhost:1/m-1");
-                    FileMetadata file = metadata.Create(fileName, nbDataServers, readQuorum, writeQuorum);
+                    FileMetadata file = metadataServers.First().Create(fileName, nbDataServers, readQuorum, writeQuorum);
                     openedFilesMetadata.Add(fileName, file);
                 }
                 else
                 {
                     //Recheck: Exception??
-                    Console.WriteLine("File " + fileName + " was already created.");
+                    Console.WriteLine(string.Format(fileAlreadyCreatedTemplate, fileName));
                 }
             }
             catch (FileAlreadyExistsException e)
@@ -61,14 +82,12 @@ namespace Client
 
         public void Open(string fileName)
         {
-            // HARD CODED TEST
-            System.Console.WriteLine("OPEN CLIENT FILE");
+            System.Console.WriteLine("OPEN CLIENT FILE " + fileName);
             try
             {
                 if (!openedFilesMetadata.ContainsKey(fileName))
                 {
-                    IMetadataServer metadata = (IMetadataServer)Activator.GetObject(typeof(IMetadataServer), "tcp://localhost:1/m-1");
-                    FileMetadata file = metadata.Open(fileName);
+                    FileMetadata file = metadataServers.First().Open(fileName);
                     openedFilesMetadata.Add(fileName, file);
                 }
             }
@@ -80,20 +99,18 @@ namespace Client
 
         public void Close(string fileName)
         {
-            // HARD CODED TEST
-            System.Console.WriteLine("CLOSE CLIENT FILE");
+            System.Console.WriteLine("CLOSE CLIENT FILE " + fileName);
             try
             {
                 if (openedFilesMetadata.ContainsKey(fileName))
                 {
-                    IMetadataServer metadata = (IMetadataServer)Activator.GetObject(typeof(IMetadataServer), "tcp://localhost:1/m-1");
-                    metadata.Close(fileName);
+                    metadataServers.First().Close(fileName);
                     openedFilesMetadata.Remove(fileName);
                 }
                 else
                 {
                     //Recheck: Exception??
-                    Console.WriteLine("File " + fileName + " is not opened.");
+                    Console.WriteLine(string.Format(fileNotOpenedTemplate, fileName));
                 }
             }
             catch (FileDoesNotExistException e)
@@ -104,20 +121,18 @@ namespace Client
 
         public void Delete(string fileName)
         {
-            // HARD CODED TEST
-            System.Console.WriteLine("DELETE CLIENT FILE");
+            System.Console.WriteLine("DELETE CLIENT FILE " + fileName);
             try
             {
                 if (!openedFilesMetadata.ContainsKey(fileName))
                 {
-                    IMetadataServer metadata = (IMetadataServer)Activator.GetObject(typeof(IMetadataServer), "tcp://localhost:1/m-1");
-                    metadata.Delete(fileName);
+                    metadataServers.First().Delete(fileName);
                     openedFilesMetadata.Remove(fileName);
                 }
                 else
                 {
                     //Recheck: Exception??
-                    Console.WriteLine("File " + fileName + " is opened. Please close the file first.");
+                    Console.WriteLine(string.Format(fileIsOpenedTemplate, fileName));
                 }
             }
             catch (FileDoesNotExistException e)
@@ -130,7 +145,7 @@ namespace Client
         {
             // HARD CODED TEST
             System.Console.WriteLine("READ CLIENT FILE");
-            IDataServer data = (IDataServer)Activator.GetObject(typeof(IDataServer), "tcp://localhost:9/d-1");
+            IDataServerToClient data = (IDataServerToClient)Activator.GetObject(typeof(IDataServerToClient), "tcp://localhost:9/d-1");
             data.Read();
         }
 
@@ -138,7 +153,7 @@ namespace Client
         {
             // HARD CODED TEST
             System.Console.WriteLine("WRITE CLIENT FILE");
-            IDataServer data = (IDataServer)Activator.GetObject(typeof(IDataServer), "tcp://localhost:9/d-1");
+            IDataServerToClient data = (IDataServerToClient)Activator.GetObject(typeof(IDataServerToClient), "tcp://localhost:9/d-1");
             data.Write();
         }
     }
