@@ -9,16 +9,14 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Runtime.Remoting.Channels.Tcp;
 using System.Runtime.Remoting.Channels;
-using SharedLibrary.Entities;
-using SharedLibrary.Interfaces;
+using SharedLibrary;
 using Client;
 using System.Diagnostics;
 using System.Collections;
 using System.IO;
 
 // @TODO
-// mini-shell + load script
-// pastas library
+// mini-shell
 // shortcuts
 // enbable/disable so quando metadata created
 // tab order
@@ -28,10 +26,6 @@ namespace PuppetMaster
 {
     public partial class PuppetMasterForm : Form
     {
-        private const int METADATA = 0;
-        private const int DATASERVER = 1;
-        private const int CLIENT = 2;
-
         private string urlTemplate = "tcp://localhost:{0}/{1}";
         private List<string> metadataServersLocation;
         private Hashtable processes;
@@ -41,10 +35,6 @@ namespace PuppetMaster
         public PuppetMasterForm()
         {
             InitializeComponent();
-            // Element details
-            this.componentSelectionBox.SelectedIndex = METADATA;
-            this.semanticsSelectionBox.SelectedIndex = 0;
-            // Connection details
             TcpChannel channel = new TcpChannel(8080);
             ChannelServices.RegisterChannel(channel, true);
             this.processes = new Hashtable();
@@ -220,12 +210,12 @@ namespace PuppetMaster
             }
         }
 
-        private void StartButtonClick(object sender, EventArgs e)
+        private void startClient_click(object sender, EventArgs e)
         {
-            string id = this.processBox.Text;
+            string clientID = this.processBox.Text;
             string port = this.portBox.Text;
 
-            if (!String.IsNullOrEmpty(id) && !String.IsNullOrEmpty(port) && !this.processes.Contains(id))
+            if (!clientID.Equals(string.Empty) && !port.Equals(string.Empty) && !this.processes.Contains(clientID))
             {
                 switch (componentSelectionBox.SelectedIndex)
                 {
@@ -251,9 +241,31 @@ namespace PuppetMaster
                             break;
                         }
                 }
+            }
+            else
+            {
+                // Caso em que o identificador já está a ser usado por outro processo
+                // Lançar uma excepção e/ou alerta no form
+            }
+        }
 
-                this.processBox.Clear();
-                this.portBox.Clear();
+        private void startMetadata_click(object sender, EventArgs e)
+        {
+            string metadataID = this.processBox.Text;
+            string port = this.portBox.Text;
+
+            if (!metadataID.Equals(string.Empty) && !port.Equals(string.Empty) && !this.processes.Contains(metadataID))
+            {
+                Process.Start("MetadataServer.exe", metadataID + " " + port);
+                string url = string.Format(urlTemplate, port, metadataID);
+                IServerToPM metadata = (IServerToPM)Activator.GetObject(typeof(IServerToPM), url);
+                this.processes.Add(metadataID, metadata);
+                this.metadataServersLocation.Add(url);
+            }
+            else
+            {
+                // Caso em que o identificador já está a ser usado por outro processo
+                // Lançar uma excepção e/ou alerta no form
             }
         }
 
@@ -308,5 +320,25 @@ namespace PuppetMaster
                 string[] commands = line.Split(new string[] { "\n", " ", "," }, StringSplitOptions.None);
             }
         }
+
+        private void startDataServer_click(object sender, EventArgs e)
+        {
+            string dataID = this.processBox.Text;
+            string port = this.portBox.Text;
+
+            if (!dataID.Equals(string.Empty) && !port.Equals(string.Empty) && !this.processes.Contains(dataID))
+            {
+                Process.Start("DataServer.exe", dataID + " " + port);
+                IDataServerToPM dataServer = (IDataServerToPM)Activator.GetObject(typeof(IDataServerToPM), string.Format(urlTemplate, port, dataID));
+                this.processes.Add(dataID, dataServer);
+                dataServer.ReceiveMetadataServersLocations(this.metadataServersLocation);
+            }
+            else
+            {
+                // Caso em que o identificador já está a ser usado por outro processo
+                // Lançar uma excepção e/ou alerta no form
+            }
+        }
+
     }
 }

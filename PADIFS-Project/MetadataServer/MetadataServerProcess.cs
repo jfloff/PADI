@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -12,14 +12,14 @@ using System.Collections;
 using SharedLibrary.Entities;
 using SharedLibrary.Interfaces;
 
-namespace SharedLibrary
+namespace MetadaServer
 {
     class MetadataServerProcess : MarshalByRefObject, IMetadataServerToClient, IServerToPM, IMetadataServerToDataServer
     {
         private static string metadataStartedTemplate = "Metadata Server {0} has started.";
         private static Dictionary<string, FileMetadata> fileMetadataTable = new Dictionary<string, FileMetadata>();
         private static Dictionary<string, IDataServerToMetadataServer> dataServers = new Dictionary<string, IDataServerToMetadataServer>();
-        private static List<string> clients;
+        private static List<string> clients = new List<string>();
         private static string metadataServerName;
         private static int metadataServerPort;
 
