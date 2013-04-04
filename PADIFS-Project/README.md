@@ -1,3 +1,6 @@
+Missing:
+Verificações de null objects nos activator get object.
+
 Questions
 
 -> Contacto dos Metadata Servers é passado no startup aos Data Servers e Clientes ? (No enunciado só mencionam os Clientes)
