@@ -215,22 +215,26 @@ namespace PuppetMaster
                     case 0:
                         {
                             Process.Start("MetadataServer.exe", id + " " + port);
-                            IServerPM metadata = (IServerPM)Activator.GetObject(typeof(IServerPM), "tcp://localhost:" + port + "/" + id);
+                            string urlLocation = string.Format(urlTemplate, port, id);
+                            IServerToPM metadata = (IServerToPM)Activator.GetObject(typeof(IServerToPM), urlLocation);
                             this.processes.Add(id, metadata);
+                            this.metadataServersLocation.Add(urlLocation);
                             break;
                         }
                     case 1:
                         {
                             Process.Start("DataServer.exe", id + " " + port);
-                            IDataServerPM dataServer = (IDataServerPM)Activator.GetObject(typeof(IDataServerPM), "tcp://localhost:" + port + "/" + id);
+                            IDataServerToPM dataServer = (IDataServerToPM)Activator.GetObject(typeof(IDataServerToPM), string.Format(urlTemplate, port, id));
                             this.processes.Add(id, dataServer);
+                            dataServer.ReceiveMetadataServersLocations(metadataServersLocation);
                             break;
                         }
-                    case 3:
+                    case 2:
                         {
                             Process.Start("Client.exe", id + " " + port);
-                            IClientPM client = (IClientPM)Activator.GetObject(typeof(IClientPM), "tcp://localhost:" + port + "/" + id);
+                            IClientToPM client = (IClientToPM)Activator.GetObject(typeof(IClientToPM), string.Format(urlTemplate, port, id));
                             this.processes.Add(id, client);
+                            client.ReceiveMetadataServersLocations(metadataServersLocation);
                             break;
                         }
                 }

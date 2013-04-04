@@ -65,23 +65,25 @@ namespace SharedLibrary
                 throw new FileDoesNotExistException(fileName);
         }
 
-        public Dictionary<string,string> selectDataServersForFilePlacement(int nbDataServers,string localFileName) {
+        public Dictionary<string, string> selectDataServersForFilePlacement(int nbDataServers, string localFileName)
+        {
             int actualNrDataServers = dataServers.Count;
 
             if (nbDataServers > actualNrDataServers)
                 throw new NotEnoughDataServersException(nbDataServers, actualNrDataServers);
 
-            Dictionary<string,string> selectedDataServers = new Dictionary<string,string>();
-            for (int i = 0; i < nbDataServers; i++) {
+            Dictionary<string, string> selectedDataServers = new Dictionary<string, string>();
+            for (int i = 0; i < nbDataServers; i++)
+            {
                 Random random = new Random();
                 int ran = random.Next(actualNrDataServers);
-                selectedDataServers.Add(dataServers.ElementAt(ran).Key,localFileName);
+                selectedDataServers.Add(dataServers.ElementAt(ran).Key, localFileName);
             }
 
             return selectedDataServers;
         }
 
-        public bool filePlacementOnSelectedDataServers(Dictionary<string,string> dataServersAndLocalFileList)
+        public bool filePlacementOnSelectedDataServers(Dictionary<string, string> dataServersAndLocalFileList)
         {
             //Async request?
             for (int i = 0; i < dataServersAndLocalFileList.Count; i++)
@@ -106,11 +108,11 @@ namespace SharedLibrary
                 throw new FileAlreadyExistsException(fileName);
 
             //Select Data Servers For File Placement
-            
+
             //Missing: create localFileName
             String localFileName = fileName;
 
-            Dictionary<string,string> selectedDataServersList = selectDataServersForFilePlacement(nbDataServers,localFileName);
+            Dictionary<string, string> selectedDataServersList = selectDataServersForFilePlacement(nbDataServers, localFileName);
             FileMetadata fileMetadata = new FileMetadata(fileName, nbDataServers, readQuorum, writeQuorum, selectedDataServersList);
             fileMetadataTable.Add(fileName, fileMetadata);
 
@@ -146,8 +148,8 @@ namespace SharedLibrary
             Console.WriteLine("REGISTER CLIENT " + clientName);
 
             if (clients.Contains(clientName))
-                return false;    
-            
+                return false;
+
             clients.Add(clientName);
 
             return true;
