@@ -16,8 +16,8 @@ namespace SharedLibrary
     {
         private static string metadataStartedTemplate = "Metadata Server {0} has started.";
         private static Dictionary<string, FileMetadata> fileMetadataTable = new Dictionary<string, FileMetadata>();
+        private static Dictionary<string, IDataServerToMetadataServer> dataServers = new Dictionary<string, IDataServerToMetadataServer>();
         private static List<string> clients;
-        private static List<string> dataServers;
         private static string metadataServerName;
         private static int metadataServerPort;
 
@@ -65,6 +65,25 @@ namespace SharedLibrary
                 throw new FileDoesNotExistException(fileName);
         }
 
+        public List<string> selectDataServersForFilePlacement(int nbDataServers) {
+            int actualNrDataServers = dataServers.Count;
+            
+            if (nbDataServers > actualNrDataServers)
+                throw new NotEnoughDataServersException(nbDataServers, actualNrDataServers);
+
+            List<string> selectedDataServers = new List<string>();
+            for (int i = 0; i < nbDataServers; i++) {
+                Random random = new Random();
+                int ran = random.Next(actualNrDataServers);
+                selectedDataServers.Add(dataServers.ElementAt(ran).Key);
+            }
+
+            return selectedDataServers;
+        }
+
+        public bool filePlacementOnSelectedDataServers(List<string> dataServers, )
+        {
+        }
         public FileMetadata Create(string fileName, int nbDataServers, int readQuorum, int writeQuorum)
         {
             Console.WriteLine("CREATE METADATA FILE");
@@ -73,10 +92,12 @@ namespace SharedLibrary
             if (hasFile(fileName))
                 throw new FileAlreadyExistsException(fileName);
 
-            //Missing: selecionar data servers
-            List<string> dataServersList = new List<string>();
-            FileMetadata fileMetadata = new FileMetadata(fileName, nbDataServers, readQuorum, writeQuorum, dataServersList);
+            //Select Data Servers For File Placement
+            List<string> selectedDataServersList = selectDataServersForFilePlacement(nbDataServers);
+            FileMetadata fileMetadata = new FileMetadata(fileName, nbDataServers, readQuorum, writeQuorum, selectedDataServersList);
             fileMetadataTable.Add(fileName, fileMetadata);
+
+
 
             return fileMetadata;
         }
@@ -121,14 +142,15 @@ namespace SharedLibrary
             return null;
         }
 
-        public bool RegisterDataServer(string dataServerName)
+        public bool RegisterDataServer(string dataServerName, string urlLocation)
         {
             Console.WriteLine("REGISTER DATA SERVER " + dataServerName);
 
-            if (dataServers.Contains(dataServerName))
+            if (dataServers.ContainsKey(dataServerName))
                 return false;
-                
-            dataServers.Add(dataServerName);
+
+            IDataServerToMetadataServer metadata = (IDataServerToMetadataServer)Activator.GetObject(typeof(IDataServerToMetadataServer), urlLocation);
+            dataServers.Add(dataServerName, metadata);
 
             return true;
         }

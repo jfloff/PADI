@@ -13,14 +13,15 @@ namespace SharedLibrary
         private int nbDataServers;
         private int readQuorum;
         private int writeQuorum;
-        private List<string> dataServers;
+        private List<Tuple<string, string>> dataServersLocalFiles;
 
-        public FileMetadata(string fileName, int nbDataServers, int readQuorum, int writeQuorum, List<string> dataServers) {
+        public FileMetadata(string fileName, int nbDataServers, int readQuorum, int writeQuorum, List<Tuple<string,string>> dataServersLocalFiles)
+        {
             this.fileName = fileName;
             this.nbDataServers = nbDataServers;
             this.readQuorum = readQuorum;
             this.writeQuorum = writeQuorum;
-            this.dataServers = dataServers;
+            this.dataServersLocalFiles = dataServersLocalFiles;
         }
 
         public string FileName

@@ -9,6 +9,6 @@ namespace SharedLibrary
     public interface IMetadataServerToDataServer
     {
         Heartbeat Heartbeat();
-        bool RegisterDataServer(string dataServerName);
+        bool RegisterDataServer(string dataServerName, string urlLocation);
     }
 }

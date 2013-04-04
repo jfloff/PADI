@@ -14,7 +14,7 @@ namespace DataServer
     class DataServerProcess : MarshalByRefObject, IDataServerToClient, IDataServerToPM, IDataServerToMetadataServer
     {
         private static string dataServerStartedTemplate = "Data Server {0} has started.";
-        private static List<IMetadataServerToDataServer> metadataServers;
+        private static List<Tuple<IMetadataServerToDataServer, string>> metadataServers;
         private static string dataServerName;
         private static int dataServerPort;
 
@@ -35,7 +35,7 @@ namespace DataServer
 
             Console.WriteLine(string.Format(dataServerStartedTemplate, dataServerName));
 
-            metadataServers = new List<IMetadataServerToDataServer>();
+            //metadataServers = new Tuple<IMetadataServerToDataServer, string>();
 
             System.Console.ReadLine();
         }
@@ -84,13 +84,15 @@ namespace DataServer
         public void ReceiveMetadataServersLocations(List<string> metadataServerList)
         {
             for (int i = 0; i < metadataServerList.Count; i++)
-            {
-                IMetadataServerToDataServer metadata = (IMetadataServerToDataServer)Activator.GetObject(typeof(IMetadataServerToDataServer), metadataServerList.ElementAt(i));
-                metadataServers.Add(metadata);
+            {   
+                string urlLocation = metadataServerList.ElementAt(i);
+                IMetadataServerToDataServer metadata = (IMetadataServerToDataServer)Activator.GetObject(typeof(IMetadataServerToDataServer), urlLocation);
+                metadataServers.Add(Tuple.Create(metadata, urlLocation));
             }
 
             //Notify Primary Metadata Server
-            if (!metadataServers.First().RegisterDataServer(dataServerName))
+            Tuple<IMetadataServerToDataServer,string> metadataServerTuple = metadataServers.First();
+            if (!metadataServerTuple.Item1.RegisterDataServer(dataServerName, metadataServerTuple.Item2))
                 throw new CouldNotRegistOnMetadataServer(dataServerName);
         }
     }
