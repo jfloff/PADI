@@ -43,17 +43,17 @@
     <Compile Include="Exceptions\NotEnoughDataServersException.cs" />
     <Compile Include="Exceptions\CouldNotRegistOnMetadataServer.cs" />
     <Compile Include="Exceptions\FileAlreadyExistsException.cs" />
-    <Compile Include="FileData.cs" />
+    <Compile Include="Entities\FileData.cs" />
     <Compile Include="Exceptions\FileDoesNotExistException.cs" />
-    <Compile Include="FileMetadata.cs" />
-    <Compile Include="Heartbeat.cs" />
-    <Compile Include="IClientToPM.cs" />
-    <Compile Include="IDataServerToClient.cs" />
-    <Compile Include="IDataServerToMetadataServer.cs" />
-    <Compile Include="IDataServerToPM.cs" />
-    <Compile Include="IMetadataServerToClient.cs" />
-    <Compile Include="IMetadataServerToDataServer.cs" />
-    <Compile Include="IServerToPM.cs" />
+    <Compile Include="Entities\FileMetadata.cs" />
+    <Compile Include="Entities\Heartbeat.cs" />
+    <Compile Include="Interfaces\IClientToPM.cs" />
+    <Compile Include="Interfaces\IDataServerToClient.cs" />
+    <Compile Include="Interfaces\IDataServerToMetadataServer.cs" />
+    <Compile Include="Interfaces\IDataServerToPM.cs" />
+    <Compile Include="Interfaces\IMetadataServerToClient.cs" />
+    <Compile Include="Interfaces\IMetadataServerToDataServer.cs" />
+    <Compile Include="Interfaces\IServerToPM.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

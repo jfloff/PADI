@@ -8,6 +8,7 @@ using System.Runtime.Remoting.Channels.Tcp;
 using System.Runtime.Remoting.Channels;
 using System.Runtime.Remoting;
 using SharedLibrary.Exceptions;
+using SharedLibrary.Interfaces;
 
 namespace DataServer
 {

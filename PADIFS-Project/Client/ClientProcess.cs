@@ -8,6 +8,8 @@ using System.Runtime.Remoting;
 using System.Runtime.Remoting.Channels;
 using System.Runtime.Remoting.Channels.Tcp;
 using SharedLibrary.Exceptions;
+using SharedLibrary.Entities;
+using SharedLibrary.Interfaces;
 
 namespace Client
 {

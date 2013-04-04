@@ -9,15 +9,26 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Runtime.Remoting.Channels.Tcp;
 using System.Runtime.Remoting.Channels;
-using SharedLibrary;
+using SharedLibrary.Entities;
+using SharedLibrary.Interfaces;
 using Client;
 using System.Diagnostics;
 using System.Collections;
+
+// @TODO
+// mini-shell + load script
+// pastas library
+// shortcuts
+// enbable/disable so quando metadata created
 
 namespace PuppetMaster
 {
     public partial class PuppetMasterForm : Form
     {
+        private const int METADATA = 0;
+        private const int DATASERVER = 1;
+        private const int CLIENT = 2;
+
         private string urlTemplate = "tcp://localhost:{0}/{1}";
         private List<string> metadataServersLocation;
         private Hashtable processes;
@@ -26,7 +37,7 @@ namespace PuppetMaster
         {
             InitializeComponent();
             // Element details
-            this.componentSelectionBox.SelectedIndex = 0;
+            this.componentSelectionBox.SelectedIndex = METADATA;
             this.semanticsSelectionBox.SelectedIndex = 0;
             // Connection details
             TcpChannel channel = new TcpChannel(8080);
@@ -42,21 +53,21 @@ namespace PuppetMaster
             switch (componentSelectionBox.SelectedIndex) 
             {
                 default:
-                case 0:
+                case METADATA:
                     {
                         ToggleDataServerElements(false);
                         ToggleClientElements(false);
                         ToggleMetadataElements(true);
                         break;
                     }
-                case 1:
+                case DATASERVER:
                     {
                         ToggleMetadataElements(false);
                         ToggleClientElements(false);
                         ToggleDataServerElements(true);
                         break;
                     }
-                case 2:
+                case CLIENT:
                     {
                         ToggleMetadataElements(false);
                         ToggleDataServerElements(false);
@@ -212,7 +223,7 @@ namespace PuppetMaster
             {
                 switch (componentSelectionBox.SelectedIndex)
                 {
-                    case 0:
+                    case METADATA:
                         {
                             Process.Start("MetadataServer.exe", id + " " + port);
                             string urlLocation = string.Format(urlTemplate, port, id);
@@ -221,7 +232,7 @@ namespace PuppetMaster
                             this.metadataServersLocation.Add(urlLocation);
                             break;
                         }
-                    case 1:
+                    case DATASERVER:
                         {
                             Process.Start("DataServer.exe", id + " " + port);
                             IDataServerToPM dataServer = (IDataServerToPM)Activator.GetObject(typeof(IDataServerToPM), string.Format(urlTemplate, port, id));
@@ -229,7 +240,7 @@ namespace PuppetMaster
                             dataServer.ReceiveMetadataServersLocations(metadataServersLocation);
                             break;
                         }
-                    case 2:
+                    case CLIENT:
                         {
                             Process.Start("Client.exe", id + " " + port);
                             IClientToPM client = (IClientToPM)Activator.GetObject(typeof(IClientToPM), string.Format(urlTemplate, port, id));
