@@ -81,9 +81,6 @@ namespace SharedLibrary
             return selectedDataServers;
         }
 
-        public bool filePlacementOnSelectedDataServers(List<string> dataServers, )
-        {
-        }
         public FileMetadata Create(string fileName, int nbDataServers, int readQuorum, int writeQuorum)
         {
             Console.WriteLine("CREATE METADATA FILE");
