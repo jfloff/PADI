@@ -4,7 +4,7 @@ using System.Linq;
 using System.Runtime.Serialization;
 using System.Text;
 
-namespace SharedLibrary
+namespace SharedLibrary.Exceptions
 {
     [Serializable]
     public class FileDoesNotExistException : ApplicationException

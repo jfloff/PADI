@@ -10,5 +10,6 @@ namespace SharedLibrary
     {
         void Freeze();
         void Unfreeze();
+        void ReceiveMetadataServersLocations(List<string> metadataServerList);
     }
 }

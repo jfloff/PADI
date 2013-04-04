@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using SharedLibrary;
+using SharedLibrary.Exceptions;
 using System.Runtime.Remoting;
 using System.Runtime.Remoting.Channels.Tcp;
 using System.Runtime.Remoting.Channels;
@@ -13,26 +14,34 @@ namespace SharedLibrary
 {
     class MetadataServerProcess : MarshalByRefObject, IMetadataServerToClient, IServerToPM, IMetadataServerToDataServer
     {
-        private static string metadataStartedTemplate = "Metadata Server {0} has started."; 
+        private static string metadataStartedTemplate = "Metadata Server {0} has started.";
         private static Dictionary<string, FileMetadata> fileMetadataTable = new Dictionary<string, FileMetadata>();
+        private static List<string> clients;
+        private static List<string> dataServers;
+        private static string metadataServerName;
+        private static int metadataServerPort;
 
-        public bool hasFile(string fileName) {
+        public bool hasFile(string fileName)
+        {
             return fileMetadataTable.ContainsKey(fileName);
         }
-        
+
         public static void Main(string[] args)
         {
             if (args.Length != 2)
                 throw new Exception("Wrong Arguments");
 
-            TcpChannel channel = new TcpChannel(Convert.ToInt32(args[1]));
+            metadataServerName = args[0];
+            metadataServerPort = Convert.ToInt32(args[1]);
+
+            TcpChannel channel = new TcpChannel(metadataServerPort);
             ChannelServices.RegisterChannel(channel, true);
             RemotingConfiguration.RegisterWellKnownServiceType(
                 typeof(MetadataServerProcess),
-                args[0],
+                metadataServerName,
                 WellKnownObjectMode.Singleton);
 
-            Console.WriteLine(string.Format(metadataStartedTemplate, args[0]));
+            Console.WriteLine(string.Format(metadataStartedTemplate, metadataServerName));
 
             System.Console.ReadLine();
         }
@@ -97,6 +106,12 @@ namespace SharedLibrary
         public bool RegisterClient(string clientName)
         {
             Console.WriteLine("REGISTER CLIENT " + clientName);
+
+            if (clients.Contains(clientName))
+                return false;    
+            
+            clients.Add(clientName);
+
             return true;
         }
 
@@ -109,7 +124,13 @@ namespace SharedLibrary
         public bool RegisterDataServer(string dataServerName)
         {
             Console.WriteLine("REGISTER DATA SERVER " + dataServerName);
+
+            if (dataServers.Contains(dataServerName))
+                return false;
+                
+            dataServers.Add(dataServerName);
+
             return true;
         }
-    }   
+    }
 }

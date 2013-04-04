@@ -40,6 +40,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Config.cs" />
+    <Compile Include="Exceptions\CouldNotRegistOnMetadataServer.cs" />
     <Compile Include="Exceptions\FileAlreadyExistsException.cs" />
     <Compile Include="FileData.cs" />
     <Compile Include="Exceptions\FileDoesNotExistException.cs" />

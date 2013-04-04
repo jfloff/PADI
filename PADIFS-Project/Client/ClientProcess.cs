@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using System.Runtime.Remoting;
 using System.Runtime.Remoting.Channels;
 using System.Runtime.Remoting.Channels.Tcp;
+using SharedLibrary.Exceptions;
 
 namespace Client
 {
@@ -18,20 +19,25 @@ namespace Client
         private static string fileIsOpenedTemplate = "File {0} is opened. Please close the file first.";
         private static Dictionary<string, FileMetadata> openedFilesMetadata;
         private static List<IMetadataServerToClient> metadataServers;
+        private static string clientName;
+        private static int clientPort;
 
         public static void Main(string[] args)
         {
             if (args.Length != 2)
                 throw new Exception("Wrong arguments");
 
-            TcpChannel channel = new TcpChannel(Convert.ToInt32(args[1]));
+            clientName = args[0];
+            clientPort = Convert.ToInt32(args[1]);
+
+            TcpChannel channel = new TcpChannel(clientPort);
             ChannelServices.RegisterChannel(channel, true);
             RemotingConfiguration.RegisterWellKnownServiceType(
                 typeof(ClientProcess),
-                args[0],
+                clientName,
                 WellKnownObjectMode.Singleton);
 
-            Console.WriteLine(string.Format(clientStartedTemplate, args[0]));
+            Console.WriteLine(string.Format(clientStartedTemplate,clientName));
 
             openedFilesMetadata = new Dictionary<string, FileMetadata>(Config.MAX_FILE_REGISTERS);
             metadataServers = new List<IMetadataServerToClient>();
@@ -48,6 +54,8 @@ namespace Client
             }
 
             //Notify Primary Metadata Server
+            if (!metadataServers.First().RegisterClient(clientName))
+                throw new CouldNotRegistOnMetadataServer(clientName);
         }
 
         public void Create(string fileName, int nbDataServers, int readQuorum, int writeQuorum)
