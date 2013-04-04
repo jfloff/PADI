@@ -15,7 +15,7 @@ namespace DataServer
     class DataServerProcess : MarshalByRefObject, IDataServerToClient, IDataServerToPM, IDataServerToMetadataServer
     {
         private static string dataServerStartedTemplate = "Data Server {0} has started.";
-        private static List<Tuple<IMetadataServerToDataServer, string>> metadataServers;
+        private static List<Tuple<IMetadataServerToDataServer, string>> metadataServers = new List<Tuple<IMetadataServerToDataServer, string>>();
         private static string dataServerName;
         private static int dataServerPort;
 
@@ -35,8 +35,6 @@ namespace DataServer
                 WellKnownObjectMode.Singleton);
 
             Console.WriteLine(string.Format(dataServerStartedTemplate, dataServerName));
-
-            //metadataServers = new Tuple<IMetadataServerToDataServer, string>();
 
             System.Console.ReadLine();
         }
@@ -85,14 +83,14 @@ namespace DataServer
         public void ReceiveMetadataServersLocations(List<string> metadataServerList)
         {
             for (int i = 0; i < metadataServerList.Count; i++)
-            {   
+            {
                 string urlLocation = metadataServerList.ElementAt(i);
                 IMetadataServerToDataServer metadata = (IMetadataServerToDataServer)Activator.GetObject(typeof(IMetadataServerToDataServer), urlLocation);
                 metadataServers.Add(Tuple.Create(metadata, urlLocation));
             }
 
             //Notify Primary Metadata Server
-            Tuple<IMetadataServerToDataServer,string> metadataServerTuple = metadataServers.First();
+            Tuple<IMetadataServerToDataServer, string> metadataServerTuple = metadataServers.First();
             if (!metadataServerTuple.Item1.RegisterDataServer(dataServerName, metadataServerTuple.Item2))
                 throw new CouldNotRegistOnMetadataServer(dataServerName);
         }
