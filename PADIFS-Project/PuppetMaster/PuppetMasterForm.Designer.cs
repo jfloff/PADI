@@ -70,6 +70,7 @@
             this.groupBox1 = new System.Windows.Forms.GroupBox();
             this.fileRegister1Number = new System.Windows.Forms.NumericUpDown();
             this.fileRegister2Number = new System.Windows.Forms.NumericUpDown();
+            this.button1 = new System.Windows.Forms.Button();
             ((System.ComponentModel.ISupportInitialize)(this.stringRegisterNumber)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.fileRegister1Number)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.fileRegister2Number)).BeginInit();
@@ -538,11 +539,22 @@
             0});
             this.fileRegister2Number.Visible = false;
             // 
+            // button1
+            // 
+            this.button1.Location = new System.Drawing.Point(50, 545);
+            this.button1.Name = "button1";
+            this.button1.Size = new System.Drawing.Size(75, 23);
+            this.button1.TabIndex = 54;
+            this.button1.Text = "TEST";
+            this.button1.UseVisualStyleBackColor = true;
+            this.button1.Click += new System.EventHandler(this.button1_Click);
+            // 
             // PuppetMasterForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(185, 539);
+            this.ClientSize = new System.Drawing.Size(185, 580);
+            this.Controls.Add(this.button1);
             this.Controls.Add(this.fileRegister2Number);
             this.Controls.Add(this.fileRegister1Number);
             this.Controls.Add(this.stringRegisterNumber);
@@ -640,6 +652,7 @@
         private System.Windows.Forms.GroupBox groupBox1;
         private System.Windows.Forms.NumericUpDown fileRegister1Number;
         private System.Windows.Forms.NumericUpDown fileRegister2Number;
+        private System.Windows.Forms.Button button1;
 
     }
 }

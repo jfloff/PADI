@@ -49,6 +49,10 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\DataServer\DataServer.csproj">
+      <Project>{31ae84c4-5151-4fbc-8f74-c4eca184c2c4}</Project>
+      <Name>DataServer</Name>
+    </ProjectReference>
     <ProjectReference Include="..\SharedLibrary\SharedLibrary.csproj">
       <Project>{cb0df71e-e4cc-472d-93ef-b58b7914799d}</Project>
       <Name>SharedLibrary</Name>

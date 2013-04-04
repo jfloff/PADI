@@ -21,7 +21,7 @@ namespace PuppetMaster
         private string urlTemplate = "tcp://localhost:{0}/{1}";
         private List<string> metadataServersLocation;
         private Hashtable processes;
-       
+
         public PuppetMasterForm()
         {
             InitializeComponent();
@@ -39,7 +39,7 @@ namespace PuppetMaster
         {
             ComboBox componentSelectionBox = (ComboBox)sender;
 
-            switch (componentSelectionBox.SelectedIndex) 
+            switch (componentSelectionBox.SelectedIndex)
             {
                 default:
                 case 0:
@@ -242,6 +242,44 @@ namespace PuppetMaster
                 this.processBox.Clear();
                 this.portBox.Clear();
             }
+        }
+
+        //Test Method
+        private void button1_Click(object sender, EventArgs e)
+        {
+            Process.Start("MetadataServer.exe", "m-1 1");
+            string urlLocation = string.Format(urlTemplate, "1", "m-1");
+            IServerToPM metadata = (IServerToPM)Activator.GetObject(typeof(IServerToPM), urlLocation);
+            this.processes.Add("m-1", metadata);
+            this.metadataServersLocation.Add(urlLocation);
+
+            Process.Start("MetadataServer.exe", "m-2 2");
+            urlLocation = string.Format(urlTemplate, "2", "m-2");
+            metadata = (IServerToPM)Activator.GetObject(typeof(IServerToPM), urlLocation);
+            this.processes.Add("m-2", metadata);
+            this.metadataServersLocation.Add(urlLocation);
+
+            Process.Start("MetadataServer.exe", "m-3 3");
+            urlLocation = string.Format(urlTemplate, "3", "m-3");
+            metadata = (IServerToPM)Activator.GetObject(typeof(IServerToPM), urlLocation);
+            this.processes.Add("m-3", metadata);
+            this.metadataServersLocation.Add(urlLocation);
+
+            Process.Start("DataServer.exe", "d-1 4");
+            IDataServerToPM dataServer = (IDataServerToPM)Activator.GetObject(typeof(IDataServerToPM), string.Format(urlTemplate, "4", "d-1"));
+            this.processes.Add("d-1", dataServer);
+            dataServer.ReceiveMetadataServersLocations(metadataServersLocation);
+
+            Process.Start("DataServer.exe", "d-2 5");
+            dataServer = (IDataServerToPM)Activator.GetObject(typeof(IDataServerToPM), string.Format(urlTemplate, "5", "d-2"));
+            this.processes.Add("d-2", dataServer);
+            dataServer.ReceiveMetadataServersLocations(metadataServersLocation);
+
+            Process.Start("Client.exe", "c-1 6");
+            IClientToPM client = (IClientToPM)Activator.GetObject(typeof(IClientToPM), string.Format(urlTemplate, "6", "c-1"));
+            this.processes.Add("c-1", client);
+            client.ReceiveMetadataServersLocations(metadataServersLocation);
+    
         }
     }
 }

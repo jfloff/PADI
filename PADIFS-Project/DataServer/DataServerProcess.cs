@@ -14,7 +14,7 @@ namespace DataServer
     class DataServerProcess : MarshalByRefObject, IDataServerToClient, IDataServerToPM, IDataServerToMetadataServer
     {
         private static string dataServerStartedTemplate = "Data Server {0} has started.";
-        private static List<Tuple<IMetadataServerToDataServer, string>> metadataServers;
+        private static List<Tuple<IMetadataServerToDataServer, string>> metadataServers = new List<Tuple<IMetadataServerToDataServer, string>>();
         private static string dataServerName;
         private static int dataServerPort;
 
@@ -34,8 +34,6 @@ namespace DataServer
                 WellKnownObjectMode.Singleton);
 
             Console.WriteLine(string.Format(dataServerStartedTemplate, dataServerName));
-
-            //metadataServers = new Tuple<IMetadataServerToDataServer, string>();
 
             System.Console.ReadLine();
         }
