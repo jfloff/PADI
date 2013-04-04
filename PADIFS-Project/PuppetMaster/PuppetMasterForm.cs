@@ -27,10 +27,12 @@ namespace PuppetMaster
     public partial class PuppetMasterForm : Form
     {
         private string urlTemplate = "tcp://localhost:{0}/{1}";
-        private List<string> metadataServersLocation;
-        private Hashtable processes;
+        private List<string> metadataServersLocation = new List<string>();
+        private Hashtable processes = new Hashtable();
+        private List<string> portsUsed = new List<string>();
 
         private int currentScriptLine = -1;
+
         private const int METADATA = 0;
         private const int DATASERVER = 1;
         private const int CLIENT = 2;
@@ -44,8 +46,6 @@ namespace PuppetMaster
             // Connection details
             TcpChannel channel = new TcpChannel(8080);
             ChannelServices.RegisterChannel(channel, true);
-            this.processes = new Hashtable();
-            this.metadataServersLocation = new List<string>();
         }
 
         private void ComponentSelectionBoxSelectedIndexChanged(object sender, EventArgs e)
@@ -128,42 +128,58 @@ namespace PuppetMaster
         private void recover_click(object sender, EventArgs e)
         {
             string serverID = this.processBox.Text;
-            if (!serverID.Equals(string.Empty) && this.processes.Contains(serverID))
+            if (!String.IsNullOrEmpty(serverID) && this.processes.Contains(serverID))
             {
                 IServerToPM server = (IServerToPM)this.processes[serverID];
                 server.Recover();
+            }
+            else
+            {
+                setStatus("[ERROR] Process ID empty or not created");
             }
         }
 
         private void fail_click(object sender, EventArgs e)
         {
             string serverID = this.processBox.Text;
-            if (!serverID.Equals(string.Empty) && this.processes.Contains(serverID))
+            if (!String.IsNullOrEmpty(serverID) && this.processes.Contains(serverID))
             {
                 IServerToPM server = (IServerToPM)this.processes[serverID];
                 server.Fail();
+            }
+            else
+            {
+                setStatus("[ERROR] Process ID empty or not created");
             }
         }
 
         private void unfreeze_click(object sender, EventArgs e)
         {
             string serverID = this.processBox.Text;
-            if (!serverID.Equals(string.Empty) && this.processes.Contains(serverID))
+            if (!String.IsNullOrEmpty(serverID) && this.processes.Contains(serverID))
             {
                 // Verificar se é um metadata server or data server (apenas data servers podem fazer unfreeze)
                 IDataServerToPM server = (IDataServerToPM)this.processes[serverID];
                 server.Unfreeze();
+            }
+            else
+            {
+                setStatus("[ERROR] Process ID empty or not created");
             }
         }
 
         private void freeze_click(object sender, EventArgs e)
         {
             string serverID = this.processBox.Text;
-            if (!serverID.Equals(string.Empty) && this.processes.Contains(serverID))
+            if (!String.IsNullOrEmpty(serverID) && this.processes.Contains(serverID))
             {
                 // Verificar se é um metadata server or data server (apenas data servers podem fazer freeze)
                 IDataServerToPM server = (IDataServerToPM)this.processes[serverID];
                 server.Freeze();
+            }
+            else
+            {
+                setStatus("[ERROR] Process ID empty or not created");
             }
         }
 
@@ -175,12 +191,19 @@ namespace PuppetMaster
             string readq = this.readQuorumBox.Text;
             string writeq = this.writeQuorumBox.Text;
 
-            if (!fileName.Equals(string.Empty) && !nbData.Equals(string.Empty)
-                && !readq.Equals(string.Empty) && !writeq.Equals(string.Empty)
-                && !clientID.Equals(string.Empty) && this.processes.Contains(clientID))
+            if (!String.IsNullOrEmpty(fileName) 
+                && !String.IsNullOrEmpty(nbData)
+                && !String.IsNullOrEmpty(readq) 
+                && !String.IsNullOrEmpty(writeq)
+                && !String.IsNullOrEmpty(clientID) 
+                && this.processes.Contains(clientID))
             {
                 IClientToPM client = (IClientToPM)this.processes[clientID];
                 client.Create(fileName, Convert.ToInt32(nbData), Convert.ToInt32(readq), Convert.ToInt32(writeq));
+            }
+            else
+            {
+                setStatus("[ERROR] Process ID or File fields empty, or client not created");
             }
         }
 
@@ -188,10 +211,14 @@ namespace PuppetMaster
         {
             string clientID = this.processBox.Text;
             string fileName = this.filenameBox.Text;
-            if (!clientID.Equals(string.Empty) && !fileName.Equals(string.Empty) && this.processes.Contains(clientID))
+            if (!String.IsNullOrEmpty(clientID) && !String.IsNullOrEmpty(fileName) && this.processes.Contains(clientID))
             {
                 IClientToPM client = (IClientToPM)this.processes[clientID];
                 client.Open(fileName);
+            }
+            else
+            {
+                setStatus("[ERROR] Process ID or Filename empty, or client not created");
             }
         }
 
@@ -199,10 +226,14 @@ namespace PuppetMaster
         {
             string clientID = this.processBox.Text;
             string fileName = this.filenameBox.Text;
-            if (!clientID.Equals(string.Empty) && !fileName.Equals(string.Empty) && this.processes.Contains(clientID))
+            if (!String.IsNullOrEmpty(clientID) && !String.IsNullOrEmpty(fileName) && this.processes.Contains(clientID))
             {
                 IClientToPM client = (IClientToPM)this.processes[clientID];
                 client.Delete(fileName);
+            }
+            else
+            {
+                setStatus("[ERROR] Process ID or Filename empty, or client not created");
             }
         }
 
@@ -210,10 +241,14 @@ namespace PuppetMaster
         {
             string clientID = this.processBox.Text;
             string fileName = this.filenameBox.Text;
-            if (!clientID.Equals(string.Empty) && !fileName.Equals(string.Empty) && this.processes.Contains(clientID))
+            if (!String.IsNullOrEmpty(clientID) && !String.IsNullOrEmpty(fileName) && this.processes.Contains(clientID))
             {
                 IClientToPM client = (IClientToPM)this.processes[clientID];
                 client.Close(fileName);
+            }
+            else
+            {
+                setStatus("[ERROR] Process ID or Filename empty, or client not created");
             }
         }
 
@@ -222,33 +257,27 @@ namespace PuppetMaster
             string id = this.processBox.Text;
             string port = this.portBox.Text;
 
-            if (!String.IsNullOrEmpty(id) && !String.IsNullOrEmpty(port) && !this.processes.Contains(id))
+            // falta verificar se a porta já está a ser usada
+            if (!String.IsNullOrEmpty(id) 
+                && !String.IsNullOrEmpty(port)
+                && !this.portsUsed.Contains(port)
+                && !this.processes.Contains(id))
             {
                 switch (componentSelectionBox.SelectedIndex)
                 {
                     case METADATA:
                         {
-                            Process.Start("MetadataServer.exe", id + " " + port);
-                            string urlLocation = string.Format(urlTemplate, port, id);
-                            IServerToPM metadata = (IServerToPM)Activator.GetObject(typeof(IServerToPM), urlLocation);
-                            this.processes.Add(id, metadata);
-                            this.metadataServersLocation.Add(urlLocation);
+                            StartMetadata(id, port);
                             break;
                         }
                     case DATASERVER:
                         {
-                            Process.Start("DataServer.exe", id + " " + port);
-                            IDataServerToPM dataServer = (IDataServerToPM)Activator.GetObject(typeof(IDataServerToPM), string.Format(urlTemplate, port, id));
-                            this.processes.Add(id, dataServer);
-                            dataServer.ReceiveMetadataServersLocations(metadataServersLocation);
+                            StartDataServer(id, port);
                             break;
                         }
                     case CLIENT:
                         {
-                            Process.Start("Client.exe", id + " " + port);
-                            IClientToPM client = (IClientToPM)Activator.GetObject(typeof(IClientToPM), string.Format(urlTemplate, port, id));
-                            this.processes.Add(id, client);
-                            client.ReceiveMetadataServersLocations(metadataServersLocation);
+                            StartClient(id, port);
                             break;
                         }
                 }
@@ -257,9 +286,36 @@ namespace PuppetMaster
             }
             else
             {
-                // Caso em que o identificador já está a ser usado por outro processo
-                // Lançar uma excepção e/ou alerta no form
+                setStatus("[ERROR] Empty Process ID or Port, Port already in use, or process already created");
             }
+        }
+        
+        private void StartMetadata(string id, string port)
+        {
+            Process.Start("MetadataServer.exe", id + " " + port);
+            string urlLocation = string.Format(urlTemplate, port, id);
+            IServerToPM metadata = (IServerToPM)Activator.GetObject(typeof(IServerToPM), urlLocation);
+            this.processes.Add(id, metadata);
+            this.metadataServersLocation.Add(urlLocation);
+            setStatus("Created Metadata with id " + id + " at port " + port);
+        }
+
+        private void StartDataServer(string id, string port)
+        {
+            Process.Start("DataServer.exe", id + " " + port);
+            IDataServerToPM dataServer = (IDataServerToPM)Activator.GetObject(typeof(IDataServerToPM), string.Format(urlTemplate, port, id));
+            this.processes.Add(id, dataServer);
+            dataServer.ReceiveMetadataServersLocations(metadataServersLocation);
+            setStatus("Created Data Server with id " + id + " at port " + port);
+        }
+
+        private void StartClient(string id, string port)
+        {
+            Process.Start("Client.exe", id + " " + port);
+            IClientToPM client = (IClientToPM)Activator.GetObject(typeof(IClientToPM), string.Format(urlTemplate, port, id));
+            this.processes.Add(id, client);
+            client.ReceiveMetadataServersLocations(metadataServersLocation);
+            setStatus("Created Client with id " + id + " at port " + port);
         }
 
         private void LoadScriptButtonClick(object sender, EventArgs e)
@@ -267,14 +323,16 @@ namespace PuppetMaster
             DialogResult result = this.openScriptDialog.ShowDialog(); // Show the dialog.
             if (result == DialogResult.OK) // Test result.
             {
-                string file = openScriptDialog.FileName;
+                string filename = openScriptDialog.FileName;
                 try
                 {
-                    this.scriptBox.Text = File.ReadAllText(file);
+                    this.scriptBox.Text = File.ReadAllText(filename);
                     this.currentScriptLine = -1;
+                    setStatus("Loaded script " + filename);
                 }
                 catch (IOException)
                 {
+                    setStatus("[ERROR] Failed to load script");
                 }
             }
         }
@@ -288,21 +346,69 @@ namespace PuppetMaster
                 int start = this.scriptBox.GetFirstCharIndexFromLine(lineNumber);
                 int length = this.scriptBox.Lines[lineNumber].Length;
                 this.scriptBox.Select(start, length);
+                string line = this.scriptBox.SelectedText;
                 this.scriptBox.SelectionBackColor = Color.Red;
 
                 // reset previous line
-                if (--lineNumber >= 0)
+                int previousLine = lineNumber - 1;
+                if (previousLine >= 0)
                 {
-                    start = this.scriptBox.GetFirstCharIndexFromLine(lineNumber);
-                    length = this.scriptBox.Lines[lineNumber].Length;
+                    start = this.scriptBox.GetFirstCharIndexFromLine(previousLine);
+                    length = this.scriptBox.Lines[previousLine].Length;
                     this.scriptBox.Select(start, length);
                     this.scriptBox.SelectionBackColor = SystemColors.Control;
                 }
 
+                // FALTA TRATAR LINHAS VAZIAS
+                if (String.IsNullOrEmpty(line)) { }
+
                 // PARSER
-                string line = this.scriptBox.SelectedText;
-                string[] commands = line.Split(new string[] { "\n", " ", "," }, StringSplitOptions.None);
+                string[] steps = line.Split(new string[] { "\n", " ", "," }, StringSplitOptions.None);
+
+                if (steps[0].First() != '#')
+                {
+                    switch (steps[0])
+                    {
+                        // RUN PROCESS ID PORT
+                        case "RUN":
+                            {
+                                switch (steps[1])
+                                {
+                                    case "METADATA":
+                                        {
+                                            StartMetadata(steps[2], steps[3]);
+                                            return;
+                                        }
+                                    case "DATASERVER":
+                                        {
+                                            StartDataServer(steps[2], steps[3]);
+                                            return;
+                                        }
+                                    case "CLIENT":
+                                        {
+                                            StartClient(steps[2], steps[3]);
+                                            return;
+                                        }
+                                    default: break;
+                                }
+                                break;
+                            }
+                        default: break;
+                    }
+                }
+
+                setStatus("[ERROR] Invalid Script at line " + lineNumber);
+                return;
             }
+            else
+            {
+                ++currentScriptLine;
+            }
+        }
+
+        private void setStatus(string msg)
+        {
+            this.statusStripLabel.Text = msg;
         }
     }
 }

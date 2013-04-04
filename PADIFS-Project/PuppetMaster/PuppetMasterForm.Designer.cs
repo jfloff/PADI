@@ -73,9 +73,12 @@
             this.nextStepScriptButton = new System.Windows.Forms.Button();
             this.executeAllScriptButton = new System.Windows.Forms.Button();
             this.scriptBox = new System.Windows.Forms.RichTextBox();
+            this.statusStrip = new System.Windows.Forms.StatusStrip();
+            this.statusStripLabel = new System.Windows.Forms.ToolStripStatusLabel();
             ((System.ComponentModel.ISupportInitialize)(this.stringRegisterNumber)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.fileRegister1Number)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.fileRegister2Number)).BeginInit();
+            this.statusStrip.SuspendLayout();
             this.SuspendLayout();
             // 
             // failButton
@@ -570,11 +573,28 @@
             this.scriptBox.TabIndex = 60;
             this.scriptBox.Text = "";
             // 
+            // statusStrip
+            // 
+            this.statusStrip.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.statusStripLabel});
+            this.statusStrip.Location = new System.Drawing.Point(0, 698);
+            this.statusStrip.Name = "statusStrip";
+            this.statusStrip.Size = new System.Drawing.Size(187, 22);
+            this.statusStrip.TabIndex = 61;
+            this.statusStrip.Text = "statusStrip";
+            // 
+            // statusStripLabel
+            // 
+            this.statusStripLabel.Name = "statusStripLabel";
+            this.statusStripLabel.Size = new System.Drawing.Size(60, 17);
+            this.statusStripLabel.Text = "Welcome!";
+            // 
             // PuppetMasterForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(187, 697);
+            this.ClientSize = new System.Drawing.Size(187, 720);
+            this.Controls.Add(this.statusStrip);
             this.Controls.Add(this.scriptBox);
             this.Controls.Add(this.executeAllScriptButton);
             this.Controls.Add(this.nextStepScriptButton);
@@ -625,6 +645,8 @@
             ((System.ComponentModel.ISupportInitialize)(this.stringRegisterNumber)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.fileRegister1Number)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.fileRegister2Number)).EndInit();
+            this.statusStrip.ResumeLayout(false);
+            this.statusStrip.PerformLayout();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -677,6 +699,8 @@
         private System.Windows.Forms.Button nextStepScriptButton;
         private System.Windows.Forms.Button executeAllScriptButton;
         private System.Windows.Forms.RichTextBox scriptBox;
+        private System.Windows.Forms.StatusStrip statusStrip;
+        private System.Windows.Forms.ToolStripStatusLabel statusStripLabel;
 
     }
 }
