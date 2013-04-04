@@ -9,5 +9,6 @@ namespace SharedLibrary
     public static class Config
     {
         public const int MAX_FILE_REGISTERS = 10;
+        public const string URL = "tcp://localhost:{0}/{1}";
     }
 }

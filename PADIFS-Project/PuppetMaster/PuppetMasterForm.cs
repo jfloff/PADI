@@ -14,6 +14,7 @@ using Client;
 using System.Diagnostics;
 using System.Collections;
 using System.IO;
+using SharedLibrary;
 
 // @TODO
 // mini-shell
@@ -26,7 +27,6 @@ namespace PuppetMaster
 {
     public partial class PuppetMasterForm : Form
     {
-        private string urlTemplate = "tcp://localhost:{0}/{1}";
         private List<string> metadataServersLocation;
         private Hashtable processes;
 
@@ -229,7 +229,7 @@ namespace PuppetMaster
                     case METADATA:
                         {
                             Process.Start("MetadataServer.exe", id + " " + port);
-                            string urlLocation = string.Format(urlTemplate, port, id);
+                            string urlLocation = string.Format(Config.URL, port, id);
                             IServerToPM metadata = (IServerToPM)Activator.GetObject(typeof(IServerToPM), urlLocation);
                             this.processes.Add(id, metadata);
                             this.metadataServersLocation.Add(urlLocation);
@@ -238,7 +238,7 @@ namespace PuppetMaster
                     case DATASERVER:
                         {
                             Process.Start("DataServer.exe", id + " " + port);
-                            IDataServerToPM dataServer = (IDataServerToPM)Activator.GetObject(typeof(IDataServerToPM), string.Format(urlTemplate, port, id));
+                            IDataServerToPM dataServer = (IDataServerToPM)Activator.GetObject(typeof(IDataServerToPM), string.Format(Config.URL, port, id));
                             this.processes.Add(id, dataServer);
                             dataServer.ReceiveMetadataServersLocations(metadataServersLocation);
                             break;
@@ -246,7 +246,7 @@ namespace PuppetMaster
                     case CLIENT:
                         {
                             Process.Start("Client.exe", id + " " + port);
-                            IClientToPM client = (IClientToPM)Activator.GetObject(typeof(IClientToPM), string.Format(urlTemplate, port, id));
+                            IClientToPM client = (IClientToPM)Activator.GetObject(typeof(IClientToPM), string.Format(Config.URL, port, id));
                             this.processes.Add(id, client);
                             client.ReceiveMetadataServersLocations(metadataServersLocation);
                             break;
