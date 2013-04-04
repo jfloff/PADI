@@ -11,7 +11,7 @@ using SharedLibrary.Exceptions;
 
 namespace DataServer
 {
-    class DataServerProcess : MarshalByRefObject, IDataServerToClient, IDataServerToPM, IDataServerToMetadataServer
+    public class DataServerProcess : MarshalByRefObject, IDataServerToClient, IDataServerToPM, IDataServerToMetadataServer
     {
         private static string dataServerStartedTemplate = "Data Server {0} has started.";
         private static List<Tuple<IMetadataServerToDataServer, string>> metadataServers = new List<Tuple<IMetadataServerToDataServer, string>>();
@@ -29,7 +29,7 @@ namespace DataServer
             TcpChannel channel = new TcpChannel(dataServerPort);
             ChannelServices.RegisterChannel(channel, true);
             RemotingConfiguration.RegisterWellKnownServiceType(
-                typeof(DataServerProcess),
+                typeof(DataServer.DataServerProcess),
                 dataServerName,
                 WellKnownObjectMode.Singleton);
 
@@ -68,12 +68,12 @@ namespace DataServer
             Console.WriteLine("WRITE DATA SERVER FILE  " + dataServerName);
         }
 
-        public void Create(string fileName)
+        public void CreateFile(string fileName)
         {
             Console.WriteLine("CREATE FILE " + fileName);
         }
 
-        public void Delete(string fileName)
+        public void DeleteFile(string fileName)
         {
             Console.WriteLine("DELETE FILE " + fileName);
         }
@@ -90,7 +90,7 @@ namespace DataServer
 
             //Notify Primary Metadata Server
             Tuple<IMetadataServerToDataServer,string> metadataServerTuple = metadataServers.First();
-            if (!metadataServerTuple.Item1.RegisterDataServer(dataServerName, metadataServerTuple.Item2))
+            if (!metadataServerTuple.Item1.RegisterDataServer(dataServerName, string.Format(Config.URL,dataServerPort ,dataServerName)))
                 throw new CouldNotRegistOnMetadataServer(dataServerName);
         }
     }

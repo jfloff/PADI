@@ -78,6 +78,10 @@ namespace Client
             {
                 Console.WriteLine(e.Message);
             }
+            catch (NotEnoughDataServersException e)
+            {
+                Console.WriteLine(e.Message);
+            }
         }
 
         public void Open(string fileName)

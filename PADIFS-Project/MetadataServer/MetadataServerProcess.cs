@@ -10,7 +10,7 @@ using System.Runtime.Remoting.Channels.Tcp;
 using System.Runtime.Remoting.Channels;
 using System.Collections;
 
-namespace SharedLibrary
+namespace MetadataServer
 {
     class MetadataServerProcess : MarshalByRefObject, IMetadataServerToClient, IServerToPM, IMetadataServerToDataServer
     {
@@ -83,31 +83,14 @@ namespace SharedLibrary
 
         public bool filePlacementOnSelectedDataServers(Dictionary<string, string> dataServersAndLocalFileList)
         {
-            Console.WriteLine("LAALALALA FILE PLACEMENT");
             //Async request?
             for (int i = 0; i < dataServersAndLocalFileList.Count; i++)
             {
-                Console.WriteLine("FSDSDFDFSDf");
-
                 string dataServerName = dataServersAndLocalFileList.ElementAt(i).Key;
                 string localFileName = dataServersAndLocalFileList.ElementAt(i).Value;
-
-                IDataServerToMetadataServer dataServer = dataServers[dataServerName];
-
-                try
-                {
-
-                    dataServer.Create(localFileName);
-                 
-                }
-                catch (Exception e)
-                {
-                    Console.WriteLine(e.Message + " " + e.StackTrace);
-                }
-                    Console.WriteLine("XXXXSDAASD");
+                IDataServerToMetadataServer dataServer = (IDataServerToMetadataServer)dataServers[dataServerName];
+                dataServer.CreateFile(localFileName);
             }
-
-            //exception Handler
             return true;
         }
 
@@ -121,13 +104,10 @@ namespace SharedLibrary
                 throw new FileAlreadyExistsException(fileName);
 
             //Select Data Servers For File Placement
-            Console.WriteLine("SELECT DATA SERVERS");
             Dictionary<string, string> selectedDataServersList = selectDataServersForFilePlacement(nbDataServers, fileName);
             FileMetadata fileMetadata = new FileMetadata(fileName, nbDataServers, readQuorum, writeQuorum, selectedDataServersList);
             fileMetadataTable.Add(fileName, fileMetadata);
-            Console.WriteLine("BEFORE FILE PLACEMENT");
             filePlacementOnSelectedDataServers(selectedDataServersList);
-
             return fileMetadata;
         }
 
@@ -181,9 +161,8 @@ namespace SharedLibrary
             IDataServerToMetadataServer data = (IDataServerToMetadataServer)Activator.GetObject(typeof(IDataServerToMetadataServer), urlLocation);
             dataServers.Add(dataServerName, data);
 
-            data.Create("alex");
-
             return true;
         }
+
     }
 }
