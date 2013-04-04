@@ -172,6 +172,7 @@ namespace PuppetMaster
                 Process.Start("DataServer.exe", dataID + " " + port);
                 IDataServerToPM dataServer = (IDataServerToPM)Activator.GetObject(typeof(IDataServerToPM), string.Format(urlTemplate, port, dataID));
                 this.processes.Add(dataID, dataServer);
+                dataServer.ReceiveMetadataServersLocations(this.metadataServersLocation);
             }
             else
             {
