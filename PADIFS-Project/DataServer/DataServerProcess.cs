@@ -9,6 +9,7 @@ using System.Runtime.Remoting.Channels;
 using System.Runtime.Remoting;
 using SharedLibrary.Exceptions;
 using SharedLibrary.Interfaces;
+using SharedLibrary.Entities;
 
 namespace DataServer
 {
@@ -16,6 +17,7 @@ namespace DataServer
     {
         private static string dataServerStartedTemplate = "Data Server {0} has started.";
         private static List<Tuple<IMetadataServerToDataServer, string>> metadataServers = new List<Tuple<IMetadataServerToDataServer, string>>();
+        private static Dictionary<string, FileData> allFiles = new Dictionary<string, FileData>();
         private static string dataServerName;
         private static int dataServerPort;
 
@@ -30,7 +32,7 @@ namespace DataServer
             TcpChannel channel = new TcpChannel(dataServerPort);
             ChannelServices.RegisterChannel(channel, true);
             RemotingConfiguration.RegisterWellKnownServiceType(
-                typeof(DataServer.DataServerProcess),
+                typeof(DataServerProcess),
                 dataServerName,
                 WellKnownObjectMode.Singleton);
 
@@ -72,26 +74,29 @@ namespace DataServer
         public void CreateFile(string fileName)
         {
             Console.WriteLine("CREATE FILE " + fileName);
+            FileData file = new FileData(0);
+            allFiles.Add(fileName, file);
         }
 
         public void DeleteFile(string fileName)
         {
             Console.WriteLine("DELETE FILE " + fileName);
+            allFiles.Remove(fileName);
         }
 
 
         public void ReceiveMetadataServersLocations(List<string> metadataServerList)
         {
             for (int i = 0; i < metadataServerList.Count; i++)
-            {   
+            {
                 string urlLocation = metadataServerList.ElementAt(i);
                 IMetadataServerToDataServer metadata = (IMetadataServerToDataServer)Activator.GetObject(typeof(IMetadataServerToDataServer), urlLocation);
                 metadataServers.Add(Tuple.Create(metadata, urlLocation));
             }
 
             //Notify Primary Metadata Server
-            Tuple<IMetadataServerToDataServer,string> metadataServerTuple = metadataServers.First();
-            if (!metadataServerTuple.Item1.RegisterDataServer(dataServerName, string.Format(Config.URL,dataServerPort ,dataServerName)))
+            Tuple<IMetadataServerToDataServer, string> metadataServerTuple = metadataServers.First();
+            if (!metadataServerTuple.Item1.RegisterDataServer(dataServerName, string.Format(Config.URL, dataServerPort, dataServerName)))
                 throw new CouldNotRegistOnMetadataServer(dataServerName);
         }
     }

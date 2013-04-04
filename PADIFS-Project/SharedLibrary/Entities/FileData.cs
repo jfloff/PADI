@@ -11,6 +11,11 @@ namespace SharedLibrary.Entities
         int version;
         byte[] contents;
 
+        public FileData(int version)
+        {
+            this.version = version;
+        }
+
         public FileData(int version, byte[] contents)
         {
             this.version = version;

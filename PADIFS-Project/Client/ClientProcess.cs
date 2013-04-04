@@ -133,7 +133,6 @@ namespace Client
                 if (!openedFilesMetadata.ContainsKey(fileName))
                 {
                     metadataServers.First().Delete(fileName);
-                    openedFilesMetadata.Remove(fileName);
                 }
                 else
                 {

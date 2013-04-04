@@ -67,7 +67,7 @@ namespace MetadataServer
                 throw new FileDoesNotExistException(fileName);
         }
 
-        public Dictionary<string, string> selectDataServersForFilePlacement(int nbDataServers, string localFileName)
+        public Dictionary<string, string> SelectDataServersForFilePlacement(int nbDataServers, string localFileName)
         {
             int actualNrDataServers = dataServers.Count;
 
@@ -83,19 +83,31 @@ namespace MetadataServer
             return selectedDataServers;
         }
 
-        public bool filePlacementOnSelectedDataServers(Dictionary<string, string> dataServersAndLocalFileList)
+        public bool FilePlacementOnSelectedDataServers(Dictionary<string, string> dataServersAndLocalFileList)
         {
             //Async request?
             for (int i = 0; i < dataServersAndLocalFileList.Count; i++)
             {
                 string dataServerName = dataServersAndLocalFileList.ElementAt(i).Key;
-                string localFileName = dataServersAndLocalFileList.ElementAt(i).Value;
+                string fileName = dataServersAndLocalFileList.ElementAt(i).Value;
                 IDataServerToMetadataServer dataServer = (IDataServerToMetadataServer)dataServers[dataServerName];
-                dataServer.CreateFile(localFileName);
+                dataServer.CreateFile(fileName);
             }
             return true;
         }
 
+        public bool FileDeletionOnCorrespondingDataServers(Dictionary<string, string> dataServersAndLocalFileList) { 
+             
+            //Async request?
+            for (int i = 0; i < dataServersAndLocalFileList.Count; i++)
+            {
+                string dataServerName = dataServersAndLocalFileList.ElementAt(i).Key;
+                string fileName = dataServersAndLocalFileList.ElementAt(i).Value;
+                IDataServerToMetadataServer dataServer = (IDataServerToMetadataServer)dataServers[dataServerName];
+                dataServer.DeleteFile(fileName);
+            }
+            return true;
+        }
 
         public FileMetadata Create(string fileName, int nbDataServers, int readQuorum, int writeQuorum)
         {
@@ -106,10 +118,10 @@ namespace MetadataServer
                 throw new FileAlreadyExistsException(fileName);
 
             //Select Data Servers For File Placement
-            Dictionary<string, string> selectedDataServersList = selectDataServersForFilePlacement(nbDataServers, fileName);
+            Dictionary<string, string> selectedDataServersList = SelectDataServersForFilePlacement(nbDataServers, fileName + fileName.GetHashCode());
             FileMetadata fileMetadata = new FileMetadata(fileName, nbDataServers, readQuorum, writeQuorum, selectedDataServersList);
             fileMetadataTable.Add(fileName, fileMetadata);
-            filePlacementOnSelectedDataServers(selectedDataServersList);
+            FilePlacementOnSelectedDataServers(selectedDataServersList);
             return fileMetadata;
         }
 
@@ -120,8 +132,10 @@ namespace MetadataServer
             if (!hasFile(fileName))
                 throw new FileDoesNotExistException(fileName);
 
-            //data servers updates (delete files)
-            fileMetadataTable.Remove(fileName);
+            //Missing: verificar se o ficheiro está a ser utilizado por outro cliente? 
+            //Tratar o caso em que possivelmente algum dos servidores não conseguiu apagar o ficheiro
+            if (FileDeletionOnCorrespondingDataServers(fileMetadataTable[fileName].DataServers))
+                fileMetadataTable.Remove(fileName);
         }
 
         public void Fail()
