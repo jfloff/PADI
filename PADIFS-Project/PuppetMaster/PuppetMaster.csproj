@@ -45,9 +45,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="PuppetMasterForm.cs">
-      <SubType>Form</SubType>
-    </Compile>
+    <Compile Include="PuppetMasterForm.cs" />
     <Compile Include="PuppetMasterForm.Designer.cs">
       <DependentUpon>PuppetMasterForm.cs</DependentUpon>
     </Compile>

@@ -8,7 +8,7 @@ namespace SharedLibrary.Interfaces
 {
     public interface IDataServerToMetadataServer
     {
-        void Create(string fileName);
-        void Delete(string fileName);
+        void CreateFile(string fileName);
+        void DeleteFile(string fileName);
     }
 }

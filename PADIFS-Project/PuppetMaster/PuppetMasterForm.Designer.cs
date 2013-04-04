@@ -703,5 +703,4 @@
         private System.Windows.Forms.ToolStripStatusLabel statusStripLabel;
 
     }
-}
-
+}﻿

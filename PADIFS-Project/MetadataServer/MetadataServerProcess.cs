@@ -12,7 +12,7 @@ using System.Collections;
 using SharedLibrary.Entities;
 using SharedLibrary.Interfaces;
 
-namespace MetadaServer
+namespace MetadataServer
 {
     class MetadataServerProcess : MarshalByRefObject, IMetadataServerToClient, IServerToPM, IMetadataServerToDataServer
     {
@@ -77,9 +77,7 @@ namespace MetadaServer
             Dictionary<string, string> selectedDataServers = new Dictionary<string, string>();
             for (int i = 0; i < nbDataServers; i++)
             {
-                Random random = new Random();
-                int ran = random.Next(actualNrDataServers);
-                selectedDataServers.Add(dataServers.ElementAt(ran).Key, localFileName);
+                selectedDataServers.Add(dataServers.ElementAt(i).Key, localFileName);
             }
 
             return selectedDataServers;
@@ -92,11 +90,9 @@ namespace MetadaServer
             {
                 string dataServerName = dataServersAndLocalFileList.ElementAt(i).Key;
                 string localFileName = dataServersAndLocalFileList.ElementAt(i).Value;
-
-                dataServers[dataServerName].Create(localFileName);
+                IDataServerToMetadataServer dataServer = (IDataServerToMetadataServer)dataServers[dataServerName];
+                dataServer.CreateFile(localFileName);
             }
-
-            //exception Handler
             return true;
         }
 
@@ -110,16 +106,10 @@ namespace MetadaServer
                 throw new FileAlreadyExistsException(fileName);
 
             //Select Data Servers For File Placement
-
-            //Missing: create localFileName
-            String localFileName = fileName;
-
-            Dictionary<string, string> selectedDataServersList = selectDataServersForFilePlacement(nbDataServers, localFileName);
+            Dictionary<string, string> selectedDataServersList = selectDataServersForFilePlacement(nbDataServers, fileName);
             FileMetadata fileMetadata = new FileMetadata(fileName, nbDataServers, readQuorum, writeQuorum, selectedDataServersList);
             fileMetadataTable.Add(fileName, fileMetadata);
-
             filePlacementOnSelectedDataServers(selectedDataServersList);
-
             return fileMetadata;
         }
 
@@ -170,10 +160,11 @@ namespace MetadaServer
             if (dataServers.ContainsKey(dataServerName))
                 return false;
 
-            IDataServerToMetadataServer metadata = (IDataServerToMetadataServer)Activator.GetObject(typeof(IDataServerToMetadataServer), urlLocation);
-            dataServers.Add(dataServerName, metadata);
+            IDataServerToMetadataServer data = (IDataServerToMetadataServer)Activator.GetObject(typeof(IDataServerToMetadataServer), urlLocation);
+            dataServers.Add(dataServerName, data);
 
             return true;
         }
+
     }
 }
