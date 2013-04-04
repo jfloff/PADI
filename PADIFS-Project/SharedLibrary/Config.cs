@@ -6,8 +6,8 @@ using System.Threading.Tasks;
 
 namespace SharedLibrary
 {
-    public class Config
+    public static class Config
     {
-        public static const int MAX_FILE_REGISTERS = 10;
+        public const int MAX_FILE_REGISTERS = 10;
     }
 }

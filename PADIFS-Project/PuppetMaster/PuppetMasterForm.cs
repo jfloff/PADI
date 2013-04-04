@@ -19,13 +19,93 @@ namespace PuppetMaster
     public partial class PuppetMasterForm : Form
     {
         private Hashtable processes;
-
+       
         public PuppetMasterForm()
         {
             InitializeComponent();
+            // Element details
+            this.componentSelectionBox.SelectedIndex = 0;
+            this.semanticsSelectionBox.SelectedIndex = 0;
+            // Connection details
             TcpChannel channel = new TcpChannel(8080);
             ChannelServices.RegisterChannel(channel, true);
             this.processes = new Hashtable();
+        }
+
+        private void ComponentSelectionBoxSelectedIndexChanged(object sender, EventArgs e)
+        {
+            ComboBox componentSelectionBox = (ComboBox)sender;
+
+            switch (componentSelectionBox.SelectedIndex) 
+            {
+                default:
+                case 0:
+                    {
+                        ToggleDataServerElements(false);
+                        ToggleClientElements(false);
+                        ToggleMetadataElements(true);
+                        break;
+                    }
+                case 1:
+                    {
+                        ToggleMetadataElements(false);
+                        ToggleClientElements(false);
+                        ToggleDataServerElements(true);
+                        break;
+                    }
+                case 2:
+                    {
+                        ToggleMetadataElements(false);
+                        ToggleDataServerElements(false);
+                        ToggleClientElements(true);
+                        break;
+                    }
+            }
+        }
+
+        private void ToggleMetadataElements(bool toggle)
+        {
+            this.failButton.Visible = toggle;
+            this.recoverButton.Visible = toggle;
+        }
+
+        private void ToggleDataServerElements(bool toggle)
+        {
+            this.failButton.Visible = toggle;
+            this.recoverButton.Visible = toggle;
+            this.freezeButton.Visible = toggle;
+            this.unfreezeButton.Visible = toggle;
+        }
+
+        private void ToggleClientElements(bool toggle)
+        {
+            this.filenameBox.Visible = toggle;
+            this.filenameLabel.Visible = toggle;
+            this.NbDataServersBox.Visible = toggle;
+            this.NbDataServersLabel.Visible = toggle;
+            this.readQuorumBox.Visible = toggle;
+            this.readQuorumLabel.Visible = toggle;
+            this.writeQuorumBox.Visible = toggle;
+            this.writeQuorumLabel.Visible = toggle;
+            this.createButton.Visible = toggle;
+            this.deleteButton.Visible = toggle;
+            this.openButton.Visible = toggle;
+            this.closeButton.Visible = toggle;
+            this.fileRegister1Label.Visible = toggle;
+            this.fileRegister1Number.Visible = toggle;
+            this.fileRegister2Label.Visible = toggle;
+            this.fileRegister2Number.Visible = toggle;
+            this.semanticsLabel.Visible = toggle;
+            this.semanticsSelectionBox.Visible = toggle;
+            this.stringRegisterLabel.Visible = toggle;
+            this.stringRegisterNumber.Visible = toggle;
+            this.contentsLabel.Visible = toggle;
+            this.contentsBox.Visible = toggle;
+            this.readButton.Visible = toggle;
+            this.writeButton.Visible = toggle;
+            this.saltLabel.Visible = toggle;
+            this.saltBox.Visible = toggle;
+            this.copyButton.Visible = toggle;
         }
 
         private void recover_click(object sender, EventArgs e)
@@ -120,35 +200,38 @@ namespace PuppetMaster
             }
         }
 
-        private void startClient_click(object sender, EventArgs e)
+        private void StartButtonClick(object sender, EventArgs e)
         {
-            string clientID = this.processBox.Text;
+            string id = this.processBox.Text;
             string port = this.portBox.Text;
 
-            if (!clientID.Equals(string.Empty) && !port.Equals(string.Empty) && !this.processes.Contains(clientID))
+            if (!String.IsNullOrEmpty(id) && !String.IsNullOrEmpty(port) && !this.processes.Contains(id))
             {
-                Process.Start("Client.exe", clientID + " " + port);
-                IClientPM client = (IClientPM)Activator.GetObject(typeof(IClientPM), "tcp://localhost:" + port + "/" + clientID);
-                this.processes.Add(clientID, client);
-                this.processBox.Clear();
-                this.portBox.Clear();
-            }
-            else { 
-                // Caso em que o identificador já está a ser usado por outro processo
-                // Lançar uma excepção e/ou alerta no form
-            }
-        }
+                switch (componentSelectionBox.SelectedIndex)
+                {
+                    case 0:
+                        {
+                            Process.Start("MetadataServer.exe", id + " " + port);
+                            IServerPM metadata = (IServerPM)Activator.GetObject(typeof(IServerPM), "tcp://localhost:" + port + "/" + id);
+                            this.processes.Add(id, metadata);
+                            break;
+                        }
+                    case 1:
+                        {
+                            Process.Start("DataServer.exe", id + " " + port);
+                            IDataServerPM dataServer = (IDataServerPM)Activator.GetObject(typeof(IDataServerPM), "tcp://localhost:" + port + "/" + id);
+                            this.processes.Add(id, dataServer);
+                            break;
+                        }
+                    case 3:
+                        {
+                            Process.Start("Client.exe", id + " " + port);
+                            IClientPM client = (IClientPM)Activator.GetObject(typeof(IClientPM), "tcp://localhost:" + port + "/" + id);
+                            this.processes.Add(id, client);
+                            break;
+                        }
+                }
 
-        private void startMetadata_click(object sender, EventArgs e)
-        {
-            string metadataID = this.processBox.Text;
-            string port = this.portBox.Text;
-
-            if (!metadataID.Equals(string.Empty) && !port.Equals(string.Empty) && !this.processes.Contains(metadataID))
-            {
-                Process.Start("MetadataServer.exe", metadataID + " " + port);
-                IServerPM metadata = (IServerPM)Activator.GetObject(typeof(IServerPM), "tcp://localhost:" + port + "/" + metadataID);
-                this.processes.Add(metadataID, metadata);
                 this.processBox.Clear();
                 this.portBox.Clear();
             }
@@ -158,27 +241,5 @@ namespace PuppetMaster
                 // Lançar uma excepção e/ou alerta no form
             }
         }
-
-        private void startDataServer_click(object sender, EventArgs e)
-        {
-            string dataID = this.processBox.Text;
-            string port = this.portBox.Text;
-
-            if (!dataID.Equals(string.Empty) && !port.Equals(string.Empty) && !this.processes.Contains(dataID))
-            {
-                Process.Start("DataServer.exe", dataID + " " + port);
-                IDataServerPM dataServer = (IDataServerPM)Activator.GetObject(typeof(IDataServerPM), "tcp://localhost:" + port + "/" + dataID);
-                this.processes.Add(dataID, dataServer);
-                this.processBox.Clear();
-                this.portBox.Clear();
-              
-            }
-            else
-            {
-                // Caso em que o identificador já está a ser usado por outro processo
-                // Lançar uma excepção e/ou alerta no form
-            }
-        }
-
     }
 }

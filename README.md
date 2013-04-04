@@ -13,6 +13,10 @@ Plataformas para Aplicações Distribuídas na Internet
 
 ## Projecto
 
+### Convenções
+*   Uma classe/interface por ficheiro
+*   Todos Metodos letra grande (Pascal Case)
+*   Começa a letra pequena (Came Case)
 
 ## Outros
 
