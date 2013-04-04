@@ -60,9 +60,7 @@
             this.readButton = new System.Windows.Forms.Button();
             this.writeButton = new System.Windows.Forms.Button();
             this.copyButton = new System.Windows.Forms.Button();
-            this.executeScriptButton = new System.Windows.Forms.Button();
-            this.scriptNameBox = new System.Windows.Forms.TextBox();
-            this.scriptNameLabel = new System.Windows.Forms.Label();
+            this.loadScriptButton = new System.Windows.Forms.Button();
             this.dumpButton = new System.Windows.Forms.Button();
             this.componentSelectionBox = new System.Windows.Forms.ComboBox();
             this.semanticsSelectionBox = new System.Windows.Forms.ComboBox();
@@ -70,6 +68,11 @@
             this.groupBox1 = new System.Windows.Forms.GroupBox();
             this.fileRegister1Number = new System.Windows.Forms.NumericUpDown();
             this.fileRegister2Number = new System.Windows.Forms.NumericUpDown();
+            this.openScriptDialog = new System.Windows.Forms.OpenFileDialog();
+            this.executeClientScriptButton = new System.Windows.Forms.Button();
+            this.nextStepScriptButton = new System.Windows.Forms.Button();
+            this.executeAllScriptButton = new System.Windows.Forms.Button();
+            this.scriptBox = new System.Windows.Forms.RichTextBox();
             ((System.ComponentModel.ISupportInitialize)(this.stringRegisterNumber)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.fileRegister1Number)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.fileRegister2Number)).BeginInit();
@@ -400,38 +403,23 @@
             this.copyButton.UseVisualStyleBackColor = true;
             this.copyButton.Visible = false;
             // 
-            // executeScriptButton
+            // loadScriptButton
             // 
-            this.executeScriptButton.Location = new System.Drawing.Point(99, 479);
-            this.executeScriptButton.Name = "executeScriptButton";
-            this.executeScriptButton.Size = new System.Drawing.Size(75, 23);
-            this.executeScriptButton.TabIndex = 24;
-            this.executeScriptButton.Text = "Execute Script";
-            this.executeScriptButton.UseVisualStyleBackColor = true;
-            // 
-            // scriptNameBox
-            // 
-            this.scriptNameBox.Location = new System.Drawing.Point(12, 482);
-            this.scriptNameBox.Name = "scriptNameBox";
-            this.scriptNameBox.Size = new System.Drawing.Size(75, 20);
-            this.scriptNameBox.TabIndex = 23;
-            // 
-            // scriptNameLabel
-            // 
-            this.scriptNameLabel.AutoSize = true;
-            this.scriptNameLabel.Location = new System.Drawing.Point(9, 466);
-            this.scriptNameLabel.Name = "scriptNameLabel";
-            this.scriptNameLabel.Size = new System.Drawing.Size(65, 13);
-            this.scriptNameLabel.TabIndex = 47;
-            this.scriptNameLabel.Text = "Script Name";
+            this.loadScriptButton.Location = new System.Drawing.Point(12, 523);
+            this.loadScriptButton.Name = "loadScriptButton";
+            this.loadScriptButton.Size = new System.Drawing.Size(162, 23);
+            this.loadScriptButton.TabIndex = 24;
+            this.loadScriptButton.Text = "Load Script";
+            this.loadScriptButton.UseVisualStyleBackColor = true;
+            this.loadScriptButton.Click += new System.EventHandler(this.LoadScriptButtonClick);
             // 
             // dumpButton
             // 
-            this.dumpButton.Location = new System.Drawing.Point(12, 508);
+            this.dumpButton.Location = new System.Drawing.Point(12, 494);
             this.dumpButton.Name = "dumpButton";
             this.dumpButton.Size = new System.Drawing.Size(162, 23);
             this.dumpButton.TabIndex = 25;
-            this.dumpButton.Text = "Dump";
+            this.dumpButton.Text = "Dump Process";
             this.dumpButton.UseVisualStyleBackColor = true;
             // 
             // componentSelectionBox
@@ -486,9 +474,9 @@
             // 
             // groupBox1
             // 
-            this.groupBox1.Location = new System.Drawing.Point(-6, 442);
+            this.groupBox1.Location = new System.Drawing.Point(-5, 467);
             this.groupBox1.Name = "groupBox1";
-            this.groupBox1.Size = new System.Drawing.Size(205, 100);
+            this.groupBox1.Size = new System.Drawing.Size(205, 21);
             this.groupBox1.TabIndex = 51;
             this.groupBox1.TabStop = false;
             // 
@@ -538,20 +526,66 @@
             0});
             this.fileRegister2Number.Visible = false;
             // 
+            // openScriptDialog
+            // 
+            this.openScriptDialog.DefaultExt = "padis";
+            this.openScriptDialog.FileName = "main.padis";
+            this.openScriptDialog.Filter = "PADI-FS Scripts (*.padis)|*.padis|All files|*.*";
+            // 
+            // executeClientScriptButton
+            // 
+            this.executeClientScriptButton.Location = new System.Drawing.Point(12, 442);
+            this.executeClientScriptButton.Name = "executeClientScriptButton";
+            this.executeClientScriptButton.Size = new System.Drawing.Size(162, 23);
+            this.executeClientScriptButton.TabIndex = 57;
+            this.executeClientScriptButton.Text = "Execute Client Script";
+            this.executeClientScriptButton.UseVisualStyleBackColor = true;
+            this.executeClientScriptButton.Visible = false;
+            // 
+            // nextStepScriptButton
+            // 
+            this.nextStepScriptButton.Location = new System.Drawing.Point(12, 664);
+            this.nextStepScriptButton.Name = "nextStepScriptButton";
+            this.nextStepScriptButton.Size = new System.Drawing.Size(75, 23);
+            this.nextStepScriptButton.TabIndex = 58;
+            this.nextStepScriptButton.Text = "Next Step";
+            this.nextStepScriptButton.UseVisualStyleBackColor = true;
+            this.nextStepScriptButton.Click += new System.EventHandler(this.NextStepScriptButtonClick);
+            // 
+            // executeAllScriptButton
+            // 
+            this.executeAllScriptButton.Location = new System.Drawing.Point(99, 664);
+            this.executeAllScriptButton.Name = "executeAllScriptButton";
+            this.executeAllScriptButton.Size = new System.Drawing.Size(75, 23);
+            this.executeAllScriptButton.TabIndex = 59;
+            this.executeAllScriptButton.Text = "Execute All";
+            this.executeAllScriptButton.UseVisualStyleBackColor = true;
+            // 
+            // scriptBox
+            // 
+            this.scriptBox.Location = new System.Drawing.Point(12, 552);
+            this.scriptBox.Name = "scriptBox";
+            this.scriptBox.ReadOnly = true;
+            this.scriptBox.Size = new System.Drawing.Size(162, 106);
+            this.scriptBox.TabIndex = 60;
+            this.scriptBox.Text = "";
+            // 
             // PuppetMasterForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(185, 539);
+            this.ClientSize = new System.Drawing.Size(187, 697);
+            this.Controls.Add(this.scriptBox);
+            this.Controls.Add(this.executeAllScriptButton);
+            this.Controls.Add(this.nextStepScriptButton);
+            this.Controls.Add(this.executeClientScriptButton);
             this.Controls.Add(this.fileRegister2Number);
             this.Controls.Add(this.fileRegister1Number);
             this.Controls.Add(this.stringRegisterNumber);
             this.Controls.Add(this.semanticsSelectionBox);
             this.Controls.Add(this.componentSelectionBox);
             this.Controls.Add(this.dumpButton);
-            this.Controls.Add(this.scriptNameLabel);
-            this.Controls.Add(this.scriptNameBox);
-            this.Controls.Add(this.executeScriptButton);
+            this.Controls.Add(this.loadScriptButton);
             this.Controls.Add(this.copyButton);
             this.Controls.Add(this.writeButton);
             this.Controls.Add(this.readButton);
@@ -630,9 +664,7 @@
         private System.Windows.Forms.Button readButton;
         private System.Windows.Forms.Button writeButton;
         private System.Windows.Forms.Button copyButton;
-        private System.Windows.Forms.Button executeScriptButton;
-        private System.Windows.Forms.TextBox scriptNameBox;
-        private System.Windows.Forms.Label scriptNameLabel;
+        private System.Windows.Forms.Button loadScriptButton;
         private System.Windows.Forms.Button dumpButton;
         private System.Windows.Forms.ComboBox componentSelectionBox;
         private System.Windows.Forms.ComboBox semanticsSelectionBox;
@@ -640,6 +672,11 @@
         private System.Windows.Forms.GroupBox groupBox1;
         private System.Windows.Forms.NumericUpDown fileRegister1Number;
         private System.Windows.Forms.NumericUpDown fileRegister2Number;
+        private System.Windows.Forms.OpenFileDialog openScriptDialog;
+        private System.Windows.Forms.Button executeClientScriptButton;
+        private System.Windows.Forms.Button nextStepScriptButton;
+        private System.Windows.Forms.Button executeAllScriptButton;
+        private System.Windows.Forms.RichTextBox scriptBox;
 
     }
 }

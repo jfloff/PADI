@@ -14,12 +14,15 @@ using SharedLibrary.Interfaces;
 using Client;
 using System.Diagnostics;
 using System.Collections;
+using System.IO;
 
 // @TODO
 // mini-shell + load script
 // pastas library
 // shortcuts
 // enbable/disable so quando metadata created
+// tab order
+// masked text box for process
 
 namespace PuppetMaster
 {
@@ -32,6 +35,8 @@ namespace PuppetMaster
         private string urlTemplate = "tcp://localhost:{0}/{1}";
         private List<string> metadataServersLocation;
         private Hashtable processes;
+
+        private int currentScriptLine = -1;
        
         public PuppetMasterForm()
         {
@@ -120,6 +125,7 @@ namespace PuppetMaster
             this.saltLabel.Visible = toggle;
             this.saltBox.Visible = toggle;
             this.copyButton.Visible = toggle;
+            this.executeClientScriptButton.Visible = toggle;
         }
 
         private void recover_click(object sender, EventArgs e)
@@ -225,11 +231,7 @@ namespace PuppetMaster
                 {
                     case METADATA:
                         {
-                            Process.Start("MetadataServer.exe", id + " " + port);
-                            string urlLocation = string.Format(urlTemplate, port, id);
-                            IServerToPM metadata = (IServerToPM)Activator.GetObject(typeof(IServerToPM), urlLocation);
-                            this.processes.Add(id, metadata);
-                            this.metadataServersLocation.Add(urlLocation);
+                            StartMetadata(id, port);
                             break;
                         }
                     case DATASERVER:
@@ -252,6 +254,58 @@ namespace PuppetMaster
 
                 this.processBox.Clear();
                 this.portBox.Clear();
+            }
+        }
+
+        private void StartMetadata(string id, string port)
+        {
+            Process.Start("MetadataServer.exe", id + " " + port);
+            string urlLocation = string.Format(urlTemplate, port, id);
+            IServerToPM metadata = (IServerToPM)Activator.GetObject(typeof(IServerToPM), urlLocation);
+            this.processes.Add(id, metadata);
+            this.metadataServersLocation.Add(urlLocation);
+        }
+
+        private void LoadScriptButtonClick(object sender, EventArgs e)
+        {
+            DialogResult result = this.openScriptDialog.ShowDialog(); // Show the dialog.
+            if (result == DialogResult.OK) // Test result.
+            {
+                string file = openScriptDialog.FileName;
+                try
+                {
+                    this.scriptBox.Text = File.ReadAllText(file);
+                    this.currentScriptLine = -1;
+                }
+                catch (IOException)
+                {
+                }
+            }
+        }
+
+        private void NextStepScriptButtonClick(object sender, EventArgs e)
+        {
+            if (this.scriptBox.Lines.Length >= 0 && this.currentScriptLine < this.scriptBox.Lines.Length - 1)
+            {
+                int lineNumber = ++currentScriptLine;
+
+                int start = this.scriptBox.GetFirstCharIndexFromLine(lineNumber);
+                int length = this.scriptBox.Lines[lineNumber].Length;
+                this.scriptBox.Select(start, length);
+                this.scriptBox.SelectionBackColor = Color.Red;
+
+                // reset previous line
+                if (--lineNumber >= 0)
+                {
+                    start = this.scriptBox.GetFirstCharIndexFromLine(lineNumber);
+                    length = this.scriptBox.Lines[lineNumber].Length;
+                    this.scriptBox.Select(start, length);
+                    this.scriptBox.SelectionBackColor = SystemColors.Control;
+                }
+
+                // PARSER
+                string line = this.scriptBox.SelectedText;
+                string[] commands = line.Split(new string[] { "\n", " ", "," }, StringSplitOptions.None);
             }
         }
     }
