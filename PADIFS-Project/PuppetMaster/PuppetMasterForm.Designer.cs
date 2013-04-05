@@ -30,7 +30,6 @@
         {
             this.failButton = new System.Windows.Forms.Button();
             this.recoverButton = new System.Windows.Forms.Button();
-            this.processBox = new System.Windows.Forms.TextBox();
             this.unfreezeButton = new System.Windows.Forms.Button();
             this.createButton = new System.Windows.Forms.Button();
             this.freezeButton = new System.Windows.Forms.Button();
@@ -75,6 +74,7 @@
             this.scriptBox = new System.Windows.Forms.RichTextBox();
             this.statusStrip = new System.Windows.Forms.StatusStrip();
             this.statusStripLabel = new System.Windows.Forms.ToolStripStatusLabel();
+            this.processBox = new System.Windows.Forms.MaskedTextBox();
             ((System.ComponentModel.ISupportInitialize)(this.stringRegisterNumber)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.fileRegister1Number)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.fileRegister2Number)).BeginInit();
@@ -90,7 +90,7 @@
             this.failButton.Text = "Fail";
             this.failButton.UseVisualStyleBackColor = true;
             this.failButton.Visible = false;
-            this.failButton.Click += new System.EventHandler(this.fail_click);
+            this.failButton.Click += new System.EventHandler(this.FailButtonClick);
             // 
             // recoverButton
             // 
@@ -101,35 +101,7 @@
             this.recoverButton.Text = "Recover";
             this.recoverButton.UseVisualStyleBackColor = true;
             this.recoverButton.Visible = false;
-            this.recoverButton.Click += new System.EventHandler(this.recover_click);
-            // 
-            // processBox
-            // 
-            this.processBox.AutoCompleteCustomSource.AddRange(new string[] {
-            "m-1",
-            "m-2",
-            "m-3",
-            "d-1",
-            "d-2",
-            "d-3",
-            "d-4",
-            "d-5",
-            "c-1",
-            "c-2",
-            "c-3",
-            "c-4",
-            "c-5",
-            "c-6",
-            "c-7",
-            "c-8",
-            "c-9",
-            "c-10"});
-            this.processBox.AutoCompleteMode = System.Windows.Forms.AutoCompleteMode.SuggestAppend;
-            this.processBox.AutoCompleteSource = System.Windows.Forms.AutoCompleteSource.CustomSource;
-            this.processBox.Location = new System.Drawing.Point(12, 53);
-            this.processBox.Name = "processBox";
-            this.processBox.Size = new System.Drawing.Size(75, 20);
-            this.processBox.TabIndex = 0;
+            this.recoverButton.Click += new System.EventHandler(this.RecoverButtonClick);
             // 
             // unfreezeButton
             // 
@@ -140,7 +112,7 @@
             this.unfreezeButton.Text = "Unfreeze";
             this.unfreezeButton.UseVisualStyleBackColor = true;
             this.unfreezeButton.Visible = false;
-            this.unfreezeButton.Click += new System.EventHandler(this.unfreeze_click);
+            this.unfreezeButton.Click += new System.EventHandler(this.UnfreezeButtonClick);
             // 
             // createButton
             // 
@@ -151,7 +123,7 @@
             this.createButton.Text = "Create";
             this.createButton.UseVisualStyleBackColor = true;
             this.createButton.Visible = false;
-            this.createButton.Click += new System.EventHandler(this.Create_click);
+            this.createButton.Click += new System.EventHandler(this.CreateButtonClick);
             // 
             // freezeButton
             // 
@@ -162,7 +134,7 @@
             this.freezeButton.Text = "Freeze";
             this.freezeButton.UseVisualStyleBackColor = true;
             this.freezeButton.Visible = false;
-            this.freezeButton.Click += new System.EventHandler(this.freeze_click);
+            this.freezeButton.Click += new System.EventHandler(this.FreezeButtonClick);
             // 
             // processLabel
             // 
@@ -254,7 +226,7 @@
             this.deleteButton.Text = "Delete";
             this.deleteButton.UseVisualStyleBackColor = true;
             this.deleteButton.Visible = false;
-            this.deleteButton.Click += new System.EventHandler(this.delete_click);
+            this.deleteButton.Click += new System.EventHandler(this.DeleteButtonClick);
             // 
             // openButton
             // 
@@ -265,7 +237,7 @@
             this.openButton.Text = "Open";
             this.openButton.UseVisualStyleBackColor = true;
             this.openButton.Visible = false;
-            this.openButton.Click += new System.EventHandler(this.open_click);
+            this.openButton.Click += new System.EventHandler(this.OpenButtonClick);
             // 
             // closeButton
             // 
@@ -276,7 +248,7 @@
             this.closeButton.Text = "Close";
             this.closeButton.UseVisualStyleBackColor = true;
             this.closeButton.Visible = false;
-            this.closeButton.Click += new System.EventHandler(this.close_click);
+            this.closeButton.Click += new System.EventHandler(this.CloseButtonClick);
             // 
             // portBox
             // 
@@ -563,6 +535,7 @@
             this.executeAllScriptButton.TabIndex = 59;
             this.executeAllScriptButton.Text = "Execute All";
             this.executeAllScriptButton.UseVisualStyleBackColor = true;
+            this.executeAllScriptButton.Click += new System.EventHandler(this.ExecuteAllScriptButtonClick);
             // 
             // scriptBox
             // 
@@ -589,11 +562,21 @@
             this.statusStripLabel.Size = new System.Drawing.Size(60, 17);
             this.statusStripLabel.Text = "Welcome!";
             // 
+            // processBox
+            // 
+            this.processBox.Location = new System.Drawing.Point(12, 52);
+            this.processBox.Mask = "c-0";
+            this.processBox.Name = "processBox";
+            this.processBox.Size = new System.Drawing.Size(75, 20);
+            this.processBox.TabIndex = 62;
+            this.processBox.MaskInputRejected += new System.Windows.Forms.MaskInputRejectedEventHandler(this.ProcessBoxMaskInputRejected);
+            // 
             // PuppetMasterForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(187, 720);
+            this.Controls.Add(this.processBox);
             this.Controls.Add(this.statusStrip);
             this.Controls.Add(this.scriptBox);
             this.Controls.Add(this.executeAllScriptButton);
@@ -635,7 +618,6 @@
             this.Controls.Add(this.freezeButton);
             this.Controls.Add(this.createButton);
             this.Controls.Add(this.unfreezeButton);
-            this.Controls.Add(this.processBox);
             this.Controls.Add(this.recoverButton);
             this.Controls.Add(this.failButton);
             this.Controls.Add(this.groupBox1);
@@ -656,7 +638,6 @@
 
         private System.Windows.Forms.Button failButton;
         private System.Windows.Forms.Button recoverButton;
-        private System.Windows.Forms.TextBox processBox;
         private System.Windows.Forms.Button unfreezeButton;
         private System.Windows.Forms.Button createButton;
         private System.Windows.Forms.Button freezeButton;
@@ -701,6 +682,7 @@
         private System.Windows.Forms.RichTextBox scriptBox;
         private System.Windows.Forms.StatusStrip statusStrip;
         private System.Windows.Forms.ToolStripStatusLabel statusStripLabel;
+        private System.Windows.Forms.MaskedTextBox processBox;
 
     }
 }﻿

@@ -11,9 +11,9 @@ namespace SharedLibrary
         public const int MAX_FILE_REGISTERS = 10;
         public const string URL_TEMPLATE = "tcp://localhost:{0}/{1}";
 
-        public static string getUrlTemplate(string id, string port)
+        public static string GetUrlTemplate(string id, int port)
         {
-            return string.Format(URL_TEMPLATE, id, port);
+            return string.Format(URL_TEMPLATE, port, id);
         }
     }
 }
