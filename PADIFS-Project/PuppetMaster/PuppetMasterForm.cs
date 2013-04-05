@@ -20,15 +20,13 @@ using System.IO;
 // enbable/disable so quando metadata created
 // tab order
 // masked text box for process
+// VERDE o que ja foi executado
+// LINHA ACTUAL A AMARELO NAO E EXECUTADA
 
 namespace PuppetMaster
 {
     public partial class PuppetMasterForm : Form
     {
-        private string urlTemplate = "tcp://localhost:{0}/{1}";
-        private List<string> metadataServersLocation = new List<string>();
-        private Hashtable processes = new Hashtable();
-        private List<string> portsUsed = new List<string>();
 
         private int currentScriptLine = -1;
 
@@ -238,12 +236,11 @@ namespace PuppetMaster
 
         private void close_click(object sender, EventArgs e)
         {
-            string clientID = this.processBox.Text;
+            string id = this.processBox.Text;
             string fileName = this.filenameBox.Text;
-            if (!string.IsNullOrEmpty(clientID) && !string.IsNullOrEmpty(fileName) && this.processes.Contains(clientID))
+            if (!string.IsNullOrEmpty(id) && !string.IsNullOrEmpty(fileName) && PuppetMaster.idUsed(id))
             {
-                IClientToPM client = (IClientToPM)this.processes[clientID];
-                client.Close(fileName);
+                
             }
             else
             {
@@ -259,24 +256,27 @@ namespace PuppetMaster
             // falta verificar se a porta já está a ser usada
             if (!string.IsNullOrEmpty(id)
                 && !string.IsNullOrEmpty(port)
-                && !this.portsUsed.Contains(port)
-                && !this.processes.Contains(id))
+                && !PuppetMaster.portUsed(port)
+                && !PuppetMaster.idUsed(id))
             {
                 switch (componentSelectionBox.SelectedIndex)
                 {
                     case METADATA:
                         {
-                            StartMetadata(id, port);
+                            PuppetMaster.StartMetadata(id, port);
+                            setStatus("Created Metadata with id " + id + " at port " + port);
                             break;
                         }
                     case DATASERVER:
                         {
-                            StartDataServer(id, port);
+                            PuppetMaster.StartDataServer(id, port);
+                            setStatus("Created Data Server with id " + id + " at port " + port);
                             break;
                         }
                     case CLIENT:
                         {
-                            StartClient(id, port);
+                            PuppetMaster.StartClient(id, port);
+                            setStatus("Created Client with id " + id + " at port " + port);
                             break;
                         }
                 }
@@ -287,34 +287,6 @@ namespace PuppetMaster
             {
                 setStatus("[ERROR] Empty Process ID or Port, Port already in use, or process already created");
             }
-        }
-
-        private void StartMetadata(string id, string port)
-        {
-            Process.Start("MetadataServer.exe", id + " " + port);
-            string urlLocation = string.Format(urlTemplate, port, id);
-            IServerToPM metadata = (IServerToPM)Activator.GetObject(typeof(IServerToPM), urlLocation);
-            this.processes.Add(id, metadata);
-            this.metadataServersLocation.Add(urlLocation);
-            setStatus("Created Metadata with id " + id + " at port " + port);
-        }
-
-        private void StartDataServer(string id, string port)
-        {
-            Process.Start("DataServer.exe", id + " " + port);
-            IDataServerToPM dataServer = (IDataServerToPM)Activator.GetObject(typeof(IDataServerToPM), string.Format(urlTemplate, port, id));
-            this.processes.Add(id, dataServer);
-            dataServer.ReceiveMetadataServersLocations(metadataServersLocation);
-            setStatus("Created Data Server with id " + id + " at port " + port);
-        }
-
-        private void StartClient(string id, string port)
-        {
-            Process.Start("Client.exe", id + " " + port);
-            IClientToPM client = (IClientToPM)Activator.GetObject(typeof(IClientToPM), string.Format(urlTemplate, port, id));
-            this.processes.Add(id, client);
-            client.ReceiveMetadataServersLocations(metadataServersLocation);
-            setStatus("Created Client with id " + id + " at port " + port);
         }
 
         private void LoadScriptButtonClick(object sender, EventArgs e)
@@ -375,21 +347,26 @@ namespace PuppetMaster
                                 {
                                     if (steps.Length == 4)
                                     {
+                                        string id = steps[2];
+                                        string port = steps[3];
                                         switch (steps[1])
                                         {
                                             case "METADATA":
                                                 {
-                                                    StartMetadata(steps[2], steps[3]);
+                                                    PuppetMaster.StartMetadata(id, port);
+                                                    setStatus("Created Metadata with id " + id + " at port " + port);
                                                     return;
                                                 }
                                             case "DATASERVER":
                                                 {
-                                                    StartDataServer(steps[2], steps[3]);
+                                                    PuppetMaster.StartDataServer(id, port);
+                                                    setStatus("Created Data Server with id " + id + " at port " + port);
                                                     return;
                                                 }
                                             case "CLIENT":
                                                 {
-                                                    StartClient(steps[2], steps[3]);
+                                                    PuppetMaster.StartClient(id, port);
+                                                    setStatus("Created Data Server with id " + id + " at port " + port);
                                                     return;
                                                 }
                                             default: break;
