@@ -16,7 +16,6 @@ using System.Collections;
 using System.IO;
 
 // @TODO
-// mini-shell
 // shortcuts
 // enbable/disable so quando metadata created
 // tab order
@@ -128,7 +127,7 @@ namespace PuppetMaster
         private void recover_click(object sender, EventArgs e)
         {
             string serverID = this.processBox.Text;
-            if (!String.IsNullOrEmpty(serverID) && this.processes.Contains(serverID))
+            if (!string.IsNullOrEmpty(serverID) && this.processes.Contains(serverID))
             {
                 IServerToPM server = (IServerToPM)this.processes[serverID];
                 server.Recover();
@@ -142,7 +141,7 @@ namespace PuppetMaster
         private void fail_click(object sender, EventArgs e)
         {
             string serverID = this.processBox.Text;
-            if (!String.IsNullOrEmpty(serverID) && this.processes.Contains(serverID))
+            if (!string.IsNullOrEmpty(serverID) && this.processes.Contains(serverID))
             {
                 IServerToPM server = (IServerToPM)this.processes[serverID];
                 server.Fail();
@@ -156,7 +155,7 @@ namespace PuppetMaster
         private void unfreeze_click(object sender, EventArgs e)
         {
             string serverID = this.processBox.Text;
-            if (!String.IsNullOrEmpty(serverID) && this.processes.Contains(serverID))
+            if (!string.IsNullOrEmpty(serverID) && this.processes.Contains(serverID))
             {
                 // Verificar se é um metadata server or data server (apenas data servers podem fazer unfreeze)
                 IDataServerToPM server = (IDataServerToPM)this.processes[serverID];
@@ -171,7 +170,7 @@ namespace PuppetMaster
         private void freeze_click(object sender, EventArgs e)
         {
             string serverID = this.processBox.Text;
-            if (!String.IsNullOrEmpty(serverID) && this.processes.Contains(serverID))
+            if (!string.IsNullOrEmpty(serverID) && this.processes.Contains(serverID))
             {
                 // Verificar se é um metadata server or data server (apenas data servers podem fazer freeze)
                 IDataServerToPM server = (IDataServerToPM)this.processes[serverID];
@@ -191,11 +190,11 @@ namespace PuppetMaster
             string readq = this.readQuorumBox.Text;
             string writeq = this.writeQuorumBox.Text;
 
-            if (!String.IsNullOrEmpty(fileName) 
-                && !String.IsNullOrEmpty(nbData)
-                && !String.IsNullOrEmpty(readq) 
-                && !String.IsNullOrEmpty(writeq)
-                && !String.IsNullOrEmpty(clientID) 
+            if (!string.IsNullOrEmpty(fileName)
+                && !string.IsNullOrEmpty(nbData)
+                && !string.IsNullOrEmpty(readq)
+                && !string.IsNullOrEmpty(writeq)
+                && !string.IsNullOrEmpty(clientID)
                 && this.processes.Contains(clientID))
             {
                 IClientToPM client = (IClientToPM)this.processes[clientID];
@@ -211,7 +210,7 @@ namespace PuppetMaster
         {
             string clientID = this.processBox.Text;
             string fileName = this.filenameBox.Text;
-            if (!String.IsNullOrEmpty(clientID) && !String.IsNullOrEmpty(fileName) && this.processes.Contains(clientID))
+            if (!string.IsNullOrEmpty(clientID) && !string.IsNullOrEmpty(fileName) && this.processes.Contains(clientID))
             {
                 IClientToPM client = (IClientToPM)this.processes[clientID];
                 client.Open(fileName);
@@ -226,7 +225,7 @@ namespace PuppetMaster
         {
             string clientID = this.processBox.Text;
             string fileName = this.filenameBox.Text;
-            if (!String.IsNullOrEmpty(clientID) && !String.IsNullOrEmpty(fileName) && this.processes.Contains(clientID))
+            if (!string.IsNullOrEmpty(clientID) && !string.IsNullOrEmpty(fileName) && this.processes.Contains(clientID))
             {
                 IClientToPM client = (IClientToPM)this.processes[clientID];
                 client.Delete(fileName);
@@ -241,7 +240,7 @@ namespace PuppetMaster
         {
             string clientID = this.processBox.Text;
             string fileName = this.filenameBox.Text;
-            if (!String.IsNullOrEmpty(clientID) && !String.IsNullOrEmpty(fileName) && this.processes.Contains(clientID))
+            if (!string.IsNullOrEmpty(clientID) && !string.IsNullOrEmpty(fileName) && this.processes.Contains(clientID))
             {
                 IClientToPM client = (IClientToPM)this.processes[clientID];
                 client.Close(fileName);
@@ -258,8 +257,8 @@ namespace PuppetMaster
             string port = this.portBox.Text;
 
             // falta verificar se a porta já está a ser usada
-            if (!String.IsNullOrEmpty(id) 
-                && !String.IsNullOrEmpty(port)
+            if (!string.IsNullOrEmpty(id)
+                && !string.IsNullOrEmpty(port)
                 && !this.portsUsed.Contains(port)
                 && !this.processes.Contains(id))
             {
@@ -289,7 +288,7 @@ namespace PuppetMaster
                 setStatus("[ERROR] Empty Process ID or Port, Port already in use, or process already created");
             }
         }
-        
+
         private void StartMetadata(string id, string port)
         {
             Process.Start("MetadataServer.exe", id + " " + port);
@@ -360,45 +359,60 @@ namespace PuppetMaster
                 }
 
                 // FALTA TRATAR LINHAS VAZIAS
-                if (String.IsNullOrEmpty(line)) { }
+                if (string.IsNullOrEmpty(line)) { }
 
                 // PARSER
                 string[] steps = line.Split(new string[] { "\n", " ", "," }, StringSplitOptions.None);
 
-                if (steps[0].First() != '#')
+                if (!string.IsNullOrEmpty(steps[0]))
                 {
-                    switch (steps[0])
+                    if (steps[0].First() != '#')
                     {
-                        // RUN PROCESS ID PORT
-                        case "RUN":
-                            {
-                                switch (steps[1])
+                        switch (steps[0])
+                        {
+                            // RUN PROCESS ID PORT
+                            case "RUN":
                                 {
-                                    case "METADATA":
+                                    if (steps.Length == 4)
+                                    {
+                                        switch (steps[1])
                                         {
-                                            StartMetadata(steps[2], steps[3]);
-                                            return;
+                                            case "METADATA":
+                                                {
+                                                    StartMetadata(steps[2], steps[3]);
+                                                    return;
+                                                }
+                                            case "DATASERVER":
+                                                {
+                                                    StartDataServer(steps[2], steps[3]);
+                                                    return;
+                                                }
+                                            case "CLIENT":
+                                                {
+                                                    StartClient(steps[2], steps[3]);
+                                                    return;
+                                                }
+                                            default: break;
                                         }
-                                    case "DATASERVER":
-                                        {
-                                            StartDataServer(steps[2], steps[3]);
-                                            return;
-                                        }
-                                    case "CLIENT":
-                                        {
-                                            StartClient(steps[2], steps[3]);
-                                            return;
-                                        }
-                                    default: break;
+                                    }
+                                    break;
                                 }
-                                break;
-                            }
-                        default: break;
+                            // CREATE ID FILENAME NBDATASERVERS READQ WRITEQ
+                            case "CREATE":
+                                {
+                                    if (steps.Length == 4)
+                                    {
+                                        string id = steps[1];
+                                    }
+                                    break;
+                                }
+                            default: break;
+                        }
+
+                        setStatus("[ERROR] Invalid Script at line " + lineNumber);
+                        return;
                     }
                 }
-
-                setStatus("[ERROR] Invalid Script at line " + lineNumber);
-                return;
             }
             else
             {
