@@ -14,19 +14,16 @@ using SharedLibrary.Interfaces;
 
 namespace MetadataServer
 {
-    class MetadataServerProcess : MarshalByRefObject, IMetadataServerToClient, IServerToPM, IMetadataServerToDataServer
+    class MetadataServerProcess : MarshalByRefObject, IMetadataServerToClient, IMetadataServerToPM, IMetadataServerToDataServer
     {
         private static string metadataStartedTemplate = "Metadata Server {0} has started.";
         private static Dictionary<string, FileMetadata> fileMetadataTable = new Dictionary<string, FileMetadata>();
         private static Dictionary<string, IDataServerToMetadataServer> dataServers = new Dictionary<string, IDataServerToMetadataServer>();
+        private static Dictionary<string, IMetadataServerToMetadadataServer> metadataReplicas = new Dictionary<string, IMetadataServerToMetadadataServer>();
         private static List<string> clients = new List<string>();
         private static string metadataServerName;
         private static int metadataServerPort;
-
-        public bool hasFile(string fileName)
-        {
-            return fileMetadataTable.ContainsKey(fileName);
-        }
+        private static bool iAmPrimary = false;
 
         public static void Main(string[] args)
         {
@@ -48,11 +45,22 @@ namespace MetadataServer
             System.Console.ReadLine();
         }
 
+        public bool HasFile(string fileName)
+        {
+            return fileMetadataTable.ContainsKey(fileName);
+        }
+
+        public void SetPrimaryMetadata(bool primary)
+        {
+            Console.WriteLine("SET PRIMARY METADATA");
+            iAmPrimary = primary;
+        }
+
         public FileMetadata Open(string fileName)
         {
             Console.WriteLine("OPEN METADATA FILE " + fileName);
 
-            if (!hasFile(fileName))
+            if (!HasFile(fileName))
                 throw new FileDoesNotExistException(fileName);
 
             return fileMetadataTable[fileName];
@@ -63,7 +71,7 @@ namespace MetadataServer
         {
             Console.WriteLine("CLOSE METADATA FILE " + fileName);
 
-            if (!hasFile(fileName))
+            if (!HasFile(fileName))
                 throw new FileDoesNotExistException(fileName);
         }
 
@@ -114,7 +122,7 @@ namespace MetadataServer
             Console.WriteLine("CREATE METADATA FILE");
             Console.WriteLine("FILENAME: " + fileName + " NBDATASERVERS: " + nbDataServers + " READQUORUM: " + readQuorum + " WRITEQUORUM: " + writeQuorum);
 
-            if (hasFile(fileName))
+            if (HasFile(fileName))
                 throw new FileAlreadyExistsException(fileName);
 
             //Select Data Servers For File Placement
@@ -129,7 +137,7 @@ namespace MetadataServer
         {
             Console.WriteLine("DELETE METADATA FILE " + fileName);
 
-            if (!hasFile(fileName))
+            if (!HasFile(fileName))
                 throw new FileDoesNotExistException(fileName);
 
             //Missing: verificar se o ficheiro está a ser utilizado por outro cliente? 
@@ -176,7 +184,6 @@ namespace MetadataServer
 
             IDataServerToMetadataServer data = (IDataServerToMetadataServer)Activator.GetObject(typeof(IDataServerToMetadataServer), urlLocation);
             dataServers.Add(dataServerName, data);
-
             return true;
         }
 

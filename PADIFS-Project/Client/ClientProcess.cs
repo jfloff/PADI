@@ -41,7 +41,7 @@ namespace Client
 
             Console.WriteLine(string.Format(clientStartedTemplate,clientName));
 
-            openedFilesMetadata = new Dictionary<string, FileMetadata>(Config.MAX_FILE_REGISTERS);
+            openedFilesMetadata = new Dictionary<string, FileMetadata>(Helper.MAX_FILE_REGISTERS);
             metadataServers = new List<IMetadataServerToClient>();
 
             System.Console.ReadLine();

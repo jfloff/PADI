@@ -96,7 +96,7 @@ namespace DataServer
 
             //Notify Primary Metadata Server
             Tuple<IMetadataServerToDataServer, string> metadataServerTuple = metadataServers.First();
-            if (!metadataServerTuple.Item1.RegisterDataServer(dataServerName, string.Format(Config.URL, dataServerPort, dataServerName)))
+            if (!metadataServerTuple.Item1.RegisterDataServer(dataServerName, Helper.GetUrlTemplate(dataServerName, dataServerPort)))
                 throw new CouldNotRegistOnMetadataServer(dataServerName);
         }
     }

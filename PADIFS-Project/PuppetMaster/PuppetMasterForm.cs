@@ -289,15 +289,21 @@ namespace PuppetMaster
                 setStatus("[ERROR] Empty Process ID or Port, Port already in use, or process already created");
             }
         }
-        
+
         private void StartMetadata(string id, string port)
         {
             Process.Start("MetadataServer.exe", id + " " + port);
             string urlLocation = string.Format(urlTemplate, port, id);
-            IServerToPM metadata = (IServerToPM)Activator.GetObject(typeof(IServerToPM), urlLocation);
+            IMetadataServerToPM metadata = (IMetadataServerToPM)Activator.GetObject(typeof(IMetadataServerToPM), urlLocation);
             this.processes.Add(id, metadata);
             this.metadataServersLocation.Add(urlLocation);
             setStatus("Created Metadata with id " + id + " at port " + port);
+
+            //MODIFIED
+            if (this.metadataServersLocation.Count == 0)
+                metadata.SetPrimaryMetadata(true);
+            else
+                metadata.SetPrimaryMetadata(false);
         }
 
         private void StartDataServer(string id, string port)

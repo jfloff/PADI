@@ -6,9 +6,8 @@ using System.Threading.Tasks;
 
 namespace SharedLibrary.Interfaces
 {
-    public interface IServerToPM
+    public interface IMetadataServerToMetadadataServer
     {
-        void Fail();
-        void Recover();
+        void Heartbeat();
     }
 }

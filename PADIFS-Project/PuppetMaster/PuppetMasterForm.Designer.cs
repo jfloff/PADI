@@ -577,9 +577,9 @@
             // 
             this.statusStrip.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.statusStripLabel});
-            this.statusStrip.Location = new System.Drawing.Point(0, 698);
+            this.statusStrip.Location = new System.Drawing.Point(0, 687);
             this.statusStrip.Name = "statusStrip";
-            this.statusStrip.Size = new System.Drawing.Size(187, 22);
+            this.statusStrip.Size = new System.Drawing.Size(200, 22);
             this.statusStrip.TabIndex = 61;
             this.statusStrip.Text = "statusStrip";
             // 
@@ -593,6 +593,7 @@
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.AutoScroll = true;
             this.ClientSize = new System.Drawing.Size(187, 720);
             this.Controls.Add(this.statusStrip);
             this.Controls.Add(this.scriptBox);
