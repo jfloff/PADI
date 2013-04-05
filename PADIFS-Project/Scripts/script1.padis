@@ -1,0 +1,15 @@
+# PADI-FS, PADI Project 2012-13
+# Sample script
+# This script is used as input for the EXESCRIPT command
+# at the end of the sample_script_syntax.txt and
+# sample_script_checkpoint.txt script file.
+# The client may ignore the PROCESS parameter in all commands.
+CREATE c-1, f3, 2, 2, 2
+# The following DUMP command only has to display information 
+# on the client's console
+DUMP c-1
+OPEN c-1, f3
+READ c-1, 2, default, 1
+WRITE c-1, 2, "Text from the EXESCRIPT."
+CLOSE c-1, f3
+DUMP c-1

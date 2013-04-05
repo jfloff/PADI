@@ -29,7 +29,7 @@ namespace PuppetMaster
         {
             Process.Start("MetadataServer.exe", id + " " + port);
             string urlLocation = Helper.GetUrlTemplate(id, port);
-            IServerToPM metadata = (IServerToPM)Activator.GetObject(typeof(IServerToPM), urlLocation);
+            IMetadataServerToPM metadata = (IMetadataServerToPM)Activator.GetObject(typeof(IMetadataServerToPM), urlLocation);
             processes.Add(id, metadata);
             metadataServersLocation.Add(urlLocation);
             metadata.SetPrimaryMetadata((metadataServersLocation.Count == 0));
