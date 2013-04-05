@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
@@ -39,6 +39,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Helper.cs" />
     <Compile Include="Exceptions\NotEnoughDataServersException.cs" />
     <Compile Include="Exceptions\CouldNotRegistOnMetadataServer.cs" />
     <Compile Include="Exceptions\FileAlreadyExistsException.cs" />
@@ -46,20 +47,17 @@
     <Compile Include="Exceptions\FileDoesNotExistException.cs" />
     <Compile Include="Entities\FileMetadata.cs" />
     <Compile Include="Entities\Heartbeat.cs" />
-    <Compile Include="Helper.cs" />
     <Compile Include="Interfaces\IClientToPM.cs" />
     <Compile Include="Interfaces\IDataServerToClient.cs" />
     <Compile Include="Interfaces\IDataServerToMetadataServer.cs" />
     <Compile Include="Interfaces\IDataServerToPM.cs" />
     <Compile Include="Interfaces\IMetadataServerToClient.cs" />
     <Compile Include="Interfaces\IMetadataServerToDataServer.cs" />
-    <Compile Include="Interfaces\IMetadataServerToMetadata.cs" />
-    <Compile Include="Interfaces\IMetadataServerToPM.cs" />
     <Compile Include="Interfaces\IServerToPM.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
-  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it.
        Other similar extension points exist, see Microsoft.Common.targets.
   <Target Name="BeforeBuild">
   </Target>

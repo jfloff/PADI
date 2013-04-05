@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -13,7 +13,7 @@ namespace SharedLibrary
 
         public static string GetUrlTemplate(string id, int port)
         {
-            return string.Format(URL_TEMPLATE, id, port);
+            return string.Format(URL_TEMPLATE, port, id);
         }
     }
 }
