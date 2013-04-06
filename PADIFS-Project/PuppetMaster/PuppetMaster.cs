@@ -12,18 +12,11 @@ namespace PuppetMaster
 {
     public class PuppetMaster
     {
-        private static Hashtable processes = new Hashtable();
+        private static int port = 1;
+
+        private static Dictionary<string, IProcessToPM> processes = new Dictionary<string, IProcessToPM>();
         private static List<string> metadataServersLocation = new List<string>();
         private static List<int> portsUsed = new List<int>();
-
-        public static bool idUsed(string id)
-        {
-            return processes.ContainsKey(id);
-        }
-        public static bool portUsed(int port)
-        {
-            return portsUsed.Contains(port);
-        }
 
         public static void StartMetadata(string id, int port)
         {
@@ -38,7 +31,7 @@ namespace PuppetMaster
         public static void StartDataServer(string id, int port)
         {
             Process.Start("DataServer.exe", id + " " + port);
-            IDataServerToPM dataServer = (IDataServerToPM) Activator.GetObject(
+            IDataServerToPM dataServer = (IDataServerToPM)Activator.GetObject(
                 typeof(IDataServerToPM),
                 Helper.GetUrlTemplate(id, port)
             );
@@ -57,52 +50,99 @@ namespace PuppetMaster
             client.ReceiveMetadataServersLocations(metadataServersLocation);
         }
 
+        private static IProcessToPM GetProcess(string id)
+        {
+            if (!processes.ContainsKey(id))
+            {
+                switch (id.First())
+                {
+                    default: break;
+                    case 'm': StartMetadata(id, port++); break;
+                    case 'd': StartDataServer(id, port++); break;
+                    case 'c': StartClient(id, port++); break;
+                }
+            }
+
+            return processes[id];
+        }
+
         public static void CloseFile(string id, string filename)
         {
-            IClientToPM client = (IClientToPM)processes[id];
+            IClientToPM client = (IClientToPM)GetProcess(id);
             client.Close(filename);
         }
 
         public static void DeleteFile(string id, string filename)
         {
-            IClientToPM client = (IClientToPM)  processes[id];
+            IClientToPM client = (IClientToPM)GetProcess(id);
             client.Delete(filename);
         }
 
         public static void OpenFile(string id, string filename)
         {
-            IClientToPM client = (IClientToPM) processes[id];
+            IClientToPM client = (IClientToPM)GetProcess(id);
             client.Open(filename);
         }
 
         public static void CreateFile(string id, string filename, int nbData, int readq, int writeq)
         {
-            IClientToPM client = (IClientToPM) processes[id];
+            IClientToPM client = (IClientToPM)GetProcess(id);
             client.Create(filename, nbData, readq, writeq);
         }
 
         public static void FailProcess(string id)
         {
-            IServerToPM server = (IServerToPM) processes[id];
+            IServerToPM server = (IServerToPM)GetProcess(id);
             server.Fail();
         }
 
         public static void RecoverProcess(string id)
         {
-            IServerToPM server = (IServerToPM)processes[id];
+            IServerToPM server = (IServerToPM)GetProcess(id);
             server.Fail();
         }
 
         public static void UnfreezeProcess(string id)
         {
-             IDataServerToPM server = (IDataServerToPM) processes[id];
-             server.Unfreeze();
+            IDataServerToPM server = (IDataServerToPM)GetProcess(id);
+            server.Unfreeze();
         }
 
         public static void FreezeProcess(string id)
         {
-            IDataServerToPM server = (IDataServerToPM) processes[id];
+            IDataServerToPM server = (IDataServerToPM)GetProcess(id);
             server.Freeze();
+        }
+
+        public static void ReadFile(string id, int fileRegister, string semantic, int stringRegister)
+        {
+            int semanticId = getSemanticId(semantic);
+        }
+
+        public static void WriteFile(string id, int fileRegister, int byteArrayRegister)
+        {
+            if (!processes.ContainsKey(id)) StartClient(id, port++);
+        }
+
+        public static void WriteFile(string id, int fileRegister, string contents)
+        {
+            if (!processes.ContainsKey(id)) StartClient(id, port++);
+        }
+
+        public static void CopyFile(string id, int fileRegister1, string semantic, int fileRegister2, string salt)
+        {
+            int semanticId = getSemanticId(semantic);
+        }
+
+        public static void DumpProcess(string id)
+        {
+            IProcessToPM process = (IProcessToPM)GetProcess(id);
+            process.Dump();
+        }
+
+        private static int getSemanticId(string semantic)
+        {
+            return (semantic.Equals("monotonic")) ? Helper.MONOTONIC : Helper.DEFAULT;
         }
     }
 }

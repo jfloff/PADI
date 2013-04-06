@@ -187,5 +187,14 @@ namespace MetadataServer
             return true;
         }
 
+        public void Dump()
+        {
+            System.Console.WriteLine("DUMP PROCESS");
+        }
+
+        public void ReceiveMetadataServersLocations(List<string> metadataServerList)
+        {
+            System.Console.WriteLine("RECEIVE METADATA LOCATIONS");
+        }
     }
 }

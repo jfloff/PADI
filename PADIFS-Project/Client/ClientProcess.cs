@@ -161,5 +161,10 @@ namespace Client
             IDataServerToClient data = (IDataServerToClient)Activator.GetObject(typeof(IDataServerToClient), "tcp://localhost:9/d-1");
             data.Write();
         }
+
+        public void Dump()
+        {
+            System.Console.WriteLine("DUMP PROCESS");
+        }
     }
 }

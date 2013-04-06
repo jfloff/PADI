@@ -5,7 +5,7 @@
 # sample_script_checkpoint.txt script file.
 # The client may ignore the PROCESS parameter in all commands.
 CREATE c-1, f3, 2, 2, 2
-# The following DUMP command only has to display information 
+# The following DUMP command only has to display information
 # on the client's console
 DUMP c-1
 OPEN c-1, f3

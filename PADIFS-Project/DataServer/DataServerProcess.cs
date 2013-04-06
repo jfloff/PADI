@@ -99,5 +99,10 @@ namespace DataServer
             if (!metadataServerTuple.Item1.RegisterDataServer(dataServerName, Helper.GetUrlTemplate(dataServerName, dataServerPort)))
                 throw new CouldNotRegistOnMetadataServer(dataServerName);
         }
+
+        public void Dump()
+        {
+            System.Console.WriteLine("DUMP PROCESS");
+        }
     }
 }

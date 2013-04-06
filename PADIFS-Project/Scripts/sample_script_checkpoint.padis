@@ -1,13 +1,13 @@
 # PADI-FS, PADI Project 2012-13
 # Sample script
-# This script should be executable by all projects that complete 
+# This script should be executable by all projects that complete
 # the checkpoint.
-# First start a metadata server. 
+# First start a metadata server.
 # The first command to any node starts it!
 UNFREEZE m-1
 # Start a data server
 UNFREEZE d-1
-# Start a client and create a file f1 with 2 data servers and 
+# Start a client and create a file f1 with 2 data servers and
 # read and write quora of 1
 CREATE c-1, f1, 2, 1, 1
 # another file

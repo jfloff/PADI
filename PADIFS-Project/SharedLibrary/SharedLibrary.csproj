@@ -48,6 +48,7 @@
     <Compile Include="Entities\FileMetadata.cs" />
     <Compile Include="Entities\Heartbeat.cs" />
     <Compile Include="Interfaces\IClientToPM.cs" />
+    <Compile Include="Interfaces\IProcessToPM.cs" />
     <Compile Include="Interfaces\IDataServerToClient.cs" />
     <Compile Include="Interfaces\IDataServerToMetadataServer.cs" />
     <Compile Include="Interfaces\IDataServerToPM.cs" />

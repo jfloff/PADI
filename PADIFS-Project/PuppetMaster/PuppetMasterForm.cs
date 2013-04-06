@@ -19,7 +19,6 @@ namespace PuppetMaster
 {
     public partial class PuppetMasterForm : Form
     {
-        private bool flagDataServer = false;
         private bool flagMetadata = false;
 
         private int currentScriptLine = -1;
@@ -75,7 +74,6 @@ namespace PuppetMaster
             this.failButton.Visible = toggle;
             this.recoverButton.Visible = toggle;
             this.processBox.Mask = "m-0";
-            this.startButton.Enabled = !flagDataServer;
         }
 
         private void ToggleDataServerElements(bool toggle)
@@ -236,7 +234,6 @@ namespace PuppetMaster
                     case DATASERVER:
                         {
                             PuppetMaster.StartDataServer(id, port);
-                            flagDataServer = true;
                             SetStatus("Created Data Server with id " + id + " at port " + port);
                             break;
                         }
@@ -311,24 +308,15 @@ namespace PuppetMaster
 
         private bool CheckPort()
         {
-            int port;
-
             try
             {
-                port = Convert.ToInt32(this.portBox.Text);
+                Convert.ToInt32(this.portBox.Text);
             }
             catch (Exception)
             {
                 SetStatus("[ERROR] Port is invalid");
                 return false;
             }
-
-            if (PuppetMaster.portUsed(port))
-            {
-                SetStatus("[ERROR] Port already in used");
-                return false;
-            }
-
             return true;
         }
 
@@ -337,12 +325,6 @@ namespace PuppetMaster
             if (string.IsNullOrEmpty(this.processBox.Text))
             {
                 SetStatus("[ERROR] Process Id is Empty");
-                return false;
-            }
-
-            if (PuppetMaster.idUsed(this.processBox.Text))
-            {
-                SetStatus("[ERROR] Id already in used");
                 return false;
             }
 
@@ -388,6 +370,7 @@ namespace PuppetMaster
 
             int lineNumber = ++currentScriptLine;
 
+            string text = this.scriptBox.Text;
             int start = this.scriptBox.GetFirstCharIndexFromLine(lineNumber);
             int length = this.scriptBox.Lines[lineNumber].Length;
             this.scriptBox.Select(start, length);
@@ -401,61 +384,29 @@ namespace PuppetMaster
                 length = this.scriptBox.Lines[previousLine].Length;
                 this.scriptBox.Select(start, length);
                 this.scriptBox.SelectionBackColor = Color.Green;
+
+                string lineToRun = this.scriptBox.SelectedText;
+                readCommand(lineToRun, previousLine);
             }
+        }
 
-            string lineToRun = this.scriptBox.SelectedText;
-
+        private void readCommand(string lineToRun, int lineNumber){
+            
             if (string.IsNullOrEmpty(lineToRun)) return;
 
             // PARSER
-            string[] steps = lineToRun.Split(new string[] { "\n", " ", "," }, StringSplitOptions.None);
+            string[] steps = lineToRun.Split(new char[] { '\n', ' ', ',' }, StringSplitOptions.RemoveEmptyEntries);
 
             if (string.IsNullOrEmpty(steps[0]) || steps[0].First() == '#') return;
 
             switch (steps[0])
             {
-                // RUN PROCESS ID PORT
-                case "RUN":
-                    {
-                        if (steps.Length != 4)
-                        {
-                            SetStatus("[ERROR] Invalid Script at line " + previousLine);
-                            return;
-                        }
-                        string id = steps[2];
-                        int port = Convert.ToInt32(steps[3]);
-                        switch (steps[1])
-                        {
-                            case "METADATA":
-                                {
-                                    PuppetMaster.StartMetadata(id, port);
-                                    SetStatus("Created Metadata with id " + id + " at port " + port);
-                                    return;
-                                }
-                            case "DATASERVER":
-                                {
-                                    PuppetMaster.StartDataServer(id, port);
-                                    SetStatus("Created Data Server with id " + id + " at port " + port);
-                                    return;
-                                }
-                            case "CLIENT":
-                                {
-                                    PuppetMaster.StartClient(id, port);
-                                    SetStatus("Created Data Server with id " + id + " at port " + port);
-                                    return;
-                                }
-                            default: break;
-                        }
-
-                        break;
-                    }
-
                 // CREATE ID FILENAME NBDATASERVERS READQ WRITEQ
                 case "CREATE":
                     {
                         if (steps.Length != 6)
                         {
-                            SetStatus("[ERROR] Invalid Script at line " + previousLine);
+                            SetStatus("[ERROR] Invalid Script at line " + lineNumber);
                             return;
                         }
 
@@ -474,7 +425,7 @@ namespace PuppetMaster
                     {
                         if (steps.Length != 3)
                         {
-                            SetStatus("[ERROR] Invalid Script at line " + previousLine);
+                            SetStatus("[ERROR] Invalid Script at line " + lineNumber);
                             return;
                         }
 
@@ -489,7 +440,7 @@ namespace PuppetMaster
                     {
                         if (steps.Length != 3)
                         {
-                            SetStatus("[ERROR] Invalid Script at line " + previousLine);
+                            SetStatus("[ERROR] Invalid Script at line " + lineNumber);
                             return;
                         }
 
@@ -504,7 +455,7 @@ namespace PuppetMaster
                     {
                         if (steps.Length != 3)
                         {
-                            SetStatus("[ERROR] Invalid Script at line " + previousLine);
+                            SetStatus("[ERROR] Invalid Script at line " + lineNumber);
                             return;
                         }
 
@@ -519,7 +470,7 @@ namespace PuppetMaster
                     {
                         if (steps.Length != 2)
                         {
-                            SetStatus("[ERROR] Invalid Script at line " + previousLine);
+                            SetStatus("[ERROR] Invalid Script at line " + lineNumber);
                             return;
                         }
 
@@ -533,7 +484,7 @@ namespace PuppetMaster
                     {
                         if (steps.Length != 2)
                         {
-                            SetStatus("[ERROR] Invalid Script at line " + previousLine);
+                            SetStatus("[ERROR] Invalid Script at line " + lineNumber);
                             return;
                         }
 
@@ -547,7 +498,7 @@ namespace PuppetMaster
                     {
                         if (steps.Length != 2)
                         {
-                            SetStatus("[ERROR] Invalid Script at line " + previousLine);
+                            SetStatus("[ERROR] Invalid Script at line " + lineNumber);
                             return;
                         }
 
@@ -561,7 +512,7 @@ namespace PuppetMaster
                     {
                         if (steps.Length != 2)
                         {
-                            SetStatus("[ERROR] Invalid Script at line " + previousLine);
+                            SetStatus("[ERROR] Invalid Script at line " + lineNumber);
                             return;
                         }
 
@@ -570,13 +521,111 @@ namespace PuppetMaster
                         break;
                     }
 
+                // READ ID FILE REGISTER SEMANTICS STRING-REGISTER
+                case "READ":
+                    {
+                        if (steps.Length != 5)
+                        {
+                            SetStatus("[ERROR] Invalid Script at line " + lineNumber);
+                            return;
+                        }
+
+                        string id = steps[1];
+                        int fileRegister = Convert.ToInt32(steps[2]);
+                        string semantic = steps[3];
+                        int stringRegister = Convert.ToInt32(steps[4]);
+
+                        PuppetMaster.ReadFile(id, fileRegister, semantic, stringRegister);
+                        break;
+                    }
+
+                // WRITE ID FILE-REGISTER BYTE-ARRAY-REGISTER
+                // WRITE ID FILE-REGISTER CONTENTS
+                case "WRITE":
+                    {
+                        if (steps.Length != 4)
+                        {
+                            SetStatus("[ERROR] Invalid Script at line " + lineNumber);
+                            return;
+                        }
+
+                        string id = steps[1];
+                        int fileRegister = Convert.ToInt32(steps[2]);
+                        string contents = steps[3];
+                        string parsedContents;
+
+                        if (contents.First() != '"'){
+                            parsedContents = contents.Substring(1,contents.Length-1);
+                            PuppetMaster.WriteFile(id, fileRegister, Convert.ToInt32(contents));
+                            return;
+                        }
+                        parsedContents = contents.Substring(1,contents.Length-1);
+                        PuppetMaster.WriteFile(id, fileRegister, contents);
+                        break;
+                    }
+
+                // COPY ID FILE-REGISTER-1 SEMANTICS FILE-REGISTER-2 SALT
+                case "COPY":
+                    {
+                        if (steps.Length != 6)
+                        {
+                            SetStatus("[ERROR] Invalid Script at line " + lineNumber);
+                            return;
+                        }
+
+                        string id = steps[1];
+                        int fileRegister1 = Convert.ToInt32(steps[2]);
+                        int fileRegister2 = Convert.ToInt32(steps[4]);
+                        string semantic = steps[3];
+                        string salt = steps[5];
+
+                        PuppetMaster.CopyFile(id, fileRegister1, semantic, fileRegister2, salt);
+                        break;
+                    }
+
+                // DUMP ID
+                case "DUMP":
+                    {
+                        if (steps.Length != 2)
+                        {
+                            SetStatus("[ERROR] Invalid Script at line " + lineNumber);
+                            return;
+                        }
+
+                        string id = steps[1];
+                        PuppetMaster.DumpProcess(id);
+                        break;
+                    }
+
+                // EXESCRIPT ID FILENAME
+                case "EXESCRIPT":
+                    {
+                        if (steps.Length != 3)
+                        {
+                            SetStatus("[ERROR] Invalid Script at line " + lineNumber);
+                            return;
+                        }
+
+                        string id = steps[1];
+                        string filename = steps[2];
+
+                        string path = Application.StartupPath.Remove(Application.StartupPath.Length - 22) + "Scripts\\";
+
+                        int linenumber = 0;
+                        foreach (string line in File.ReadLines(path + filename))
+                        {
+                            readCommand(line, linenumber++);
+                        }
+
+                        break;
+                    }
+
                 default:
                     {
-                        SetStatus("[ERROR] Invalid Script at line " + previousLine);
+                        SetStatus("[ERROR] Invalid Script at line " + lineNumber);
                         return;
                     }
-            }
-        }
+            }}
 
         private void ProcessBoxMaskInputRejected(object sender, MaskInputRejectedEventArgs e)
         {
