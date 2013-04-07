@@ -70,7 +70,9 @@ namespace Metadata
         {
             while (true)
             {
-                Thread.Sleep(Helper.PING_INTERVAL);
+                // if in fail doesn't ping anyone either
+                while (fail) Thread.Sleep(Helper.PING_INTERVAL);
+
                 List<string> pings = new List<string>();
                 foreach (var entry in metadatas)
                 {
@@ -86,6 +88,7 @@ namespace Metadata
                 pings.Add(Metadata.id);
                 primary = pings.Min();
                 Console.WriteLine("PRIMARY = " + primary);
+                Thread.Sleep(Helper.PING_INTERVAL);
             }
         }
 

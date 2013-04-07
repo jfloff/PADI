@@ -365,16 +365,23 @@ namespace PuppetMaster
             this.currentScriptLine = -1;
             for (int i = 0; i < lines; i++)
             {
-                this.NextStepScriptButtonClick(null, null);
+                // if breakpoint found
+                if (NextStep()) break;
             }
         }
 
         private void NextStepScriptButtonClick(object sender, EventArgs e)
         {
+            NextStep();
+        }
+
+        // returns true if break point
+        private bool NextStep()
+        {
             if (this.scriptBox.Lines.Length < 0 || this.currentScriptLine > this.scriptBox.Lines.Length - 1)
             {
                 ++currentScriptLine;
-                return;
+                return false;
             }
 
             int lineNumber = ++currentScriptLine;
@@ -395,18 +402,29 @@ namespace PuppetMaster
                 this.scriptBox.SelectionBackColor = Color.Green;
 
                 string lineToRun = this.scriptBox.SelectedText;
-                readCommand(lineToRun, previousLine);
+                return ReadCommand(lineToRun, previousLine);
             }
+
+            return false;
         }
 
-        private void readCommand(string lineToRun, int lineNumber){
+        // returns true if break point
+        private bool ReadCommand(string lineToRun, int lineNumber){
             
-            if (string.IsNullOrEmpty(lineToRun)) return;
+            if (string.IsNullOrEmpty(lineToRun)) return false;
 
             // PARSER
             string[] steps = lineToRun.Split(new char[] { '\n', ' ', ',' }, StringSplitOptions.RemoveEmptyEntries);
 
-            if (string.IsNullOrEmpty(steps[0]) || steps[0].First() == '#') return;
+            if (string.IsNullOrEmpty(steps[0])) return false;
+
+            if (steps[0].First() == '#')
+            {
+                if (steps[0].Length == 2 && steps[0].Substring(0,2) == "#!") 
+                    return true;
+
+                return false;
+            } 
 
             switch (steps[0])
             {
@@ -416,7 +434,7 @@ namespace PuppetMaster
                         if (steps.Length != 6)
                         {
                             SetStatus("[ERROR] Invalid Script at line " + lineNumber);
-                            return;
+                            return false;
                         }
 
                         string id = steps[1];
@@ -435,7 +453,7 @@ namespace PuppetMaster
                         if (steps.Length != 3)
                         {
                             SetStatus("[ERROR] Invalid Script at line " + lineNumber);
-                            return;
+                            return false;
                         }
 
                         string id = steps[1];
@@ -450,7 +468,7 @@ namespace PuppetMaster
                         if (steps.Length != 3)
                         {
                             SetStatus("[ERROR] Invalid Script at line " + lineNumber);
-                            return;
+                            return false;
                         }
 
                         string id = steps[1];
@@ -465,7 +483,7 @@ namespace PuppetMaster
                         if (steps.Length != 3)
                         {
                             SetStatus("[ERROR] Invalid Script at line " + lineNumber);
-                            return;
+                            return false;
                         }
 
                         string id = steps[1];
@@ -480,7 +498,7 @@ namespace PuppetMaster
                         if (steps.Length != 2)
                         {
                             SetStatus("[ERROR] Invalid Script at line " + lineNumber);
-                            return;
+                            return false;
                         }
 
                         string id = steps[1];
@@ -494,7 +512,7 @@ namespace PuppetMaster
                         if (steps.Length != 2)
                         {
                             SetStatus("[ERROR] Invalid Script at line " + lineNumber);
-                            return;
+                            return false;
                         }
 
                         string id = steps[1];
@@ -508,7 +526,7 @@ namespace PuppetMaster
                         if (steps.Length != 2)
                         {
                             SetStatus("[ERROR] Invalid Script at line " + lineNumber);
-                            return;
+                            return false;
                         }
 
                         string id = steps[1];
@@ -522,7 +540,7 @@ namespace PuppetMaster
                         if (steps.Length != 2)
                         {
                             SetStatus("[ERROR] Invalid Script at line " + lineNumber);
-                            return;
+                            return false;
                         }
 
                         string id = steps[1];
@@ -536,7 +554,7 @@ namespace PuppetMaster
                         if (steps.Length != 5)
                         {
                             SetStatus("[ERROR] Invalid Script at line " + lineNumber);
-                            return;
+                            return false;
                         }
 
                         string id = steps[1];
@@ -555,7 +573,7 @@ namespace PuppetMaster
                         if (steps.Length != 4)
                         {
                             SetStatus("[ERROR] Invalid Script at line " + lineNumber);
-                            return;
+                            return false;
                         }
 
                         string id = steps[1];
@@ -566,7 +584,7 @@ namespace PuppetMaster
                         if (contents.First() != '"'){
                             parsedContents = contents.Substring(1,contents.Length-1);
                             PuppetMaster.WriteFile(id, fileRegister, Convert.ToInt32(contents));
-                            return;
+                            return false;
                         }
                         parsedContents = contents.Substring(1,contents.Length-1);
                         PuppetMaster.WriteFile(id, fileRegister, contents);
@@ -579,7 +597,7 @@ namespace PuppetMaster
                         if (steps.Length != 6)
                         {
                             SetStatus("[ERROR] Invalid Script at line " + lineNumber);
-                            return;
+                            return false;
                         }
 
                         string id = steps[1];
@@ -598,7 +616,7 @@ namespace PuppetMaster
                         if (steps.Length != 2)
                         {
                             SetStatus("[ERROR] Invalid Script at line " + lineNumber);
-                            return;
+                            return false;
                         }
 
                         string id = steps[1];
@@ -612,7 +630,7 @@ namespace PuppetMaster
                         if (steps.Length != 3)
                         {
                             SetStatus("[ERROR] Invalid Script at line " + lineNumber);
-                            return;
+                            return false;
                         }
 
                         string id = steps[1];
@@ -623,7 +641,7 @@ namespace PuppetMaster
                         int linenumber = 0;
                         foreach (string line in File.ReadLines(path + filename))
                         {
-                            readCommand(line, linenumber++);
+                            return ReadCommand(line, linenumber++);
                         }
 
                         break;
@@ -632,9 +650,11 @@ namespace PuppetMaster
                 default:
                     {
                         SetStatus("[ERROR] Invalid Script at line " + lineNumber);
-                        return;
+                        return false;
                     }
             }
+
+            return false;
         }
 
         private void ProcessBoxMaskInputRejected(object sender, MaskInputRejectedEventArgs e)
