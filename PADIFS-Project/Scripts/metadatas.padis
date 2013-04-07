@@ -9,4 +9,5 @@ RECOVER m-3
 # see them ping eachother and say primary is m-1
 
 #! Now lets fail m-1 and see m-2 take its place
+DUMP m-1
 FAIL m-1

@@ -378,7 +378,7 @@ namespace PuppetMaster
         // returns true if break point
         private bool NextStep()
         {
-            if (this.scriptBox.Lines.Length < 0 || this.currentScriptLine > this.scriptBox.Lines.Length - 1)
+            if (this.scriptBox.Lines.Length < 0 || this.currentScriptLine >= (this.scriptBox.Lines.Length - 1))
             {
                 ++currentScriptLine;
                 return false;

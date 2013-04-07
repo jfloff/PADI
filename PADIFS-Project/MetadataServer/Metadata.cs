@@ -160,6 +160,15 @@ namespace Metadata
         public void Dump()
         {
             Console.WriteLine("DUMP");
+            Console.WriteLine("File Metadatas");
+            foreach (var entry in fileMetadataTable)
+            {
+                string filename = entry.Key;
+                FileMetadata fileMetadata = entry.Value;
+
+                Console.WriteLine("  " + id);
+                Console.WriteLine("    " + fileMetadata.ToString());
+            }
         }
 
         public void Fail()
@@ -250,6 +259,8 @@ namespace Metadata
 
         public Heartbeat Heartbeat()
         {
+            if (fail) throw new ProcessDownException(id);
+
             Console.WriteLine("HEARTBEAT");
             return null;
         }

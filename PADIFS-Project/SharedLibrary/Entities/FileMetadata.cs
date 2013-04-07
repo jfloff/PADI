@@ -9,15 +9,16 @@ namespace SharedLibrary.Entities
     [Serializable]
     public class FileMetadata
     {
-        private string fileName;
+        private string filename;
         private int nbDataServers;
         private int readQuorum;
         private int writeQuorum;
+        // dataServer id / local filename
         private Dictionary<string,string> dataServersLocalFiles;
 
-        public FileMetadata(string fileName, int nbDataServers, int readQuorum, int writeQuorum, Dictionary<string, string> dataServersLocalFiles)
+        public FileMetadata(string filename, int nbDataServers, int readQuorum, int writeQuorum, Dictionary<string, string> dataServersLocalFiles)
         {
-            this.fileName = fileName;
+            this.filename = filename;
             this.nbDataServers = nbDataServers;
             this.readQuorum = readQuorum;
             this.writeQuorum = writeQuorum;
@@ -26,8 +27,8 @@ namespace SharedLibrary.Entities
 
         public string FileName
         {
-            get { return this.fileName;  }
-            set { this.fileName = value; }
+            get { return this.filename;  }
+            set { this.filename = value; }
         }
 
         public int NbDataServers
@@ -68,5 +69,23 @@ namespace SharedLibrary.Entities
             return this.dataServersLocalFiles.ContainsKey(dataServerName);
         }
 
+        public string ToString()
+        {
+            string dataServers = "[";
+            foreach (var entry in dataServersLocalFiles)
+            {
+                string dataServerId = entry.Key;
+                string localFilename = entry.Value;
+                dataServers += " (" + dataServerId + "," + localFilename + ")";
+            }
+            dataServers += " ]";
+
+            // missing dataServersLocalFiles
+            return "Filename = " + this.filename + " : "
+                + "NbDataServer = " + this.nbDataServers + " : "
+                + "Read Quorum = " + this.readQuorum + " : "
+                + "Write Quorum = " + this.writeQuorum + " : "
+                + "Data Servers = " + dataServers;
+        }
     }
 }
