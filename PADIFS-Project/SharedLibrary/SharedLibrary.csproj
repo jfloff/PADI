@@ -39,6 +39,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Exceptions\ProcessDownException.cs" />
     <Compile Include="Helper.cs" />
     <Compile Include="Exceptions\NotEnoughDataServersException.cs" />
     <Compile Include="Exceptions\FileAlreadyExistsException.cs" />

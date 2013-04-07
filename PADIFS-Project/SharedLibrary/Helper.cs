@@ -12,6 +12,8 @@ namespace SharedLibrary
         public const int WINDOW_HEIGHT = 5;
         public const int WINDOW_WIDTH = 80;
 
+        public const int PING_INTERVAL = 10000;
+
         public static string GetUrl(string id, int port)
         {
             return string.Format(URL_TEMPLATE, port, id);

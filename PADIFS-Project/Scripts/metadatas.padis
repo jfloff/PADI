@@ -1,0 +1,12 @@
+# This script is suppose to test if all metadatas ping eachother,
+# and if they fail they update the primary
+
+# Launch all metas
+RECOVER m-1
+RECOVER m-2
+RECOVER m-3
+
+# see them ping eachother and say primary is m-1
+
+#! Now lets fail m-1 and see m-2 take its place
+FAIL m-1

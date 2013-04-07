@@ -11,21 +11,23 @@ using System.Runtime.Remoting.Channels;
 using System.Collections;
 using SharedLibrary.Entities;
 using SharedLibrary.Interfaces;
+using System.Threading;
 
 namespace Metadata
 {
     class Metadata : MarshalByRefObject, IMetadataToPM, IMetadataToMetadata, IMetadataToClient, IMetadataToDataServer
     {
-        private static Dictionary<string, FileMetadata> fileMetadataTable 
+        private static Dictionary<string, FileMetadata> fileMetadataTable
             = new Dictionary<string, FileMetadata>();
 
-        private static Dictionary<string, IDataServerToMetadata> dataServers 
+        private static Dictionary<string, IDataServerToMetadata> dataServers
             = new Dictionary<string, IDataServerToMetadata>();
-        private static Dictionary<string, IMetadataToMetadata> metadatas 
+        private static Dictionary<string, IMetadataToMetadata> metadatas
             = new Dictionary<string, IMetadataToMetadata>();
 
-        private static string primary = id;
+        private static string primary;
         private static string id;
+        private static bool fail = false;
 
 
         public static void Main(string[] args)
@@ -35,7 +37,7 @@ namespace Metadata
 
             Console.SetWindowSize(Helper.WINDOW_WIDTH, Helper.WINDOW_HEIGHT);
 
-            id = args[0];
+            id = primary = args[0];
             int port = Convert.ToInt32(args[1]);
 
             TcpChannel channel = new TcpChannel(port);
@@ -45,27 +47,45 @@ namespace Metadata
                 id,
                 WellKnownObjectMode.Singleton);
 
+            // Start pinging the metatadas in a set interval
+            Thread t = new Thread(FindPrimary);
+            t.Start();
+
             Console.WriteLine("Metadata Server " + id + " has started.");
             Console.ReadLine();
         }
+
+        /**
+         * PING / Fault Detection functions
+         */
 
         private bool ImPrimary()
         {
             return (primary == id);
         }
 
-        private void FindPrimary()
+        // Function to run perodically to detect metadatas faults.
+        // Pings all the known metadatas and chooses the lowest id.
+        private static void FindPrimary()
         {
-            foreach (var entry in metadatas)
+            while (true)
             {
-                string id = entry.Key;
-                IMetadataToMetadata metadata = entry.Value;
-
-                metadata.Ping();
-                if (string.Compare(id, primary) < 0)
+                Thread.Sleep(Helper.PING_INTERVAL);
+                List<string> pings = new List<string>();
+                foreach (var entry in metadatas)
                 {
-                    primary = id;
+                    string id = entry.Key;
+                    IMetadataToMetadata metadata = entry.Value;
+                    try
+                    {
+                        metadata.Ping();
+                        pings.Add(id);
+                    }
+                    catch (ProcessDownException e) { }
                 }
+                pings.Add(Metadata.id);
+                primary = pings.Min();
+                Console.WriteLine("PRIMARY = " + primary);
             }
         }
 
@@ -142,11 +162,13 @@ namespace Metadata
         public void Fail()
         {
             Console.WriteLine("FAIL");
+            fail = true;
         }
 
         public void Recover()
         {
             Console.WriteLine("RECOVER");
+            fail = false;
         }
 
         /**
@@ -155,6 +177,8 @@ namespace Metadata
 
         public void Ping()
         {
+            if (fail) throw new ProcessDownException(id);
+
             Console.WriteLine("PING");
         }
 
@@ -164,6 +188,8 @@ namespace Metadata
 
         public FileMetadata Open(string fileName)
         {
+            if (fail) throw new ProcessDownException(id);
+
             Console.WriteLine("OPEN METADATA FILE " + fileName);
 
             if (!HasFile(fileName))
@@ -175,6 +201,8 @@ namespace Metadata
         // recheck
         public void Close(string fileName)
         {
+            if (fail) throw new ProcessDownException(id);
+
             Console.WriteLine("CLOSE METADATA FILE " + fileName);
 
             if (!HasFile(fileName))
@@ -183,8 +211,9 @@ namespace Metadata
 
         public FileMetadata Create(string fileName, int nbDataServers, int readQuorum, int writeQuorum)
         {
-            Console.WriteLine("CREATE METADATA FILE");
-            Console.WriteLine("FILENAME: " + fileName + " NBDATASERVERS: " + nbDataServers + " READQUORUM: " + readQuorum + " WRITEQUORUM: " + writeQuorum);
+            if (fail) throw new ProcessDownException(id);
+
+            Console.WriteLine("CREATE METADATA FILENAME: " + fileName + " NBDATASERVERS: " + nbDataServers + " READQUORUM: " + readQuorum + " WRITEQUORUM: " + writeQuorum);
 
             if (HasFile(fileName))
                 throw new FileAlreadyExistsException(fileName);
@@ -199,6 +228,8 @@ namespace Metadata
 
         public void Delete(string filename)
         {
+            if (fail) throw new ProcessDownException(id);
+
             Console.WriteLine("DELETE METADATA FILE " + filename);
 
             if (!HasFile(filename))
@@ -222,13 +253,15 @@ namespace Metadata
 
         public void RegisterDataServer(string name, string location)
         {
+            if (fail) throw new ProcessDownException(id);
+
             Console.WriteLine("REGISTER DATA SERVER " + name);
 
             if (!dataServers.ContainsKey(name))
             {
                 IDataServerToMetadata data = (IDataServerToMetadata)Activator.GetObject(
-                typeof(IDataServerToMetadata),
-                location);
+                    typeof(IDataServerToMetadata),
+                    location);
                 dataServers.Add(name, data);
             }
         }

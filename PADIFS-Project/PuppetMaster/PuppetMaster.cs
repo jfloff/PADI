@@ -54,9 +54,10 @@ namespace PuppetMaster
             IMetadataToPM metadata = (IMetadataToPM)Activator.GetObject(
                 typeof(IMetadataToPM),
                 location);
-            metadataLocations.Add(id, location);
+            SendMetadataLocations(metadata);
             NewMetadataLocationToProcesses(id, location);
-            // keep as last line to avoid loop in NewMetadataLocationToProcesses
+            // keep as last line to avoid pings to self
+            metadataLocations.Add(id, location);
             processes.Add(id, metadata);
         }
 
