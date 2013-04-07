@@ -625,6 +625,7 @@ namespace PuppetMaster
             this.Name = "PuppetMasterForm";
             this.StartPosition = System.Windows.Forms.FormStartPosition.Manual;
             this.Text = "PuppetMaster";
+            this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.PuppetMasterFormClosing);
             ((System.ComponentModel.ISupportInitialize)(this.stringRegisterNumber)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.fileRegister1Number)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.fileRegister2Number)).EndInit();

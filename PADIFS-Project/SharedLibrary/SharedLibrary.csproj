@@ -41,7 +41,6 @@
   <ItemGroup>
     <Compile Include="Helper.cs" />
     <Compile Include="Exceptions\NotEnoughDataServersException.cs" />
-    <Compile Include="Exceptions\CouldNotRegistOnMetadataServer.cs" />
     <Compile Include="Exceptions\FileAlreadyExistsException.cs" />
     <Compile Include="Entities\FileData.cs" />
     <Compile Include="Exceptions\FileDoesNotExistException.cs" />
@@ -50,12 +49,12 @@
     <Compile Include="Interfaces\IClientToPM.cs" />
     <Compile Include="Interfaces\IProcessToPM.cs" />
     <Compile Include="Interfaces\IDataServerToClient.cs" />
-    <Compile Include="Interfaces\IDataServerToMetadataServer.cs" />
+    <Compile Include="Interfaces\IDataServerToMetadata.cs" />
     <Compile Include="Interfaces\IDataServerToPM.cs" />
-    <Compile Include="Interfaces\IMetadataServerToClient.cs" />
-    <Compile Include="Interfaces\IMetadataServerToDataServer.cs" />
-    <Compile Include="Interfaces\IMetadataServerToMetadata.cs" />
-    <Compile Include="Interfaces\IMetadataServerToPM.cs" />
+    <Compile Include="Interfaces\IMetadataToClient.cs" />
+    <Compile Include="Interfaces\IMetadataToDataServer.cs" />
+    <Compile Include="Interfaces\IMetadataToMetadata.cs" />
+    <Compile Include="Interfaces\IMetadataToPM.cs" />
     <Compile Include="Interfaces\IServerToPM.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

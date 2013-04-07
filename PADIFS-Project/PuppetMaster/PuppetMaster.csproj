@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
@@ -88,9 +88,9 @@
       <Project>{31ae84c4-5151-4fbc-8f74-c4eca184c2c4}</Project>
       <Name>DataServer</Name>
     </ProjectReference>
-    <ProjectReference Include="..\MetadataServer\MetadataServer.csproj">
+    <ProjectReference Include="..\MetadataServer\Metadata.csproj">
       <Project>{efc72fbd-08d3-4bbf-b616-82c48190d652}</Project>
-      <Name>MetadataServer</Name>
+      <Name>Metadata</Name>
     </ProjectReference>
     <ProjectReference Include="..\SharedLibrary\SharedLibrary.csproj">
       <Project>{cb0df71e-e4cc-472d-93ef-b58b7914799d}</Project>

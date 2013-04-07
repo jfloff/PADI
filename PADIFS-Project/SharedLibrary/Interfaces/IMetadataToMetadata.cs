@@ -6,8 +6,8 @@ using System.Threading.Tasks;
 
 namespace SharedLibrary.Interfaces
 {
-    public interface IMetadataServerToPM : IServerToPM
+    public interface IMetadataToMetadata : IMetadataToClient
     {
-        void SetPrimaryMetadata(bool primary);
+        void Ping();
     }
 }

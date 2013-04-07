@@ -42,7 +42,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="ClientProcess.cs" />
+    <Compile Include="Client.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -53,9 +53,9 @@
       <Project>{31ae84c4-5151-4fbc-8f74-c4eca184c2c4}</Project>
       <Name>DataServer</Name>
     </ProjectReference>
-    <ProjectReference Include="..\MetadataServer\MetadataServer.csproj">
+    <ProjectReference Include="..\MetadataServer\Metadata.csproj">
       <Project>{efc72fbd-08d3-4bbf-b616-82c48190d652}</Project>
-      <Name>MetadataServer</Name>
+      <Name>Metadata</Name>
     </ProjectReference>
     <ProjectReference Include="..\SharedLibrary\SharedLibrary.csproj">
       <Project>{cb0df71e-e4cc-472d-93ef-b58b7914799d}</Project>

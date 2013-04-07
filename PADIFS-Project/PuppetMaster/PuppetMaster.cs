@@ -15,39 +15,71 @@ namespace PuppetMaster
         private static int port = 1;
 
         private static Dictionary<string, IProcessToPM> processes = new Dictionary<string, IProcessToPM>();
-        private static List<string> metadataServersLocation = new List<string>();
+        private static Dictionary<string, string> metadataLocations = new Dictionary<string, string>();
         private static List<int> portsUsed = new List<int>();
+
+        private static List<Process> consoles = new List<Process>();
+        public static void KillConsoles()
+        {
+            foreach (Process console in consoles)
+            {
+                console.Kill();
+            }
+        }
+
+        private static void SendMetadataLocations(IProcessToPM process)
+        {
+            foreach (var entry in metadataLocations)
+            {
+                string id = entry.Key;
+                string location = entry.Value;
+
+                process.MetadataLocation(id, location);
+            }
+        }
+
+        private static void NewMetadataLocationToProcesses(string id, string location)
+        {
+            foreach (var entry in processes)
+            {
+                IProcessToPM process = entry.Value;
+                process.MetadataLocation(id, location);
+            }
+        }
 
         public static void StartMetadata(string id, int port)
         {
-            Process.Start("MetadataServer.exe", id + " " + port);
-            string urlLocation = Helper.GetUrlTemplate(id, port);
-            IMetadataServerToPM metadata = (IMetadataServerToPM)Activator.GetObject(typeof(IMetadataServerToPM), urlLocation);
+            consoles.Add(Process.Start("Metadata.exe", id + " " + port));
+            string location = Helper.GetUrl(id, port);
+            IMetadataToPM metadata = (IMetadataToPM)Activator.GetObject(
+                typeof(IMetadataToPM),
+                location);
+            metadataLocations.Add(id, location);
+            NewMetadataLocationToProcesses(id, location);
+            // keep as last line to avoid loop in NewMetadataLocationToProcesses
             processes.Add(id, metadata);
-            metadataServersLocation.Add(urlLocation);
-            metadata.SetPrimaryMetadata((metadataServersLocation.Count == 0));
         }
 
         public static void StartDataServer(string id, int port)
         {
-            Process.Start("DataServer.exe", id + " " + port);
+            consoles.Add(Process.Start("DataServer.exe", id + " " + port));
             IDataServerToPM dataServer = (IDataServerToPM)Activator.GetObject(
                 typeof(IDataServerToPM),
-                Helper.GetUrlTemplate(id, port)
+                Helper.GetUrl(id, port)
             );
             processes.Add(id, dataServer);
-            dataServer.ReceiveMetadataServersLocations(metadataServersLocation);
+            SendMetadataLocations(dataServer);
         }
 
         public static void StartClient(string id, int port)
         {
-            Process.Start("Client.exe", id + " " + port);
+            consoles.Add(Process.Start("Client.exe", id + " " + port));
             IClientToPM client = (IClientToPM)Activator.GetObject(
                 typeof(IClientToPM),
-                Helper.GetUrlTemplate(id, port)
+                Helper.GetUrl(id, port)
             );
             processes.Add(id, client);
-            client.ReceiveMetadataServersLocations(metadataServersLocation);
+            SendMetadataLocations(client);
         }
 
         private static IProcessToPM GetProcess(string id)
@@ -99,7 +131,7 @@ namespace PuppetMaster
         public static void RecoverProcess(string id)
         {
             IServerToPM server = (IServerToPM)GetProcess(id);
-            server.Fail();
+            server.Recover();
         }
 
         public static void UnfreezeProcess(string id)

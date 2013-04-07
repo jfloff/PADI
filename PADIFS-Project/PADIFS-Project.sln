@@ -7,7 +7,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Client", "Client\Client.csp
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PuppetMaster", "PuppetMaster\PuppetMaster.csproj", "{4FEF5006-0B2D-4B7B-AF44-BE39729662A0}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MetadataServer", "MetadataServer\MetadataServer.csproj", "{EFC72FBD-08D3-4BBF-B616-82C48190D652}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Metadata", "MetadataServer\Metadata.csproj", "{EFC72FBD-08D3-4BBF-B616-82C48190D652}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataServer", "DataServer\DataServer.csproj", "{31AE84C4-5151-4FBC-8F74-C4ECA184C2C4}"
 EndProject

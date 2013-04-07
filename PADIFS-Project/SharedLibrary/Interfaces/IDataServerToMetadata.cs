@@ -6,9 +6,9 @@ using System.Threading.Tasks;
 
 namespace SharedLibrary.Interfaces
 {
-    public interface IDataServerToMetadataServer
+    public interface IDataServerToMetadata
     {
-        void CreateFile(string fileName);
-        void DeleteFile(string fileName);
+        void Create(string fileName);
+        void Delete(string fileName);
     }
 }

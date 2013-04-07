@@ -14,6 +14,5 @@ namespace SharedLibrary.Interfaces
         void Delete(string fileName);
         void Read();
         void Write();
-        void ReceiveMetadataServersLocations(List<string> metadataServerList);
     }
 }

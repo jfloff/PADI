@@ -1,8 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace SharedLibrary
 {
@@ -14,7 +9,10 @@ namespace SharedLibrary
         public const int DEFAULT = 0;
         public const int MONOTONIC = 1;
 
-        public static string GetUrlTemplate(string id, int port)
+        public const int WINDOW_HEIGHT = 5;
+        public const int WINDOW_WIDTH = 80;
+
+        public static string GetUrl(string id, int port)
         {
             return string.Format(URL_TEMPLATE, port, id);
         }

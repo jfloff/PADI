@@ -28,4 +28,5 @@ Plataformas para Aplicações Distribuídas na Internet
 *   O que fazer se o registo no metadata server falhar?
 *   Formato exacto dos scripts?
 *   Como definir o metadata primario? Pode ser o puppet master a decidir/forçar?!
+*   Como simular falhas? Excepções, respostas vazias?
 

@@ -10,6 +10,5 @@ namespace SharedLibrary.Interfaces
     {
         void Freeze();
         void Unfreeze();
-        void ReceiveMetadataServersLocations(List<string> metadataServerList);
     }
 }

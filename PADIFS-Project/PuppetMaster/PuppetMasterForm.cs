@@ -36,6 +36,14 @@ namespace PuppetMaster
             // Connection details
             TcpChannel channel = new TcpChannel(8080);
             ChannelServices.RegisterChannel(channel, true);
+
+            AppDomain currentDomain = AppDomain.CurrentDomain;
+            currentDomain.UnhandledException += new UnhandledExceptionEventHandler(ExceptionHandler);
+        }
+
+        static void ExceptionHandler(object sender, UnhandledExceptionEventArgs args)
+        {
+            PuppetMaster.KillConsoles();
         }
 
         private void ComponentSelectionBoxSelectedIndexChanged(object sender, EventArgs e)
@@ -74,6 +82,7 @@ namespace PuppetMaster
             this.failButton.Visible = toggle;
             this.recoverButton.Visible = toggle;
             this.processBox.Mask = "m-0";
+            this.startButton.Enabled = true;
         }
 
         private void ToggleDataServerElements(bool toggle)
@@ -625,7 +634,8 @@ namespace PuppetMaster
                         SetStatus("[ERROR] Invalid Script at line " + lineNumber);
                         return;
                     }
-            }}
+            }
+        }
 
         private void ProcessBoxMaskInputRejected(object sender, MaskInputRejectedEventArgs e)
         {
@@ -635,6 +645,11 @@ namespace PuppetMaster
         private void SetStatus(string msg)
         {
             this.statusStripLabel.Text = msg;
+        }
+
+        private void PuppetMasterFormClosing(object sender, FormClosingEventArgs e)
+        {
+            PuppetMaster.KillConsoles();
         }
     }
 }
