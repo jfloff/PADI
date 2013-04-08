@@ -156,6 +156,7 @@ namespace PuppetMaster
             Helper.Semantics semanticsId = getSemanticsId(semantics);
 
             IClientToPM client = (IClientToPM)GetProcess(id);
+            client.Read(fileRegister, semanticsId, stringRegister);
         }
 
         public static void WriteFile(string id, int fileRegister, int byteArrayRegister)

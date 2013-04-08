@@ -14,14 +14,41 @@ namespace Metadata
 {
     class Metadata : MarshalByRefObject, IMetadataToPM, IMetadataToMetadata, IMetadataToClient, IMetadataToDataServer
     {
+        // Return of SelectDataServers Function
+        private struct SelectedServers
+        {
+            public Dictionary<string, string> LocalFilenames;
+            public Dictionary<string, string> Locations;
+
+            public SelectedServers(Dictionary<string, string> localFilenames, Dictionary<string, string> locations) 
+            {
+                this.LocalFilenames = localFilenames;
+                this.Locations = locations;
+            }
+        }
+
+        // Store on each entry of the data servers dictionary
+        private struct DataServerInfo
+        {
+            public string Location;
+            public IDataServerToMetadata DataServer;
+
+            public DataServerInfo(string location, IDataServerToMetadata dataServer) 
+            {
+                this.Location = location;
+                this.DataServer = dataServer;
+            }
+        }
+
         // filename / FileMetadata
         private static Dictionary<string, FileMetadata> fileMetadataTable
             = new Dictionary<string, FileMetadata>();
+        // filename
         private static List<string> openedFiles = new List<string>();
-
         // id / Interface
-        private static Dictionary<string, IDataServerToMetadata> dataServers
-            = new Dictionary<string, IDataServerToMetadata>();
+        private static Dictionary<string, DataServerInfo> dataServers
+            = new Dictionary<string, DataServerInfo>();
+        // id / interface
         private static Dictionary<string, IMetadataToMetadata> metadatas
             = new Dictionary<string, IMetadataToMetadata>();
 
@@ -101,35 +128,35 @@ namespace Metadata
         }
 
         // Returns a dictionray dataServerId / localFilename
-        public Dictionary<string, string> SelectDataServers(int nbDataServers, string filename)
+        private SelectedServers SelectDataServers(int nbDataServers, string filename)
         {
-            if (nbDataServers > dataServers.Count)
-            {
-                // o que fazer neste caso ??
-                // para que server entao o nbDataServers
-                // Se o create falhar será provavelmente aqui
-            }
+            Dictionary<string, string> localFilenames = new Dictionary<string, string>();
+            Dictionary<string, string> locations = new Dictionary<string, string>();
 
-            Dictionary<string, string> selectedDataServers = new Dictionary<string, string>();
-            for (int i = 0; i < nbDataServers; i++)
+            int nbDataServersSelected = 0;
+            foreach (var entry in dataServers)
             {
-                selectedDataServers.Add(dataServers.ElementAt(i).Key, localFilename(filename));
-            }
+                if (nbDataServersSelected++ > nbDataServers) break;
 
-            return selectedDataServers;
+                string dataServerId = entry.Key;
+                string dataServerLocation = entry.Value.Location;
+                localFilenames.Add(dataServerId, localFilename(filename));
+                locations.Add(dataServerId, dataServerLocation);
+            }
+            return new SelectedServers(localFilenames, locations);
         }
 
         // Places files in the given dataServers. Doesn't care if they were created or not.
         public void CreateFileOnDataServers(FileMetadata fileMetadata)
         {
-            foreach (var entry in fileMetadata.DataServers)
+            foreach (var entry in fileMetadata.LocalFilenames)
             {
-                string dataServerId = entry.Key;
+                string id = entry.Key;
                 string localFilename = entry.Value;
 
                 Thread request = new Thread(() =>
                 {
-                    IDataServerToMetadata dataServer = (IDataServerToMetadata)dataServers[dataServerId];
+                    IDataServerToMetadata dataServer = dataServers[id].DataServer;
                     dataServer.Create(localFilename);
                 });
                 request.Start();
@@ -139,14 +166,14 @@ namespace Metadata
         //Tratar o caso em que possivelmente algum dos servidores não conseguiu apagar o ficheiro
         public void DeleteFileOnDataServers(FileMetadata fileMetadata)
         {
-            foreach (var entry in fileMetadata.DataServers)
+            foreach (var entry in fileMetadata.LocalFilenames)
             {
-                string dataServerId = entry.Key;
+                string id = entry.Key;
                 string localFilename = entry.Value;
 
                 Thread request = new Thread(() =>
                 {
-                    IDataServerToMetadata dataServer = (IDataServerToMetadata)dataServers[dataServerId];
+                    IDataServerToMetadata dataServer = dataServers[id].DataServer;
                     dataServer.Delete(localFilename);
                 });
                 request.Start();
@@ -222,9 +249,9 @@ namespace Metadata
                 throw new FileAlreadyExistsException(filename);
 
             //Select Data Servers and creates files within them
-            Dictionary<string, string> selectedDataServersList = SelectDataServers(nbDataServers, filename);
-            FileMetadata fileMetadata
-                = new FileMetadata(filename, nbDataServers, readQuorum, writeQuorum, selectedDataServersList);
+            SelectedServers selectedServers = SelectDataServers(nbDataServers, filename);
+            FileMetadata fileMetadata = new FileMetadata(filename, nbDataServers, readQuorum, writeQuorum, 
+                selectedServers.LocalFilenames, selectedServers.Locations);
             CreateFileOnDataServers(fileMetadata);
             fileMetadataTable.Add(filename, fileMetadata);
             openedFiles.Add(filename);
@@ -308,7 +335,7 @@ namespace Metadata
                 IDataServerToMetadata dataServer = (IDataServerToMetadata)Activator.GetObject(
                     typeof(IDataServerToMetadata),
                     location);
-                dataServers.Add(id, dataServer);
+                dataServers.Add(id, new DataServerInfo(location, dataServer));
             }
         }
     }

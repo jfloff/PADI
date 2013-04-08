@@ -144,14 +144,14 @@ namespace DataServer
          * IDataServerToClient Methods
          */
 
-        public byte[] Read(string localFilename)
+        public FileData Read(string localFilename)
         {
             Console.WriteLine("READ DATA");
 
             return null;
         }
 
-        public void Write(string localFilename, byte[] contents)
+        public void Write(string localFilename, FileData newFileData)
         {
             Console.WriteLine("WRITE DATA");
         }

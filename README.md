@@ -18,11 +18,14 @@ Plataformas para Aplicações Distribuídas na Internet
 *   Todos Metodos letra grande (Pascal Case)
 *   Começa a letra pequena (Came Case)
 
-### Missing
+### TODO
 *   Verificações de null objects nos activator get object.
+*   ASSINCRONO NO EXECRIPT
+*   DUMP NO PM
+*   VOLATILE NO PRIMARY METADATA
+*   REVER SCRIPTS NAO ESTA A FUNCAR
 
-## Duvidas
-
+### DUVIDAS
 ### Esclarecidas
 *   Para que server afinal o nbDataServers?
     *   Garantir que o ficheiro está sempre naquele numero de servers, >>SE<< tivermos aquele numro de servers

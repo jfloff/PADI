@@ -3,10 +3,12 @@ using SharedLibrary.Entities;
 using SharedLibrary.Exceptions;
 using SharedLibrary.Interfaces;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Runtime.Remoting;
 using System.Runtime.Remoting.Channels;
 using System.Runtime.Remoting.Channels.Tcp;
+using System.Threading;
 
 // @TODO Missing re-connect to other metadata
 
@@ -29,6 +31,10 @@ namespace Client
         // metadataId / Proxy to metadata
         private static Dictionary<string, IMetadataToClient> metadatas 
             = new Dictionary<string, IMetadataToClient>();
+
+        // filename 
+        List<string> fileRegisters = new List<string>();
+        List<byte[]> byteRegisters = new List<byte[]>();
 
         private static Primary primary = new Primary() { Id = null, Metadata = null };
 
@@ -102,6 +108,7 @@ namespace Client
                 {
                     FileMetadata fileMetadata = primary.Metadata.Open(filename);
                     openedFilesMetadata.Add(filename, fileMetadata);
+                    fileRegisters.Add(filename);
                     Console.WriteLine("FILE METADATA => " + fileMetadata.ToString());
                 }
             }
@@ -120,6 +127,7 @@ namespace Client
                 {
                     primary.Metadata.Close(filename);
                     openedFilesMetadata.Remove(filename);
+                    fileRegisters.Remove(filename);
                 }
                 else
                 {
@@ -152,31 +160,65 @@ namespace Client
             }
         }
 
-        public byte[] Read(string filename, Helper.Semantics semantics)
+        public void Read(int fileRegister, Helper.Semantics semantics, int stringRegister)
         {
-            Console.WriteLine("READ CLIENT FILE");
-            if (!openedFilesMetadata.ContainsKey(filename))
+            Console.WriteLine("READ FILE = " + fileRegister);
+
+            if (fileRegister > (fileRegisters.Count - 1))
             {
-                Open(filename);
+                Console.WriteLine("File register " + fileRegister + " does not exist");
+                return;
             }
 
+            string filename = fileRegisters[fileRegister];
+
             FileMetadata fileMetadata = openedFilesMetadata[filename];
-            // broadcast read to all, and wait for responses
+
+            // broadcast reads to all dataServers that have that file
+            ConcurrentDictionary<string, FileData> reads = new ConcurrentDictionary<string,FileData>();
+            List<Thread> requests = new List<Thread>();
+            foreach(var entry in fileMetadata.Locations)
+            {
+                string id = entry.Key;
+                string location = entry.Value;
+                string localFilename = fileMetadata.LocalFilenames[id];
+
+                Thread request = new Thread(() => 
+                {
+                    // missing checking if its down
+                    IDataServerToClient dataServer = (IDataServerToClient)Activator.GetObject(
+                        typeof(IDataServerToClient), 
+                        localFilename);
+
+                    reads.TryAdd(id, dataServer.Read(localFilename));
+                });
+                requests.Add(request);
+                request.Start();
+            }
+
+            // wait on all the requests to end
+            foreach (Thread request in requests)
+            {
+                request.Join();
+            }
+
+            //quoruns
             
-            return null;
         }
 
-        public void Write(string filename, byte[] contents)
+        public void Write(int fileRegister, int stringRegister)
         {
-            Console.WriteLine("WRITE CLIENT FILE");
-            if (!openedFilesMetadata.ContainsKey(filename))
-            {
-                Open(filename);
-            }
 
-            FileMetadata fileMetadata = openedFilesMetadata[filename];
-            
+        }
+
+        public void Write(int fileRegister, string contents)
+        {
             //IDataServerToClient data = (IDataServerToClient)Activator.GetObject(typeof(IDataServerToClient), "tcp://localhost:9/d-1");
+        }
+        
+        public void Copy(int fileRegister1, Helper.Semantics semantics, int fileRegister2, string salt)
+        {
+            //
         }
 
         public void Dump()

@@ -1,4 +1,5 @@
 ﻿
+using System;
 namespace SharedLibrary.Entities
 {
     public class Version

@@ -13,16 +13,21 @@ namespace SharedLibrary.Entities
         private int nbDataServers;
         private int readQuorum;
         private int writeQuorum;
-        // dataServer id / local filename
-        private Dictionary<string,string> dataServersLocalFiles;
+        // data Server id / local filename
+        private Dictionary<string, string> localFilenames;
+        // data Server id / locations
+        private Dictionary<string, string> locations;
 
-        public FileMetadata(string filename, int nbDataServers, int readQuorum, int writeQuorum, Dictionary<string, string> dataServersLocalFiles)
+
+        public FileMetadata(string filename, int nbDataServers, int readQuorum, int writeQuorum, 
+            Dictionary<string, string> localFilenames, Dictionary<string, string> locations)
         {
             this.filename = filename;
             this.nbDataServers = nbDataServers;
             this.readQuorum = readQuorum;
             this.writeQuorum = writeQuorum;
-            this.dataServersLocalFiles = dataServersLocalFiles;
+            this.localFilenames = localFilenames;
+            this.locations = locations;
         }
 
         public string Filename
@@ -49,34 +54,26 @@ namespace SharedLibrary.Entities
             set { this.writeQuorum = value; }
         }
 
-        public Dictionary<string, string> DataServers
+        public Dictionary<string, string> LocalFilenames
         {
-            get { return this.dataServersLocalFiles; }
-            set { this.dataServersLocalFiles = value; }
+            get { return this.localFilenames; }
+            set { this.localFilenames = value; }
         }
 
-        public void addDataServer(string dataServerName,string localFileName) {
-            this.dataServersLocalFiles.Add(dataServerName,localFileName);
-        }
-
-        public void removeDataServer(string dataServerName)
+        public Dictionary<string, string> Locations
         {
-            this.dataServersLocalFiles.Remove(dataServerName);
-        }
-
-        public bool hasDataServer(string dataServerName)
-        {
-            return this.dataServersLocalFiles.ContainsKey(dataServerName);
+            get { return this.locations; }
+            set { this.locations = value; }
         }
 
         public override string ToString()
         {
             string dataServers = "[";
-            foreach (var entry in dataServersLocalFiles)
+            foreach (var entry in localFilenames)
             {
-                string dataServerId = entry.Key;
+                string id = entry.Key;
                 string localFilename = entry.Value;
-                dataServers += " (" + dataServerId + "," + localFilename + ")";
+                dataServers += " (" + id + "," + localFilename + ")";
             }
             dataServers += " ]";
 

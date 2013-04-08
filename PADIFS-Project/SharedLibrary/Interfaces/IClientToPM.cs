@@ -12,7 +12,9 @@ namespace SharedLibrary.Interfaces
         void Delete(string filename);
         void Open(string filename);
         void Close(string filename);
-        byte[] Read(string filename, Helper.Semantics semantics);
-        void Write(string filename, byte[] contents);
+        void Read(int fileRegister, Helper.Semantics semantics, int stringRegister);
+        void Write(int fileRegister, int stringRegister);
+        void Write(int fileRegister, string contents);
+        void Copy(int fileRegister1, Helper.Semantics semantics, int fileRegister2, string salt);
     }
 }

@@ -17,7 +17,7 @@ using System.IO;
 
 namespace PuppetMaster
 {
-    public partial class PuppetMasterForm : Form
+    public partial class PuppetMasterMain : Form
     {
         private bool flagMetadata = false;
 
@@ -27,9 +27,14 @@ namespace PuppetMaster
         private const int DATASERVER = 1;
         private const int CLIENT = 2;
 
-        public PuppetMasterForm()
+        private PuppetMasterLog log;
+
+        public PuppetMasterMain()
         {
             InitializeComponent();
+            // Initialize Log
+            this.log = new PuppetMasterLog();
+            this.log.Show();
             // Element details
             this.componentSelectionBox.SelectedIndex = METADATA;
             this.semanticsSelectionBox.SelectedIndex = 0;
@@ -677,6 +682,7 @@ namespace PuppetMaster
         private void SetStatus(string msg)
         {
             this.statusStripLabel.Text = msg;
+            this.log.AddLog(msg);
         }
 
         private void PuppetMasterFormClosing(object sender, FormClosingEventArgs e)
