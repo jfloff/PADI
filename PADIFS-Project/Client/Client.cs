@@ -20,9 +20,13 @@ namespace Client
             public IMetadataToClient Metadata;
         };
 
+        // filename / file contents
+        private static Dictionary<string, FileData> openedFilesData
+             = new Dictionary<string, FileData>();
+        // filename / file metadata
         private static Dictionary<string, FileMetadata> openedFilesMetadata
              = new Dictionary<string, FileMetadata>();
-
+        // metadataId / Proxy to metadata
         private static Dictionary<string, IMetadataToClient> metadatas 
             = new Dictionary<string, IMetadataToClient>();
 
@@ -55,7 +59,7 @@ namespace Client
 
         public void MetadataLocation(string id, string location)
         {
-            System.Console.WriteLine("RECEIVED METADATA LOCATION " + location);
+            Console.WriteLine("RECEIVED METADATA LOCATION " + location);
 
             IMetadataToClient metadata = (IMetadataToClient)Activator.GetObject(
                 typeof(IMetadataToClient), 
@@ -72,7 +76,7 @@ namespace Client
 
         public void Create(string filename, int nbDataServers, int readQuorum, int writeQuorum)
         {
-            System.Console.WriteLine("CREATE CLIENT FILE " + filename);
+            Console.WriteLine("CREATE CLIENT FILE " + filename);
 
             try
             {
@@ -91,7 +95,7 @@ namespace Client
 
         public void Open(string filename)
         {
-            System.Console.WriteLine("OPEN CLIENT FILE " + filename);
+            Console.WriteLine("OPEN CLIENT FILE " + filename);
             try
             {
                 if (!openedFilesMetadata.ContainsKey(filename))
@@ -109,7 +113,7 @@ namespace Client
 
         public void Close(string filename)
         {
-            System.Console.WriteLine("CLOSED FILE " + filename);
+            Console.WriteLine("CLOSED FILE " + filename);
             try
             {
                 if (openedFilesMetadata.ContainsKey(filename))
@@ -130,7 +134,7 @@ namespace Client
 
         public void Delete(string filename)
         {
-            System.Console.WriteLine("DELETE CLIENT FILE " + filename);
+            Console.WriteLine("DELETE CLIENT FILE " + filename);
             try
             {
                 if (!openedFilesMetadata.ContainsKey(filename))
@@ -150,17 +154,29 @@ namespace Client
 
         public byte[] Read(string filename, Helper.Semantics semantics)
         {
-            // HARD CODED TEST
-            System.Console.WriteLine("READ CLIENT FILE");
-            IDataServerToClient data = (IDataServerToClient)Activator.GetObject(typeof(IDataServerToClient), "tcp://localhost:9/d-1");
+            Console.WriteLine("READ CLIENT FILE");
+            if (!openedFilesMetadata.ContainsKey(filename))
+            {
+                Open(filename);
+            }
+
+            FileMetadata fileMetadata = openedFilesMetadata[filename];
+            // broadcast read to all, and wait for responses
+            
             return null;
         }
 
         public void Write(string filename, byte[] contents)
         {
-            // HARD CODED TEST
-            System.Console.WriteLine("WRITE CLIENT FILE");
-            IDataServerToClient data = (IDataServerToClient)Activator.GetObject(typeof(IDataServerToClient), "tcp://localhost:9/d-1");
+            Console.WriteLine("WRITE CLIENT FILE");
+            if (!openedFilesMetadata.ContainsKey(filename))
+            {
+                Open(filename);
+            }
+
+            FileMetadata fileMetadata = openedFilesMetadata[filename];
+            
+            //IDataServerToClient data = (IDataServerToClient)Activator.GetObject(typeof(IDataServerToClient), "tcp://localhost:9/d-1");
         }
 
         public void Dump()
