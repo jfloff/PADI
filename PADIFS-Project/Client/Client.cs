@@ -8,41 +8,25 @@ using System.Runtime.Remoting;
 using System.Runtime.Remoting.Channels;
 using System.Runtime.Remoting.Channels.Tcp;
 
+// @TODO Missing re-connect to other metadata
+
 namespace Client
 {
-    class Primary
-    {
-        string id;
-        IMetadataToClient metadata;
-
-        public Primary(string id, IMetadataToClient metadata)
-        {
-            this.id = id;
-            this.metadata = metadata;
-        }
-
-        public string Id
-        {
-            get { return this.id; }
-            set { this.id = value; }
-        }
-
-        public IMetadataToClient Metadata
-        {
-            get { return this.metadata; }
-            set { this.metadata = value; }
-        }
-    }
-
     public class Client : MarshalByRefObject, IClientToPM
     {
+        struct Primary
+        {
+            public string Id;
+            public IMetadataToClient Metadata;
+        };
+
         private static Dictionary<string, FileMetadata> openedFilesMetadata
-             = new Dictionary<string, FileMetadata>(Helper.MAX_FILE_REGISTERS);
+             = new Dictionary<string, FileMetadata>();
 
         private static Dictionary<string, IMetadataToClient> metadatas 
             = new Dictionary<string, IMetadataToClient>();
 
-        private static Primary primary = null;
+        private static Primary primary = new Primary() { Id = null, Metadata = null };
 
         public static void Main(string[] args)
         {
@@ -62,7 +46,6 @@ namespace Client
                 WellKnownObjectMode.Singleton);
 
             Console.WriteLine("Client " + id + " has started.");
-
             Console.ReadLine();
         }
 
@@ -79,9 +62,11 @@ namespace Client
                 location);
             metadatas.Add(id, metadata);
 
-            if (primary == null)
+            // missing recheck of metadata
+            if (primary.Id == null)
             {
-                primary = new Primary(id, metadata);
+                primary.Id = id;
+                primary.Metadata = metadata;
             }
         }
 
@@ -134,7 +119,6 @@ namespace Client
                 }
                 else
                 {
-                    //Recheck: Exception??
                     Console.WriteLine("File " + filename + " is not opened.");
                 }
             }
@@ -155,7 +139,6 @@ namespace Client
                 }
                 else
                 {
-                    //Recheck: Exception??
                     Console.WriteLine("File " + filename + " is opened. Please close the file first.");
                 }
             }
@@ -165,25 +148,33 @@ namespace Client
             }
         }
 
-        public void Read()
+        public byte[] Read(string filename, Helper.Semantics semantics)
         {
             // HARD CODED TEST
             System.Console.WriteLine("READ CLIENT FILE");
             IDataServerToClient data = (IDataServerToClient)Activator.GetObject(typeof(IDataServerToClient), "tcp://localhost:9/d-1");
-            data.Read();
+            return null;
         }
 
-        public void Write()
+        public void Write(string filename, byte[] contents)
         {
             // HARD CODED TEST
             System.Console.WriteLine("WRITE CLIENT FILE");
             IDataServerToClient data = (IDataServerToClient)Activator.GetObject(typeof(IDataServerToClient), "tcp://localhost:9/d-1");
-            data.Write();
         }
 
         public void Dump()
         {
-            System.Console.WriteLine("DUMP PROCESS");
+            Console.WriteLine("DUMP");
+            Console.WriteLine("Opened File Metadatas");
+            foreach (var entry in openedFilesMetadata)
+            {
+                string filename = entry.Key;
+                FileMetadata fileMetadata = entry.Value;
+
+                Console.WriteLine("  " + filename);
+                Console.WriteLine("    " + fileMetadata.ToString());
+            }
         }
     }
 }

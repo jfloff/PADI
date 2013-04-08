@@ -18,6 +18,10 @@ namespace PuppetMaster
         private static Dictionary<string, string> metadataLocations = new Dictionary<string, string>();
         private static List<int> portsUsed = new List<int>();
 
+        // filenames
+        private static List<string> fileRegister = new List<string>(Helper.MAX_FILE_REGISTERS);
+        private static List<byte[]> stringRegister = new List<byte[]>(Helper.MAX_FILE_REGISTERS);
+
         private static List<Process> consoles = new List<Process>();
         public static void KillConsoles()
         {
@@ -71,7 +75,7 @@ namespace PuppetMaster
             processes.Add(id, dataServer);
             SendMetadataLocations(dataServer);
         }
-
+        
         public static void StartClient(string id, int port)
         {
             consoles.Add(Process.Start("Client.exe", id + " " + port));
@@ -147,24 +151,26 @@ namespace PuppetMaster
             server.Freeze();
         }
 
-        public static void ReadFile(string id, int fileRegister, string semantic, int stringRegister)
+        public static void ReadFile(string id, int fileRegister, string semantics, int stringRegister)
         {
-            int semanticId = getSemanticId(semantic);
+            Helper.Semantics semanticsId = getSemanticsId(semantics);
+
+            IClientToPM client = (IClientToPM)GetProcess(id);
         }
 
         public static void WriteFile(string id, int fileRegister, int byteArrayRegister)
         {
-            if (!processes.ContainsKey(id)) StartClient(id, port++);
+            IClientToPM client = (IClientToPM)GetProcess(id);
         }
 
         public static void WriteFile(string id, int fileRegister, string contents)
         {
-            if (!processes.ContainsKey(id)) StartClient(id, port++);
+            IClientToPM client = (IClientToPM)GetProcess(id);
         }
 
-        public static void CopyFile(string id, int fileRegister1, string semantic, int fileRegister2, string salt)
+        public static void CopyFile(string id, int fileRegister1, string semantics, int fileRegister2, string salt)
         {
-            int semanticId = getSemanticId(semantic);
+            Helper.Semantics semanticsId = getSemanticsId(semantics);
         }
 
         public static void DumpProcess(string id)
@@ -173,9 +179,9 @@ namespace PuppetMaster
             process.Dump();
         }
 
-        private static int getSemanticId(string semantic)
+        private static Helper.Semantics getSemanticsId(string semantics)
         {
-            return (semantic.Equals("monotonic")) ? Helper.MONOTONIC : Helper.DEFAULT;
+            return (semantics.Equals("monotonic")) ? Helper.Semantics.MONOTONIC : Helper.Semantics.DEFAULT;
         }
     }
 }

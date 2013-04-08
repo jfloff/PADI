@@ -12,7 +12,7 @@ namespace SharedLibrary.Interfaces
         void Delete(string filename);
         void Open(string filename);
         void Close(string filename);
-        void Read();
-        void Write();
+        byte[] Read(string filename, Helper.Semantics semantics);
+        void Write(string filename, byte[] contents);
     }
 }

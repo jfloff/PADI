@@ -6,8 +6,11 @@ namespace SharedLibrary
         public const int MAX_FILE_REGISTERS = 10;
         public const string URL_TEMPLATE = "tcp://localhost:{0}/{1}";
 
-        public const int DEFAULT = 0;
-        public const int MONOTONIC = 1;
+        public enum Semantics
+        {
+            DEFAULT,
+            MONOTONIC
+        }
 
         public const int WINDOW_HEIGHT = 5;
         public const int WINDOW_WIDTH = 80;

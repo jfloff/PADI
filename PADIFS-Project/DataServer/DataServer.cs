@@ -1,5 +1,6 @@
 ﻿using SharedLibrary;
 using SharedLibrary.Entities;
+using SharedLibrary.Exceptions;
 using SharedLibrary.Interfaces;
 using System;
 using System.Collections.Generic;
@@ -7,40 +8,27 @@ using System.Runtime.Remoting;
 using System.Runtime.Remoting.Channels;
 using System.Runtime.Remoting.Channels.Tcp;
 
+// @TODO Fix primary decision
+
 namespace DataServer
 {
-    class Primary
-    {
-        string id;
-        IMetadataToDataServer metadata;
-
-        public Primary(string id, IMetadataToDataServer metadata)
-        {
-            this.id = id;
-            this.metadata = metadata;
-        }
-
-        public string Id
-        {
-            get { return this.id; }
-            set { this.id = value; }
-        }
-
-        public IMetadataToDataServer Metadata
-        {
-            get { return this.metadata; }
-            set { this.metadata = value; }
-        }
-    }
-
     public class DataServer : MarshalByRefObject, IDataServerToPM, IDataServerToMetadata, IDataServerToClient
     {
-        private static List<IMetadataToDataServer> metadatas = new List<IMetadataToDataServer>();
+        struct Primary
+        {
+            public string Id;
+            public IMetadataToDataServer Metadata;
+        };
+
+        // localFilename / FileData
         private static Dictionary<string, FileData> files = new Dictionary<string, FileData>();
-        private static Primary primary = null;
+
+        private static List<IMetadataToDataServer> metadatas = new List<IMetadataToDataServer>();
+        private static Primary primary = new Primary() { Id = null, Metadata = null };
         
         private static string id;
         private static int port;
+        private static bool fail = false;
 
         public static void Main(string[] args)
         {
@@ -76,36 +64,51 @@ namespace DataServer
                 location);
             metadatas.Add(metadata);
 
-            // @TODO Fix primary decision
-            if (primary == null)
+            if (primary.Id == null)
             {
-                primary = new Primary(id, metadata);
-                primary.Metadata.RegisterDataServer(DataServer.id, Helper.GetUrl(DataServer.id, port));
+                primary.Id = id;
+                primary.Metadata = metadata;
+                primary.Metadata.RegisterDataServer(DataServer.id, Helper.GetUrl(DataServer.id, DataServer.port));
             }
         }
 
         public void Dump()
         {
             Console.WriteLine("DUMP");
+            Console.WriteLine("Opened File Metadatas");
+            foreach (var entry in files)
+            {
+                string localFilename = entry.Key;
+                FileData fileData = entry.Value;
+
+                Console.WriteLine("  " + localFilename);
+                Console.WriteLine("    " + fileData.ToString());
+            }
         }
 
         public void Fail()
         {
             Console.WriteLine("FAIL");
+            fail = true;
         }
 
         public void Recover()
         {
             Console.WriteLine("RECOVER");
+            fail = false;
         }
 
         public void Freeze()
         {
+            if (fail) throw new ProcessDownException(id);
+
             Console.WriteLine("FREEZE");
         }
 
         public void Unfreeze()
         {
+            if (fail) throw new ProcessDownException(id);
+
             Console.WriteLine("UNFREEZE");
         }
 
@@ -113,31 +116,42 @@ namespace DataServer
          * IDataServerToMetadata Methods
          */
 
-        public void Create(string filename)
+        public void Create(string localFilename)
         {
-            Console.WriteLine("CREATE FILE " + filename);
+            if (fail) throw new ProcessDownException(id);
 
-            FileData file = new FileData(0);
-            files.Add(filename, file);
+            Console.WriteLine("CREATE FILE " + localFilename);
+
+            if (!files.ContainsKey(localFilename))
+            {
+                files.Add(localFilename, new FileData());
+            }
         }
 
-        public void Delete(string filename)
+        public void Delete(string localFilename)
         {
-            Console.WriteLine("DELETE FILE " + filename);
+            if (fail) throw new ProcessDownException(id);
 
-            files.Remove(filename);
+            Console.WriteLine("DELETE FILE " + localFilename);
+
+            if (files.ContainsKey(localFilename))
+            {
+                files.Remove(localFilename);
+            }
         }
 
         /**
          * IDataServerToClient Methods
          */
 
-        public void Read()
+        public byte[] Read(string localFilename)
         {
             Console.WriteLine("READ DATA");
+
+            return null;
         }
 
-        public void Write()
+        public void Write(string localFilename, byte[] contents)
         {
             Console.WriteLine("WRITE DATA");
         }

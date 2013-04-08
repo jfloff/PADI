@@ -22,12 +22,12 @@ Plataformas para Aplicações Distribuídas na Internet
 *   Verificações de null objects nos activator get object.
 
 ## Duvidas
-*   Contacto dos Metadata Servers é passado no startup aos Data Servers e Clientes ? (No enunciado só mencionam os Clientes)
-*   Excepções possivelmente lançadas no cliente para o PM ?
-*   O que fazer se o registo no metadata server falhar?
-    *   Tentar outro?
-*   Formato exacto dos scripts?
-*   Como simular falhas? Excepções?
-*   What should the system do if a data-server fails?
+
+### Esclarecidas
 *   Para que server afinal o nbDataServers?
-*   //Tratar o caso em que possivelmente algum dos servidores não conseguiu apagar o ficheiro
+    *   Garantir que o ficheiro está sempre naquele numero de servers, >>SE<< tivermos aquele numro de servers
+*   Tratar o caso em que possivelmente algum dos servidores não conseguiu apagar o ficheiro
+    *   Ou se ignora, ou criamos um batch de pedidos
+
+## A Tirar
+*   Copy/Write/Read on client should exactly be like the proj statement?

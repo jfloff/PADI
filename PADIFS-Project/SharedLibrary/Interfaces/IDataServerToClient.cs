@@ -8,7 +8,7 @@ namespace SharedLibrary.Interfaces
 {
     public interface IDataServerToClient
     {
-        void Read();
-        void Write();
+        byte[] Read(string localFilename);
+        void Write(string localFilename, byte[] contents);
     }
 }

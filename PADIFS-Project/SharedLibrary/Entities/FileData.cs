@@ -1,31 +1,21 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Linq;
 
 namespace SharedLibrary.Entities
 {
     public class FileData
     {
-        int version;
+        Version version;
         byte[] contents;
 
-        public FileData(int version)
+        public FileData()
         {
-            this.version = version;
+            this.version = new Version();
         }
 
-        public FileData(int version, byte[] contents)
+        public FileData(byte[] contents)
         {
-            this.version = version;
+
             this.contents = contents;
-        }
-
-        public int Version
-        {
-            get { return this.version; }
-            set { this.version = value; }
         }
 
         public byte[] Contents
@@ -34,14 +24,22 @@ namespace SharedLibrary.Entities
             set { this.contents = value; }
         }
 
-        public void incrementVersion()
+        public Version Version
         {
-            this.version++;
+            get { return this.version; }
+            set { this.version = value; }
         }
 
-        public void addContents(byte[] newContents)
+        public void addSalt(byte[] salt)
         {
-            this.contents = this.contents.Concat(newContents).ToArray();
+            this.contents = this.contents.Concat(salt).ToArray();
+        }
+
+        public override string ToString()
+        {
+            // missing dataServersLocalFiles
+            return "Version = " + this.version + " : "
+                + "Contents = " + this.contents;
         }
     }
 }

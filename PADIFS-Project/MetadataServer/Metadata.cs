@@ -1,16 +1,13 @@
+using SharedLibrary;
+using SharedLibrary.Entities;
+using SharedLibrary.Exceptions;
+using SharedLibrary.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using SharedLibrary;
-using SharedLibrary.Exceptions;
 using System.Runtime.Remoting;
-using System.Runtime.Remoting.Channels.Tcp;
 using System.Runtime.Remoting.Channels;
-using System.Collections;
-using SharedLibrary.Entities;
-using SharedLibrary.Interfaces;
+using System.Runtime.Remoting.Channels.Tcp;
 using System.Threading;
 
 namespace Metadata
@@ -20,7 +17,6 @@ namespace Metadata
         // filename / FileMetadata
         private static Dictionary<string, FileMetadata> fileMetadataTable
             = new Dictionary<string, FileMetadata>();
-
         private static List<string> openedFiles = new List<string>();
 
         // id / Interface
@@ -183,7 +179,7 @@ namespace Metadata
                 string filename = entry.Key;
                 FileMetadata fileMetadata = entry.Value;
 
-                Console.WriteLine("  " + id);
+                Console.WriteLine("  " + filename);
                 Console.WriteLine("    " + fileMetadata.ToString());
             }
         }
