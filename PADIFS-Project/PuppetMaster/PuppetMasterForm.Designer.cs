@@ -396,6 +396,7 @@ namespace PuppetMaster
             this.dumpButton.TabIndex = 25;
             this.dumpButton.Text = "Dump Process";
             this.dumpButton.UseVisualStyleBackColor = true;
+            this.dumpButton.Click += new System.EventHandler(this.DumpButtonClick);
             // 
             // componentSelectionBox
             // 

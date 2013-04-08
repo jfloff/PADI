@@ -17,9 +17,13 @@ namespace Metadata
 {
     class Metadata : MarshalByRefObject, IMetadataToPM, IMetadataToMetadata, IMetadataToClient, IMetadataToDataServer
     {
+        // filename / FileMetadata
         private static Dictionary<string, FileMetadata> fileMetadataTable
             = new Dictionary<string, FileMetadata>();
 
+        private static List<string> openedFiles = new List<string>();
+
+        // id / Interface
         private static Dictionary<string, IDataServerToMetadata> dataServers
             = new Dictionary<string, IDataServerToMetadata>();
         private static Dictionary<string, IMetadataToMetadata> metadatas
@@ -35,7 +39,7 @@ namespace Metadata
             if (args.Length != 2)
                 throw new Exception("Wrong Arguments");
 
-            Console.SetWindowSize(Helper.WINDOW_WIDTH, Helper.WINDOW_HEIGHT);
+            // Console.SetWindowSize(Helper.WINDOW_WIDTH, Helper.WINDOW_HEIGHT);
 
             id = primary = args[0];
             int port = Convert.ToInt32(args[1]);
@@ -48,7 +52,16 @@ namespace Metadata
                 WellKnownObjectMode.Singleton);
 
             // Start pinging the metatadas in a set interval
-            Thread t = new Thread(FindPrimary);
+            Thread t = new Thread(() => 
+            { 
+                while (true)
+                {
+                    // if in fail doesn't ping anyone either
+                    while (fail) Thread.Sleep(Helper.PING_INTERVAL);
+                    FindPrimary();
+                    Thread.Sleep(Helper.PING_INTERVAL);
+                }
+            });
             t.Start();
 
             Console.WriteLine("Metadata Server " + id + " has started.");
@@ -59,89 +72,90 @@ namespace Metadata
          * PING / Fault Detection functions
          */
 
-        private bool ImPrimary()
-        {
-            return (primary == id);
-        }
-
         // Function to run perodically to detect metadatas faults.
         // Pings all the known metadatas and chooses the lowest id.
         private static void FindPrimary()
         {
-            while (true)
+            List<string> pings = new List<string>();
+            foreach (var entry in metadatas)
             {
-                // if in fail doesn't ping anyone either
-                while (fail) Thread.Sleep(Helper.PING_INTERVAL);
-
-                List<string> pings = new List<string>();
-                foreach (var entry in metadatas)
+                string id = entry.Key;
+                IMetadataToMetadata metadata = entry.Value;
+                try
                 {
-                    string id = entry.Key;
-                    IMetadataToMetadata metadata = entry.Value;
-                    try
-                    {
-                        metadata.Ping();
-                        pings.Add(id);
-                    }
-                    catch (ProcessDownException e) { }
+                    metadata.Ping();
+                    pings.Add(id);
                 }
-                pings.Add(Metadata.id);
-                primary = pings.Min();
-                Console.WriteLine("PRIMARY = " + primary);
-                Thread.Sleep(Helper.PING_INTERVAL);
+                catch (ProcessDownException) { }
             }
+            pings.Add(Metadata.id);
+            primary = pings.Min();
+            Console.WriteLine("PRIMARY = " + primary);
         }
 
-        ////// TO RECHECK 
+        /**
+         * Open File related methods
+         */
 
-        public bool HasFile(string fileName)
+        // returns localFilename for dataServer
+        private static string localFilename(string filename)
         {
-            return fileMetadataTable.ContainsKey(fileName);
+            // GUID better probably?
+            return filename + "$" + filename.GetHashCode();
         }
 
-        public Dictionary<string, string> SelectDataServersForFilePlacement(int nbDataServers, string localFileName)
+        // Returns a dictionray dataServerId / localFilename
+        public Dictionary<string, string> SelectDataServers(int nbDataServers, string filename)
         {
-            int actualNrDataServers = dataServers.Count;
-
-            if (nbDataServers > actualNrDataServers)
-                throw new NotEnoughDataServersException(nbDataServers, actualNrDataServers);
+            if (nbDataServers > dataServers.Count)
+            {
+                // o que fazer neste caso ??
+                // para que server entao o nbDataServers
+                // Se o create falhar será provavelmente aqui
+            }
 
             Dictionary<string, string> selectedDataServers = new Dictionary<string, string>();
             for (int i = 0; i < nbDataServers; i++)
             {
-                selectedDataServers.Add(dataServers.ElementAt(i).Key, localFileName);
+                selectedDataServers.Add(dataServers.ElementAt(i).Key, localFilename(filename));
             }
 
             return selectedDataServers;
         }
 
-        public bool FilePlacementOnSelectedDataServers(Dictionary<string, string> dataServersAndLocalFileList)
+        // Places files in the given dataServers. Doesn't care if they were created or not.
+        public void CreateFileOnDataServers(FileMetadata fileMetadata)
         {
-            //Async request?
-            for (int i = 0; i < dataServersAndLocalFileList.Count; i++)
+            foreach (var entry in fileMetadata.DataServers)
             {
-                string dataServerName = dataServersAndLocalFileList.ElementAt(i).Key;
-                string fileName = dataServersAndLocalFileList.ElementAt(i).Value;
-                IDataServerToMetadata dataServer = (IDataServerToMetadata)dataServers[dataServerName];
-                dataServer.Create(fileName);
+                string dataServerId = entry.Key;
+                string localFilename = entry.Value;
+
+                Thread request = new Thread(() =>
+                {
+                    IDataServerToMetadata dataServer = (IDataServerToMetadata)dataServers[dataServerId];
+                    dataServer.Create(localFilename);
+                });
+                request.Start();
             }
-            return true;
         }
 
-        public bool FileDeletionOnCorrespondingDataServers(Dictionary<string, string> dataServersAndLocalFileList)
+        //Tratar o caso em que possivelmente algum dos servidores não conseguiu apagar o ficheiro
+        public void DeleteFileOnDataServers(FileMetadata fileMetadata)
         {
-
-            //Async request?
-            for (int i = 0; i < dataServersAndLocalFileList.Count; i++)
+            foreach (var entry in fileMetadata.DataServers)
             {
-                string dataServerName = dataServersAndLocalFileList.ElementAt(i).Key;
-                string fileName = dataServersAndLocalFileList.ElementAt(i).Value;
-                IDataServerToMetadata dataServer = (IDataServerToMetadata)dataServers[dataServerName];
-                dataServer.Delete(fileName);
+                string dataServerId = entry.Key;
+                string localFilename = entry.Value;
+
+                Thread request = new Thread(() =>
+                {
+                    IDataServerToMetadata dataServer = (IDataServerToMetadata)dataServers[dataServerId];
+                    dataServer.Delete(localFilename);
+                });
+                request.Start();
             }
-            return true;
         }
-        /////////
 
         /**
          * IMetadataToPM Methods
@@ -155,6 +169,9 @@ namespace Metadata
                 typeof(IMetadataToMetadata),
                 location);
             metadatas.Add(id, metadata);
+
+            //Force invocation of primary decision
+            FindPrimary();
         }
 
         public void Dump()
@@ -198,44 +215,58 @@ namespace Metadata
          * IMetadataToClient Methods
          */
 
-        public FileMetadata Open(string fileName)
+        public FileMetadata Create(string filename, int nbDataServers, int readQuorum, int writeQuorum)
         {
             if (fail) throw new ProcessDownException(id);
 
-            Console.WriteLine("OPEN METADATA FILE " + fileName);
+            Console.WriteLine("CREATE METADATA FILENAME: " + filename + " NBDATASERVERS: " + nbDataServers
+                + " READQUORUM: " + readQuorum + " WRITEQUORUM: " + writeQuorum);
 
-            if (!HasFile(fileName))
-                throw new FileDoesNotExistException(fileName);
+            if (fileMetadataTable.ContainsKey(filename))
+                throw new FileAlreadyExistsException(filename);
 
-            return fileMetadataTable[fileName];
-        }
-
-        // recheck
-        public void Close(string fileName)
-        {
-            if (fail) throw new ProcessDownException(id);
-
-            Console.WriteLine("CLOSE METADATA FILE " + fileName);
-
-            if (!HasFile(fileName))
-                throw new FileDoesNotExistException(fileName);
-        }
-
-        public FileMetadata Create(string fileName, int nbDataServers, int readQuorum, int writeQuorum)
-        {
-            if (fail) throw new ProcessDownException(id);
-
-            Console.WriteLine("CREATE METADATA FILENAME: " + fileName + " NBDATASERVERS: " + nbDataServers + " READQUORUM: " + readQuorum + " WRITEQUORUM: " + writeQuorum);
-
-            if (HasFile(fileName))
-                throw new FileAlreadyExistsException(fileName);
-
-            //Select Data Servers For File Placement
-            Dictionary<string, string> selectedDataServersList = SelectDataServersForFilePlacement(nbDataServers, fileName + fileName.GetHashCode());
-            FileMetadata fileMetadata = new FileMetadata(fileName, nbDataServers, readQuorum, writeQuorum, selectedDataServersList);
-            fileMetadataTable.Add(fileName, fileMetadata);
-            FilePlacementOnSelectedDataServers(selectedDataServersList);
+            //Select Data Servers and creates files within them
+            Dictionary<string, string> selectedDataServersList = SelectDataServers(nbDataServers, filename);
+            FileMetadata fileMetadata
+                = new FileMetadata(filename, nbDataServers, readQuorum, writeQuorum, selectedDataServersList);
+            CreateFileOnDataServers(fileMetadata);
+            fileMetadataTable.Add(filename, fileMetadata);
+            openedFiles.Add(filename);
             return fileMetadata;
+        }
+
+        public FileMetadata Open(string filename)
+        {
+            if (fail) throw new ProcessDownException(id);
+
+            Console.WriteLine("OPEN METADATA FILE " + filename);
+
+            if (!fileMetadataTable.ContainsKey(filename))
+                throw new FileDoesNotExistException(filename);
+
+            // does nothing if file is already open
+            if (!openedFiles.Contains(filename))
+            {
+                openedFiles.Add(filename);
+            }
+            
+            return fileMetadataTable[filename];
+        }
+
+        public void Close(string filename)
+        {
+            if (fail) throw new ProcessDownException(id);
+
+            Console.WriteLine("CLOSE METADATA FILE " + filename);
+
+            if (!fileMetadataTable.ContainsKey(filename)) 
+                throw new FileDoesNotExistException(filename);
+
+            // does nothing if file was never open
+            if (openedFiles.Contains(filename))
+            {
+                openedFiles.Remove(filename);
+            }
         }
 
         public void Delete(string filename)
@@ -244,39 +275,44 @@ namespace Metadata
 
             Console.WriteLine("DELETE METADATA FILE " + filename);
 
-            if (!HasFile(filename))
+            if (!fileMetadataTable.ContainsKey(filename)) 
                 throw new FileDoesNotExistException(filename);
 
-            //Missing: verificar se o ficheiro está a ser utilizado por outro cliente? 
-            //Tratar o caso em que possivelmente algum dos servidores não conseguiu apagar o ficheiro
-            if (FileDeletionOnCorrespondingDataServers(fileMetadataTable[filename].DataServers))
-                fileMetadataTable.Remove(filename);
+            if (openedFiles.Contains(filename))
+                throw new FileCurrentlyOpenException(filename);
+
+            openedFiles.Remove(filename);
+
+            // missing check if they are all deleted?
+            DeleteFileOnDataServers(fileMetadataTable[filename]);
+            fileMetadataTable.Remove(filename);
         }
 
         /**
          * IMetadataToDataServer Methods
          */
 
-        public Heartbeat Heartbeat()
+        public Heartbeat Heartbeat(string id)
         {
             if (fail) throw new ProcessDownException(id);
 
+            // what should the system do if a data-server fails?
             Console.WriteLine("HEARTBEAT");
             return null;
         }
 
-        public void RegisterDataServer(string name, string location)
+        public void RegisterDataServer(string id, string location)
         {
             if (fail) throw new ProcessDownException(id);
 
-            Console.WriteLine("REGISTER DATA SERVER " + name);
+            Console.WriteLine("REGISTER DATA SERVER " + id);
 
-            if (!dataServers.ContainsKey(name))
+            if (!dataServers.ContainsKey(id))
             {
-                IDataServerToMetadata data = (IDataServerToMetadata)Activator.GetObject(
+                IDataServerToMetadata dataServer = (IDataServerToMetadata)Activator.GetObject(
                     typeof(IDataServerToMetadata),
                     location);
-                dataServers.Add(name, data);
+                dataServers.Add(id, dataServer);
             }
         }
     }

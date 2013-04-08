@@ -66,21 +66,14 @@ namespace Client
             Console.ReadLine();
         }
 
-        public void UpdatePrimary()
-        {
-            foreach (var entry in metadatas)
-            {
-                string id = entry.Key;
-                IMetadataToClient metadata = entry.Value;
-            }
-        }
-
         /**
          * IClientToPM Methods
          */
 
         public void MetadataLocation(string id, string location)
         {
+            System.Console.WriteLine("RECEIVED METADATA LOCATION " + location);
+
             IMetadataToClient metadata = (IMetadataToClient)Activator.GetObject(
                 typeof(IMetadataToClient), 
                 location);
@@ -95,19 +88,17 @@ namespace Client
         public void Create(string filename, int nbDataServers, int readQuorum, int writeQuorum)
         {
             System.Console.WriteLine("CREATE CLIENT FILE " + filename);
+
             try
             {
-                if (openedFilesMetadata.ContainsKey(filename)) throw new FileAlreadyExistsException(filename);
+                if (openedFilesMetadata.ContainsKey(filename)) 
+                    throw new FileAlreadyExistsException(filename);
 
                 // missing testing if metadata is down
                 FileMetadata file = primary.Metadata.Create(filename, nbDataServers, readQuorum, writeQuorum);
                 openedFilesMetadata.Add(filename, file);
             }
             catch (FileAlreadyExistsException e)
-            {
-                Console.WriteLine(e.Message);
-            }
-            catch (NotEnoughDataServersException e)
             {
                 Console.WriteLine(e.Message);
             }
@@ -120,8 +111,9 @@ namespace Client
             {
                 if (!openedFilesMetadata.ContainsKey(filename))
                 {
-                    FileMetadata file = primary.Metadata.Open(filename);
-                    openedFilesMetadata.Add(filename, file);
+                    FileMetadata fileMetadata = primary.Metadata.Open(filename);
+                    openedFilesMetadata.Add(filename, fileMetadata);
+                    Console.WriteLine("FILE METADATA => " + fileMetadata.ToString());
                 }
             }
             catch (FileDoesNotExistException e)
@@ -132,7 +124,7 @@ namespace Client
 
         public void Close(string filename)
         {
-            System.Console.WriteLine("CLOSE CLIENT FILE " + filename);
+            System.Console.WriteLine("CLOSED FILE " + filename);
             try
             {
                 if (openedFilesMetadata.ContainsKey(filename))

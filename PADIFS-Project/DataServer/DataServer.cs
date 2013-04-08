@@ -76,10 +76,11 @@ namespace DataServer
                 location);
             metadatas.Add(metadata);
 
+            // @TODO Fix primary decision
             if (primary == null)
             {
                 primary = new Primary(id, metadata);
-                primary.Metadata.RegisterDataServer(id, Helper.GetUrl(DataServer.id, port));
+                primary.Metadata.RegisterDataServer(DataServer.id, Helper.GetUrl(DataServer.id, port));
             }
         }
 

@@ -43,7 +43,7 @@ namespace PuppetMaster
 
         static void ExceptionHandler(object sender, UnhandledExceptionEventArgs args)
         {
-            PuppetMaster.KillConsoles();
+            // PuppetMaster.KillConsoles();
         }
 
         private void ComponentSelectionBoxSelectedIndexChanged(object sender, EventArgs e)
@@ -129,6 +129,17 @@ namespace PuppetMaster
             this.startButton.Enabled = flagMetadata;
         }
 
+        private void DumpButtonClick(object sender, EventArgs e)
+        {
+            if (CheckId())
+            {
+                string id = this.processBox.Text;
+
+                PuppetMaster.DumpProcess(id);
+                SetStatus("Recovered process " + id);
+            }
+        }
+
         private void RecoverButtonClick(object sender, EventArgs e)
         {
             if (CheckId())
@@ -175,7 +186,7 @@ namespace PuppetMaster
 
         private void CreateButtonClick(object sender, EventArgs e)
         {
-            if (CheckId() && CheckFilename() && CheckNbData() && CheckReadQ() && CheckWriteQ())
+            if (CheckId() && CheckFilename() && CheckNbDataServers() && CheckReadQuorum() && CheckWriteQuorum())
             {
                 string id = this.processBox.Text;
                 string filename = this.filenameBox.Text;
@@ -262,7 +273,7 @@ namespace PuppetMaster
         /**
          * Field checkers
          */
-        private bool CheckNbData()
+        private bool CheckNbDataServers()
         {
             try
             {
@@ -276,7 +287,7 @@ namespace PuppetMaster
             }
         }
 
-        private bool CheckReadQ()
+        private bool CheckReadQuorum()
         {
             try
             {
@@ -290,7 +301,7 @@ namespace PuppetMaster
             }
         }
 
-        private bool CheckWriteQ()
+        private bool CheckWriteQuorum()
         {
             try
             {
@@ -420,6 +431,7 @@ namespace PuppetMaster
 
             if (steps[0].First() == '#')
             {
+                // #! is a BREAKPOINT 'laica boss'
                 if (steps[0].Length == 2 && steps[0].Substring(0,2) == "#!") 
                     return true;
 

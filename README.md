@@ -24,9 +24,10 @@ Plataformas para Aplicações Distribuídas na Internet
 ## Duvidas
 *   Contacto dos Metadata Servers é passado no startup aos Data Servers e Clientes ? (No enunciado só mencionam os Clientes)
 *   Excepções possivelmente lançadas no cliente para o PM ?
-*   É suposto registar em todos os metadatas ou só no primary?
 *   O que fazer se o registo no metadata server falhar?
+    *   Tentar outro?
 *   Formato exacto dos scripts?
-*   Como definir o metadata primario? Pode ser o puppet master a decidir/forçar?!
-*   Como simular falhas? Excepções, respostas vazias?
-
+*   Como simular falhas? Excepções?
+*   What should the system do if a data-server fails?
+*   Para que server afinal o nbDataServers?
+*   //Tratar o caso em que possivelmente algum dos servidores não conseguiu apagar o ficheiro

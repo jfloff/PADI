@@ -9,6 +9,7 @@ RECOVER m-1
 UNFREEZE d-1
 # Start a client and create a file f1 with 2 data servers and
 # read and write quora of 1
+#!
 CREATE c-1, f1, 2, 1, 1
 # another file
 CREATE c-1, f2, 3, 2, 2

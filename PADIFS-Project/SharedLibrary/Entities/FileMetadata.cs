@@ -25,7 +25,7 @@ namespace SharedLibrary.Entities
             this.dataServersLocalFiles = dataServersLocalFiles;
         }
 
-        public string FileName
+        public string Filename
         {
             get { return this.filename;  }
             set { this.filename = value; }
@@ -69,7 +69,7 @@ namespace SharedLibrary.Entities
             return this.dataServersLocalFiles.ContainsKey(dataServerName);
         }
 
-        public string ToString()
+        public override string ToString()
         {
             string dataServers = "[";
             foreach (var entry in dataServersLocalFiles)

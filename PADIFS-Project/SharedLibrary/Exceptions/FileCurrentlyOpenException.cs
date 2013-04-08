@@ -3,24 +3,22 @@ using System.Runtime.Serialization;
 
 namespace SharedLibrary.Exceptions
 {
-
     [Serializable]
-    public class FileAlreadyExistsException : ApplicationException
+    public class FileCurrentlyOpenException : ApplicationException
     {
         private string filename;
 
-        public FileAlreadyExistsException() { }
+        public FileCurrentlyOpenException() { }
 
-        public FileAlreadyExistsException(string filename)
-            : base("File " + filename + " already exists.")
+        public FileCurrentlyOpenException(string filename)
+            : base("File " + filename + " is currently open by other clients.")
         {
             this.filename = filename;
         }
 
-        public FileAlreadyExistsException(SerializationInfo info, StreamingContext context)
+        public FileCurrentlyOpenException(SerializationInfo info, StreamingContext context)
             : base(info, context)
-        {
-        }
+        { }
 
         public string Filename
         {
