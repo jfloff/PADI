@@ -91,25 +91,31 @@ namespace SharedLibrary.Entities
 
         public override bool Equals(object obj)
         {
-            return Equals(obj as FileData);
+            // If parameter is null return false.
+            if (obj == null)
+            {
+                return false;
+            }
+
+            // If parameter cannot be cast to Point return false.
+            FileData fileData = obj as FileData;
+            if ((System.Object) fileData == null)
+            {
+                return false;
+            }
+
+            return (this.version.ClientId.Equals(fileData.version.ClientId) && (this.version.Clock == fileData.version.Clock));
         }
 
         public bool Equals(FileData fileData)
         {
+            // If parameter is null return false:
+            if ((object)fileData == null)
+            {
+                return false;
+            }
+
             return (this.version.ClientId.Equals(fileData.version.ClientId) && (this.version.Clock == fileData.version.Clock));
         }
-
-        //public static bool operator ==(FileData f1, FileData f2)
-        //{
-        //    if (f1 == null && f2 == null) return true;
-        //    if (f1.version.ClientId.Equals(f2.version.ClientId) && (f1.version.Clock == f2.version.Clock)) return true;
-
-        //    return false;
-        //}
-
-        //public static bool operator !=(FileData f1, FileData f2)
-        //{
-        //    return !(f1 == f2);
-        //}
     }
 }
