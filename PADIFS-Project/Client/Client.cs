@@ -9,6 +9,7 @@ using System.Runtime.Remoting;
 using System.Runtime.Remoting.Channels;
 using System.Runtime.Remoting.Channels.Tcp;
 using System.Threading;
+using SharedLibrary.Entities;
 
 // @TODO Missing re-connect to other metadata
 
@@ -33,8 +34,8 @@ namespace Client
             = new Dictionary<string, IMetadataToClient>();
 
         // filename 
-        List<string> fileRegisters = new List<string>();
-        List<byte[]> byteRegisters = new List<byte[]>();
+        private static List<string> fileRegisters = new List<string>();
+        private static List<byte[]> byteRegisters = new List<byte[]>();
 
         private static Primary primary = new Primary() { Id = null, Metadata = null };
 
@@ -92,6 +93,7 @@ namespace Client
                 // missing testing if metadata is down
                 FileMetadata file = primary.Metadata.Create(filename, nbDataServers, readQuorum, writeQuorum);
                 openedFilesMetadata.Add(filename, file);
+                fileRegisters.Add(filename);
             }
             catch (FileAlreadyExistsException e)
             {
@@ -171,26 +173,98 @@ namespace Client
             }
 
             string filename = fileRegisters[fileRegister];
+            FileMetadata fileMetadata = openedFilesMetadata[filename];
+            ConcurrentBag<FileData> reads = new ConcurrentBag<FileData>();
+            // data server id / thread
+            ConcurrentDictionary<string, Thread> requests = new ConcurrentDictionary<string, Thread>();
+            FileData quorumFile = null;
 
+            //QUORUM
+            while (true)
+            {
+                // voting
+                Dictionary<FileData, int> quorum = new Dictionary<FileData, int>();
+                foreach (FileData fileData in reads)
+                {
+                    if (quorum.ContainsKey(fileData))
+                    {
+                        if (++quorum[fileData] >= fileMetadata.ReadQuorum)
+                        {
+                            quorumFile = fileData;
+                            break;
+                        }
+                    }
+                    else
+                    {
+                        quorum.Add(fileData, 1);
+                    }
+                }
+
+                // found the quorum file
+                if (quorumFile != null) break;
+                
+                // if did not found check if it has requests pending
+                if (requests.Count == 0)
+                {
+                    // broadcast to all dataServers that have that file
+                    foreach (var entry in fileMetadata.Locations)
+                    {
+                        string id = entry.Key;
+                        string location = entry.Value;
+                        string localFilename = fileMetadata.LocalFilenames[id];
+
+                        Thread request = new Thread(() =>
+                        {
+                            // missing checking if its down
+                            IDataServerToClient dataServer = (IDataServerToClient)Activator.GetObject(
+                                typeof(IDataServerToClient),
+                                location);
+                            reads.Add(dataServer.Read(localFilename));
+                            Thread ignored;
+                            requests.TryRemove(id, out ignored);
+                        });
+                        requests.TryAdd(id, request);
+                        request.Start();
+                    }
+                }
+            }
+        }
+
+        public void Write(int fileRegister, string contents)
+        {
+            Console.WriteLine("WRITE FILE = " + fileRegister);
+
+            if (fileRegister > (fileRegisters.Count - 1))
+            {
+                Console.WriteLine("File register " + fileRegister + " does not exist");
+                return;
+            }
+
+            string filename = fileRegisters[fileRegister];
+            byte[] byteContents = Helper.StringToBytes(contents);
             FileMetadata fileMetadata = openedFilesMetadata[filename];
 
+            if (!openedFilesData.ContainsKey(filename))
+            {
+            }
+
             // broadcast reads to all dataServers that have that file
-            ConcurrentDictionary<string, FileData> reads = new ConcurrentDictionary<string,FileData>();
+            ConcurrentBag<string> writes = new ConcurrentBag<string>();
             List<Thread> requests = new List<Thread>();
-            foreach(var entry in fileMetadata.Locations)
+            foreach (var entry in fileMetadata.Locations)
             {
                 string id = entry.Key;
                 string location = entry.Value;
                 string localFilename = fileMetadata.LocalFilenames[id];
 
-                Thread request = new Thread(() => 
+                Thread request = new Thread(() =>
                 {
                     // missing checking if its down
                     IDataServerToClient dataServer = (IDataServerToClient)Activator.GetObject(
-                        typeof(IDataServerToClient), 
+                        typeof(IDataServerToClient),
                         localFilename);
-
-                    reads.TryAdd(id, dataServer.Read(localFilename));
+                    //dataServer.Write(localFilename, 
+                    //writes.Add(
                 });
                 requests.Add(request);
                 request.Start();
@@ -209,11 +283,6 @@ namespace Client
         public void Write(int fileRegister, int stringRegister)
         {
 
-        }
-
-        public void Write(int fileRegister, string contents)
-        {
-            //IDataServerToClient data = (IDataServerToClient)Activator.GetObject(typeof(IDataServerToClient), "tcp://localhost:9/d-1");
         }
         
         public void Copy(int fileRegister1, Helper.Semantics semantics, int fileRegister2, string salt)

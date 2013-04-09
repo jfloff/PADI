@@ -146,9 +146,9 @@ namespace DataServer
 
         public FileData Read(string localFilename)
         {
-            Console.WriteLine("READ DATA");
+            Console.WriteLine("READ " + localFilename);
 
-            return null;
+            return (files.ContainsKey(localFilename)) ? files[localFilename] : null;
         }
 
         public void Write(string localFilename, FileData newFileData)

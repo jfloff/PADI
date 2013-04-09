@@ -39,7 +39,6 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Entities\Version.cs" />
     <Compile Include="Exceptions\FileCurrentlyOpenException.cs" />
     <Compile Include="Exceptions\ProcessDownException.cs" />
     <Compile Include="Helper.cs" />

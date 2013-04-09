@@ -24,6 +24,7 @@ Plataformas para Aplicações Distribuídas na Internet
 *   DUMP NO PM
 *   VOLATILE NO PRIMARY METADATA
 *   REVER SCRIPTS NAO ESTA A FUNCAR
+*   TRATAR DE DELETES NO READ CLIENT
 
 ### DUVIDAS
 ### Esclarecidas

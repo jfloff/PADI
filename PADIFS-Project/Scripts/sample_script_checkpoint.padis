@@ -22,7 +22,7 @@ UNFREEZE d-3
 RECOVER m-2
 RECOVER m-3
 #more operations...
-WRITE c-1, 0, "Text contents of the file. Contents are a string delimited by double quotes as this one"
+#WRITE c-1, 0, "Text contents of the file. Contents are a string delimited by double quotes as this one"
 #!
 READ c-1, 0, monotonic, 0
 FREEZE d-2

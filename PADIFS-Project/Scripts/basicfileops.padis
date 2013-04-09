@@ -2,12 +2,6 @@
 # between clients and metadata
 RECOVER m-1
 UNFREEZE d-1
-UNFREEZE d-2
-OPEN c-1, f1
 CREATE c-1, f1, 2, 1, 1
-DUMP m-1
 #!
-OPEN c-1, f1
-DELETE c-1, f1
-CLOSE c-1, f1
-DELETE c-1, f1
+READ c-1, 0, monotonic, 0

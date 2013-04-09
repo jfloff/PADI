@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 
 namespace SharedLibrary.Entities
 {
+    [Serializable]
     public class Heartbeat
     {
     }
