@@ -71,7 +71,7 @@ namespace Client
             IMetadataToClient metadata = (IMetadataToClient)Activator.GetObject(
                 typeof(IMetadataToClient), 
                 location);
-            metadatas.Add(id, metadata);
+            metadatas[id] = metadata;
 
             // missing recheck of metadata
             if (primary.Id == null)
@@ -92,7 +92,7 @@ namespace Client
 
                 // missing testing if metadata is down
                 FileMetadata file = primary.Metadata.Create(filename, nbDataServers, readQuorum, writeQuorum);
-                openedFilesMetadata.Add(filename, file);
+                openedFilesMetadata[filename] = file;
                 fileRegisters.Add(filename);
             }
             catch (FileAlreadyExistsException e)
@@ -109,7 +109,7 @@ namespace Client
                 if (!openedFilesMetadata.ContainsKey(filename))
                 {
                     FileMetadata fileMetadata = primary.Metadata.Open(filename);
-                    openedFilesMetadata.Add(filename, fileMetadata);
+                    openedFilesMetadata[filename] = fileMetadata;
                     fileRegisters.Add(filename);
                     Console.WriteLine("FILE METADATA => " + fileMetadata.ToString());
                 }
@@ -162,7 +162,7 @@ namespace Client
             }
         }
 
-        public void Read(int fileRegister, Helper.Semantics semantics, int stringRegister)
+        public void Read(int fileRegister, Helper.Semantics semantics, int byteRegister)
         {
             Console.WriteLine("READ FILE = " + fileRegister);
 
@@ -174,7 +174,7 @@ namespace Client
 
             string filename = fileRegisters[fileRegister];
             FileMetadata fileMetadata = openedFilesMetadata[filename];
-            ConcurrentBag<FileData> reads = new ConcurrentBag<FileData>();
+            ConcurrentDictionary<string, FileData> reads = new ConcurrentDictionary<string, FileData>();
             // data server id / thread
             ConcurrentDictionary<string, Thread> requests = new ConcurrentDictionary<string, Thread>();
             FileData quorumFile = null;
@@ -184,19 +184,23 @@ namespace Client
             {
                 // voting
                 Dictionary<FileData, int> quorum = new Dictionary<FileData, int>();
-                foreach (FileData fileData in reads)
+                foreach (var entry in reads)
                 {
+                    FileData fileData = entry.Value;
+
                     if (quorum.ContainsKey(fileData))
                     {
-                        if (++quorum[fileData] >= fileMetadata.ReadQuorum)
-                        {
-                            quorumFile = fileData;
-                            break;
-                        }
+                        quorum[fileData]++;
                     }
                     else
                     {
-                        quorum.Add(fileData, 1);
+                        quorum[fileData] = 1;
+                    }
+
+                    if (quorum[fileData] >= fileMetadata.ReadQuorum)
+                    {
+                        quorumFile = fileData;
+                        break;
                     }
                 }
 
@@ -219,65 +223,22 @@ namespace Client
                             IDataServerToClient dataServer = (IDataServerToClient)Activator.GetObject(
                                 typeof(IDataServerToClient),
                                 location);
-                            reads.Add(dataServer.Read(localFilename));
+                            reads[id] = dataServer.Read(localFilename);
                             Thread ignored;
                             requests.TryRemove(id, out ignored);
                         });
-                        requests.TryAdd(id, request);
+                        requests[id] = request;
                         request.Start();
                     }
                 }
             }
+
+            //byteRegistersbyteRegister = quorumFile.Contents;
         }
 
         public void Write(int fileRegister, string contents)
         {
-            Console.WriteLine("WRITE FILE = " + fileRegister);
 
-            if (fileRegister > (fileRegisters.Count - 1))
-            {
-                Console.WriteLine("File register " + fileRegister + " does not exist");
-                return;
-            }
-
-            string filename = fileRegisters[fileRegister];
-            byte[] byteContents = Helper.StringToBytes(contents);
-            FileMetadata fileMetadata = openedFilesMetadata[filename];
-
-            if (!openedFilesData.ContainsKey(filename))
-            {
-            }
-
-            // broadcast reads to all dataServers that have that file
-            ConcurrentBag<string> writes = new ConcurrentBag<string>();
-            List<Thread> requests = new List<Thread>();
-            foreach (var entry in fileMetadata.Locations)
-            {
-                string id = entry.Key;
-                string location = entry.Value;
-                string localFilename = fileMetadata.LocalFilenames[id];
-
-                Thread request = new Thread(() =>
-                {
-                    // missing checking if its down
-                    IDataServerToClient dataServer = (IDataServerToClient)Activator.GetObject(
-                        typeof(IDataServerToClient),
-                        localFilename);
-                    //dataServer.Write(localFilename, 
-                    //writes.Add(
-                });
-                requests.Add(request);
-                request.Start();
-            }
-
-            // wait on all the requests to end
-            foreach (Thread request in requests)
-            {
-                request.Join();
-            }
-
-            //quoruns
-            
         }
 
         public void Write(int fileRegister, int stringRegister)

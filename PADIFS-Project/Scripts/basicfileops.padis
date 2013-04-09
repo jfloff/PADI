@@ -2,6 +2,9 @@
 # between clients and metadata
 RECOVER m-1
 UNFREEZE d-1
-CREATE c-1, f1, 2, 1, 1
+UNFREEZE d-2
+UNFREEZE d-3
+# id filename nb rq wq
+CREATE c-1, f1, 2, 2, 2
 #!
 READ c-1, 0, monotonic, 0

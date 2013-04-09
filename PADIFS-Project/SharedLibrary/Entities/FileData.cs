@@ -96,20 +96,20 @@ namespace SharedLibrary.Entities
 
         public bool Equals(FileData fileData)
         {
-            return this == fileData;
+            return (this.version.ClientId.Equals(fileData.version.ClientId) && (this.version.Clock == fileData.version.Clock));
         }
 
-        public static bool operator ==(FileData f1, FileData f2)
-        {
-            if (f1 == null && f2 == null) return true;
-            if (f1.version.ClientId.Equals(f2.version.ClientId) && (f1.version.Clock == f2.version.Clock)) return true;
+        //public static bool operator ==(FileData f1, FileData f2)
+        //{
+        //    if (f1 == null && f2 == null) return true;
+        //    if (f1.version.ClientId.Equals(f2.version.ClientId) && (f1.version.Clock == f2.version.Clock)) return true;
 
-            return false;
-        }
+        //    return false;
+        //}
 
-        public static bool operator !=(FileData f1, FileData f2)
-        {
-            return !(f1 == f2);
-        }
+        //public static bool operator !=(FileData f1, FileData f2)
+        //{
+        //    return !(f1 == f2);
+        //}
     }
 }
