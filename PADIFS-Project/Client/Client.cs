@@ -233,7 +233,7 @@ namespace Client
                 }
             }
 
-            //byteRegistersbyteRegister = quorumFile.Contents;
+            byteRegisters.Insert(byteRegister, quorumFile.Contents);
         }
 
         public void Write(int fileRegister, string contents)
@@ -262,6 +262,11 @@ namespace Client
 
                 Console.WriteLine("  " + filename);
                 Console.WriteLine("    " + fileMetadata.ToString());
+            }
+            Console.WriteLine("Byte Registers");
+            for (int i = 0; i < byteRegisters.Count; i++)
+            {
+                Console.WriteLine("  " + i + ":"+  Helper.BytesToString(byteRegisters[i]));
             }
         }
     }

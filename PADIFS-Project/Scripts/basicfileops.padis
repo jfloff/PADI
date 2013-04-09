@@ -8,3 +8,4 @@ UNFREEZE d-3
 CREATE c-1, f1, 2, 2, 2
 #!
 READ c-1, 0, monotonic, 0
+DUMP c-1
