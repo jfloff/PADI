@@ -1,42 +1,4 @@
-﻿
-
-//public override bool Equals(object obj)
-//{
-//    return obj is FileVersion && this == (FileVersion)obj;
-//}
-
-//public override int GetHashCode()
-//{
-//    return this.clientId.GetHashCode() ^ this.clock.GetHashCode();
-//}
-
-//public static bool operator ==(FileVersion v1, FileVersion v2)
-//{
-//    return (v1.clientId.Equals(v2.clientId) && (v1.clock == v2.clock));
-//}
-
-//public static bool operator !=(FileVersion v1, FileVersion v2)
-//{
-//    return !v1.Equals(v2);
-//}
-
-//public static bool operator >(FileVersion v1, FileVersion v2)
-//{
-//    return v1.clock > v2.clock;
-//}
-
-//public static bool operator <(FileVersion v1, FileVersion v2)
-//{
-//    return v1.clock < v2.clock;
-//}
-
-//public static FileVersion operator ++(FileVersion v)
-//{
-//    return new FileVersion(v.clientId, ++v.clock);
-//}
-
-
-using System;
+﻿using System;
 using System.Linq;
 
 namespace SharedLibrary.Entities
@@ -52,7 +14,7 @@ namespace SharedLibrary.Entities
 
             public Version()
             {
-                this.ClientId = "";
+                this.ClientId = string.Empty;
                 this.Clock = 0;
             }
         }
@@ -63,7 +25,7 @@ namespace SharedLibrary.Entities
         public FileData()
         {
             this.version = new Version();
-            this.contents = Helper.StringToBytes("TESTE");
+            this.contents = Helper.StringToBytes(string.Empty);
         }
 
         public byte[] Contents
@@ -98,7 +60,7 @@ namespace SharedLibrary.Entities
                 }
                 if (fileDatas[i].version.Clock == latest.version.Clock)
                 {
-                    if (String.Compare(latest.version.ClientId, fileDatas[i].version.ClientId) > 0)
+                    if (string.Compare(latest.version.ClientId, fileDatas[i].version.ClientId) > 0)
                     {
                         latest = fileDatas[i];
                     }

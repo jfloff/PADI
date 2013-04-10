@@ -588,15 +588,13 @@ namespace PuppetMaster
                         string id = writeSteps[1];
                         int fileRegister = Convert.ToInt32(writeSteps[2]);
                         string contents = writeSteps[3];
-                        string parsedContents;
 
                         if (contents.First() != '"'){
-                            parsedContents = contents.Substring(1,contents.Length-1);
                             PuppetMaster.WriteFile(id, fileRegister, Convert.ToInt32(contents));
                             return false;
                         }
-                        parsedContents = contents.Substring(1,contents.Length-2);
-                        PuppetMaster.WriteFile(id, fileRegister, parsedContents);
+
+                        PuppetMaster.WriteFile(id, fileRegister, contents.Substring(1,contents.Length-2));
                         break;
                     }
 

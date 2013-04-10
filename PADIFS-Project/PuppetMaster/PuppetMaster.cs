@@ -158,6 +158,7 @@ namespace PuppetMaster
         public static void WriteFile(string id, int fileRegister, int byteRegister)
         {
             IClientToPM client = (IClientToPM)GetProcess(id);
+            client.Write(fileRegister, byteRegister);
         }
 
         public static void WriteFile(string id, int fileRegister, string contents)
@@ -169,6 +170,8 @@ namespace PuppetMaster
         public static void CopyFile(string id, int fileRegister1, string semantics, int fileRegister2, string salt)
         {
             Helper.Semantics semanticsId = getSemanticsId(semantics);
+            IClientToPM client = (IClientToPM)GetProcess(id);
+            client.Copy(fileRegister1, semanticsId, fileRegister2, Helper.StringToBytes(salt));
         }
 
         public static void DumpProcess(string id)

@@ -265,6 +265,7 @@ namespace Client
             FileData fileData = ReadFileData(fileRegister, Helper.Semantics.MONOTONIC);
             fileData.Contents = contents;
             fileData.IncrementVersion(Client.id);
+
             string filename = fileRegisters[fileRegister];
             FileMetadata fileMetadata = openedFilesMetadata[filename];
             // data server id / bool write
@@ -324,14 +325,36 @@ namespace Client
             }
         }
 
-        public void Write(int fileRegister, int stringRegister)
+        public void Write(int fileRegister, int byteRegister)
         {
+            if ((byteRegister > (byteRegisters.Count - 1)) || (byteRegisters[byteRegister] == null))
+            {
+                Console.WriteLine("Byte register " + byteRegister + " does not exist");
+                return;
+            }
 
+            Write(fileRegister, byteRegisters[byteRegister]);
         }
         
         public void Copy(int fileRegister1, Helper.Semantics semantics, int fileRegister2, byte[] salt)
         {
-            //
+            Console.WriteLine("COPY FILE " + fileRegister1 + " TO + " + fileRegister2);
+
+            if (fileRegister1 > (fileRegisters.Count - 1))
+            {
+                Console.WriteLine("File register " + fileRegister1 + " does not exist");
+                return;
+            }
+
+            if (fileRegister2 > (fileRegisters.Count - 1))
+            {
+                Console.WriteLine("File register " + fileRegister2 + " does not exist");
+                return;
+            }
+
+            FileData fileData = ReadFileData(fileRegister1, semantics);
+            byte[] saltedContents = Helper.AppendBytes(fileData.Contents, salt);
+            Write(fileRegister2, saltedContents);
         }
 
         public void Dump()
@@ -345,6 +368,11 @@ namespace Client
 
                 Console.WriteLine("  " + filename);
                 Console.WriteLine("    " + fileMetadata.ToString());
+            }
+            Console.WriteLine("File Registers");
+            for (int i = 0; i < fileRegisters.Count; i++)
+            {
+                Console.WriteLine("  " + i + ":" + fileRegisters[i]);
             }
             Console.WriteLine("Byte Registers");
             for (int i = 0; i < byteRegisters.Count; i++)

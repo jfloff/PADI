@@ -115,7 +115,7 @@ namespace Metadata
             }
             pings.Add(Metadata.id);
             primary = pings.Min();
-            Console.WriteLine("PRIMARY = " + primary);
+            //Console.WriteLine("PRIMARY = " + primary);
         }
 
         /**
@@ -233,7 +233,7 @@ namespace Metadata
         {
             if (fail) throw new ProcessDownException(id);
 
-            Console.WriteLine("PING");
+            // Console.WriteLine("PING");
         }
 
         /**

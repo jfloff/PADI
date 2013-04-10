@@ -4,7 +4,7 @@
 # the checkpoint.
 # First start a metadata server.
 # The first command to any node starts it!
-RECOVER m-1
+RECOVER m-0
 # Start a data server
 UNFREEZE d-1
 # Start a client and create a file f1 with 2 data servers and
@@ -19,11 +19,10 @@ OPEN c-1, f2
 UNFREEZE d-2
 UNFREEZE d-3
 # more metadata servers
+RECOVER m-1
 RECOVER m-2
-RECOVER m-3
 #more operations...
 WRITE c-1, 0, "Text contents of the file. Contents are a string delimited by double quotes as this one"
-#!
 READ c-1, 0, monotonic, 0
 FREEZE d-2
 COPY c-1, 0, default, 1, " salt example"
@@ -34,8 +33,7 @@ OPEN c-2, f2
 DUMP c-2
 CLOSE c-2, f2
 DUMP m-2
+DELETE c-2, f2
 CLOSE c-1, f2
 # script1 below would exist in the local puppet master disk
 EXESCRIPT c-1 script1.padis
-
-
