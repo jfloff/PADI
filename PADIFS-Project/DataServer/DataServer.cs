@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Runtime.Remoting;
 using System.Runtime.Remoting.Channels;
 using System.Runtime.Remoting.Channels.Tcp;
+using System.Threading;
 
 // @TODO Fix primary decision
 
@@ -25,10 +26,13 @@ namespace DataServer
 
         private static List<IMetadataToDataServer> metadatas = new List<IMetadataToDataServer>();
         private static Primary primary = new Primary() { Id = null, Metadata = null };
-        
+
         private static string id;
         private static int port;
+
         private static bool fail = false;
+        private static bool freeze = false;
+        private static Queue<Action> freezed = new Queue<Action>();
 
         public static void Main(string[] args)
         {
@@ -55,6 +59,7 @@ namespace DataServer
          * IDataServerToPM Methods
          */
 
+        // skips failed and freeze
         public void MetadataLocation(string id, string location)
         {
             Console.WriteLine("RECEIVED METADATA LOCATION " + location);
@@ -72,6 +77,7 @@ namespace DataServer
             }
         }
 
+        // skips failed and freeze
         public void Dump()
         {
             Console.WriteLine("DUMP");
@@ -88,12 +94,16 @@ namespace DataServer
 
         public void Fail()
         {
+            if (freeze) freezed.Enqueue(() => Fail());
+
             Console.WriteLine("FAIL");
             fail = true;
         }
 
         public void Recover()
         {
+            if (freeze) freezed.Enqueue(() => Recover());
+
             Console.WriteLine("RECOVER");
             fail = false;
         }
@@ -103,6 +113,7 @@ namespace DataServer
             if (fail) throw new ProcessDownException(id);
 
             Console.WriteLine("FREEZE");
+            freeze = true;
         }
 
         public void Unfreeze()
@@ -110,6 +121,16 @@ namespace DataServer
             if (fail) throw new ProcessDownException(id);
 
             Console.WriteLine("UNFREEZE");
+            freeze = false;
+            // do this after introducing concurrency in the DS
+            //Thread unfreezeAll = new Thread(() =>
+            //{
+                while (freezed.Count != 0)
+                {
+                    Action action = freezed.Dequeue();
+                    action();
+                }
+            //});
         }
 
         /**
@@ -119,6 +140,7 @@ namespace DataServer
         public void Create(string localFilename)
         {
             if (fail) throw new ProcessDownException(id);
+            if (freeze) freezed.Enqueue(() => Create(localFilename));
 
             Console.WriteLine("CREATE FILE " + localFilename);
 
@@ -131,6 +153,7 @@ namespace DataServer
         public void Delete(string localFilename)
         {
             if (fail) throw new ProcessDownException(id);
+            if (freeze) freezed.Enqueue(() => Delete(localFilename));
 
             Console.WriteLine("DELETE FILE " + localFilename);
 
@@ -147,6 +170,7 @@ namespace DataServer
         public FileData Read(string localFilename)
         {
             if (fail) throw new ProcessDownException(id);
+            if (freeze) freezed.Enqueue(() => Read(localFilename));
 
             Console.WriteLine("READ " + localFilename);
 
@@ -159,6 +183,7 @@ namespace DataServer
         public void Write(string localFilename, FileData newFile)
         {
             if (fail) throw new ProcessDownException(id);
+            if (freeze) freezed.Enqueue(() => Write(localFilename, newFile));
 
             Console.WriteLine("WRITE " + localFilename);
 

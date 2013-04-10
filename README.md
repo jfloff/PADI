@@ -22,7 +22,6 @@ Plataformas para Aplicações Distribuídas na Internet
 *   Verificações de null objects nos activator get object.
 *   ASSINCRONO NO EXECRIPT
 *   DUMP NO PM
-*   VOLATILE NO PRIMARY METADATA
 *   REVER SCRIPTS NAO ESTA A FUNCAR
 *   TRATAR DE FILE DOES NO EXIST NO READ CLIENT
 *   CONCURRENCY METADATA E DATASERVER

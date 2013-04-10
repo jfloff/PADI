@@ -22,17 +22,6 @@ namespace Client
             public IMetadataToClient Metadata;
         };
 
-        class WriteQuorumVoting
-        {
-            public int Written = 0;
-            public int Failed = 0;
-
-            public void AddVote(bool vote)
-            {
-                if (vote) Written++; else Failed++;
-            }
-        };
-
         // filename / file metadata
         private static Dictionary<string, FileMetadata> openedFilesMetadata
              = new Dictionary<string, FileMetadata>();
@@ -114,13 +103,10 @@ namespace Client
             Console.WriteLine("OPEN CLIENT FILE " + filename);
             try
             {
-                if (!openedFilesMetadata.ContainsKey(filename))
-                {
-                    FileMetadata fileMetadata = primary.Metadata.Open(filename);
-                    openedFilesMetadata[filename] = fileMetadata;
-                    fileRegisters.Add(filename);
-                    Console.WriteLine("FILE METADATA => " + fileMetadata.ToString());
-                }
+                FileMetadata fileMetadata = primary.Metadata.Open(filename);
+                openedFilesMetadata[filename] = fileMetadata;
+                fileRegisters.Add(filename);
+                Console.WriteLine("FILE METADATA => " + fileMetadata.ToString());
             }
             catch (FileDoesNotExistException e)
             {
@@ -190,31 +176,22 @@ namespace Client
             FileMetadata fileMetadata = openedFilesMetadata[filename];
             // data server id / file data
             ConcurrentDictionary<string, FileData> reads = new ConcurrentDictionary<string, FileData>();
-            // data server id / thread
-            ConcurrentDictionary<string, Thread> requests = new ConcurrentDictionary<string, Thread>();
+            int requests = 0;
             FileData quorumFile = null;
 
             //QUORUM
             while (true)
             {
                 // voting
-                Dictionary<FileData, int> quorum = new Dictionary<FileData, int>();
+                ReadQuorum quorum = new ReadQuorum(fileMetadata.ReadQuorum);
                 foreach (var entry in reads)
                 {
-                    FileData fileData = entry.Value;
+                    FileData vote = entry.Value;
 
-                    if (quorum.ContainsKey(fileData))
+                    quorum.AddVote(vote);
+                    if (quorum.CheckQuorum(vote))
                     {
-                        quorum[fileData]++;
-                    }
-                    else
-                    {
-                        quorum[fileData] = 1;
-                    }
-
-                    if (quorum[fileData] >= fileMetadata.ReadQuorum)
-                    {
-                        quorumFile = fileData;
+                        quorumFile = vote;
                         break;
                     }
                 }
@@ -222,8 +199,8 @@ namespace Client
                 // found the quorum file
                 if (quorumFile != null) break;
 
-                // if did not found check if it has requests pending
-                if (requests.Count == 0)
+                // if he voted with all the requests responses available
+                if (quorum.Count == requests)
                 {
                     // broadcast to all dataServers that have that file
                     foreach (var entry in fileMetadata.Locations)
@@ -238,11 +215,14 @@ namespace Client
                             IDataServerToClient dataServer = (IDataServerToClient)Activator.GetObject(
                                 typeof(IDataServerToClient),
                                 location);
-                            reads[id] = dataServer.Read(localFilename);
-                            Thread ignored;
-                            requests.TryRemove(id, out ignored);
+                            try
+                            {
+                                reads[id] = dataServer.Read(localFilename);
+                                Interlocked.Increment(ref requests);
+                            }
+                            catch (ProcessDownException) { }
+                            catch (FileDoesNotExistException) { }
                         });
-                        requests[id] = request;
                         request.Start();
                     }
                 }
@@ -270,23 +250,20 @@ namespace Client
             FileMetadata fileMetadata = openedFilesMetadata[filename];
             // data server id / bool write
             ConcurrentDictionary<string, bool> writes = new ConcurrentDictionary<string, bool>();
-            // data server id / thread
-            ConcurrentDictionary<string, Thread> requests = new ConcurrentDictionary<string, Thread>();
+            int requests = 0;
             bool quorumReached = false;
 
             //QUORUM
             while (true)
             {
                 // voting
-                // number of trues / number of fales
-                WriteQuorumVoting quorum = new WriteQuorumVoting();
+                WriteQuorum quorum = new WriteQuorum(fileMetadata.WriteQuorum);
                 foreach (var entry in writes)
                 {
                     bool vote = entry.Value;
 
                     quorum.AddVote(vote);
-
-                    if (quorum.Written >= fileMetadata.WriteQuorum)
+                    if (quorum.CheckQuorum())
                     {
                         quorumReached = true;
                         break;
@@ -296,9 +273,10 @@ namespace Client
                 // found the quorum file
                 if (quorumReached) break;
 
-                // if did not found check if it has requests pending
-                if (requests.Count == 0)
+                // if he voted with all the requests responses available
+                if (quorum.Count == requests)
                 {
+                    requests = 0;
                     // broadcast to all dataServers that have that file
                     foreach (var entry in fileMetadata.Locations)
                     {
@@ -312,13 +290,15 @@ namespace Client
                             IDataServerToClient dataServer = (IDataServerToClient)Activator.GetObject(
                                 typeof(IDataServerToClient),
                                 location);
-                            dataServer.Write(localFilename, fileData);
-                            // falta verificar DS down
-                            writes[id] = true;
-                            Thread ignored;
-                            requests.TryRemove(id, out ignored);
+                            try
+                            {
+                                dataServer.Write(localFilename, fileData);
+                                writes[id] = true;
+                                Interlocked.Increment(ref requests);
+                            }
+                            catch (ProcessDownException) { writes[id] = false; }
+                            catch (FileDoesNotExistException) { writes[id] = false; }
                         });
-                        requests[id] = request;
                         request.Start();
                     }
                 }

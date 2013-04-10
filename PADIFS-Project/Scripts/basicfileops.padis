@@ -4,9 +4,25 @@ RECOVER m-1
 UNFREEZE d-1
 UNFREEZE d-2
 UNFREEZE d-3
+UNFREEZE d-4
+UNFREEZE d-5
+UNFREEZE d-6
+UNFREEZE d-7
+UNFREEZE d-8
+UNFREEZE d-9
+UNFREEZE d-10
+UNFREEZE d-11
+UNFREEZE d-12
+UNFREEZE d-13
+UNFREEZE d-14
+UNFREEZE d-15
+UNFREEZE d-16
+UNFREEZE d-17
+UNFREEZE d-18
+UNFREEZE d-19
+UNFREEZE d-20
 # id filename nb rq wq
-CREATE c-1, f1, 2, 2, 2
-#!
+CREATE c-1, f2, 18, 10, 10
 WRITE c-1, 0, "Text contents of the file. Contents are a string delimited by double quotes as this one"
 READ c-1, 0, monotonic, 0
 DUMP c-1
