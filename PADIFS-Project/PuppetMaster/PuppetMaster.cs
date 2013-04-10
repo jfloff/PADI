@@ -18,10 +18,6 @@ namespace PuppetMaster
         private static Dictionary<string, string> metadataLocations = new Dictionary<string, string>();
         private static List<int> portsUsed = new List<int>();
 
-        // filenames
-        private static List<string> fileRegister = new List<string>(Helper.MAX_FILE_REGISTERS);
-        private static List<byte[]> stringRegister = new List<byte[]>(Helper.MAX_FILE_REGISTERS);
-
         private static List<Process> consoles = new List<Process>();
         public static void KillConsoles()
         {
@@ -151,15 +147,15 @@ namespace PuppetMaster
             server.Freeze();
         }
 
-        public static void ReadFile(string id, int fileRegister, string semantics, int stringRegister)
+        public static void ReadFile(string id, int fileRegister, string semantics, int byteRegister)
         {
             Helper.Semantics semanticsId = getSemanticsId(semantics);
 
             IClientToPM client = (IClientToPM)GetProcess(id);
-            client.Read(fileRegister, semanticsId, stringRegister);
+            client.Read(fileRegister, semanticsId, byteRegister);
         }
 
-        public static void WriteFile(string id, int fileRegister, int byteArrayRegister)
+        public static void WriteFile(string id, int fileRegister, int byteRegister)
         {
             IClientToPM client = (IClientToPM)GetProcess(id);
         }
@@ -167,6 +163,7 @@ namespace PuppetMaster
         public static void WriteFile(string id, int fileRegister, string contents)
         {
             IClientToPM client = (IClientToPM)GetProcess(id);
+            client.Write(fileRegister, Helper.StringToBytes(contents));
         }
 
         public static void CopyFile(string id, int fileRegister1, string semantics, int fileRegister2, string salt)

@@ -24,7 +24,10 @@ Plataformas para Aplicações Distribuídas na Internet
 *   DUMP NO PM
 *   VOLATILE NO PRIMARY METADATA
 *   REVER SCRIPTS NAO ESTA A FUNCAR
-*   TRATAR DE DELETES NO READ CLIENT
+*   TRATAR DE FILE DOES NO EXIST NO READ CLIENT
+*   CONCURRENCY METADATA E DATASERVER
+*   MONOTONIC/DEFAULT
+*   COMO OPTIMIZAR
 
 ### DUVIDAS
 ### Esclarecidas
@@ -34,4 +37,3 @@ Plataformas para Aplicações Distribuídas na Internet
     *   Ou se ignora, ou criamos um batch de pedidos
 
 ## A Tirar
-*   Copy/Write/Read on client should exactly be like the proj statement?

@@ -72,9 +72,39 @@ namespace SharedLibrary.Entities
             set { this.contents = value; }
         }
 
-        public void addSalt(byte[] salt)
+        public void AddSalt(byte[] salt)
         {
             this.contents = this.contents.Concat(salt).ToArray();
+        }
+
+        public void IncrementVersion(string clientId)
+        {
+            this.version.ClientId = clientId;
+            this.version.Clock++;
+        }
+
+        // Returns most recent version amongts a variable number of file datas
+        //Clock is king. In case of draw, lowest clientId wins.
+        public static FileData LatestVersion(params FileData[] fileDatas)
+        {
+            if (fileDatas.Length == 0) return null;
+
+            FileData latest = fileDatas[0];
+            for (int i = 1; i < fileDatas.Length; i++)
+            {
+                if (fileDatas[i].version.Clock > latest.version.Clock)
+                {
+                    latest = fileDatas[i];
+                }
+                if (fileDatas[i].version.Clock == latest.version.Clock)
+                {
+                    if (String.Compare(latest.version.ClientId, fileDatas[i].version.ClientId) > 0)
+                    {
+                        latest = fileDatas[i];
+                    }
+                }
+            }
+            return latest;
         }
 
         public override string ToString()
@@ -83,6 +113,8 @@ namespace SharedLibrary.Entities
             return "Version = (" + this.version.ClientId + "," + this.version.Clock + ") : "
                 + "Contents = " + this.contents;
         }
+
+        // Operation overrides needed for Dictionaries
 
         public override int GetHashCode()
         {

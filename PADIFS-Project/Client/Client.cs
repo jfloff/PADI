@@ -9,7 +9,6 @@ using System.Runtime.Remoting;
 using System.Runtime.Remoting.Channels;
 using System.Runtime.Remoting.Channels.Tcp;
 using System.Threading;
-using SharedLibrary.Entities;
 
 // @TODO Missing re-connect to other metadata
 
@@ -17,15 +16,23 @@ namespace Client
 {
     public class Client : MarshalByRefObject, IClientToPM
     {
-        struct Primary
+        class Primary
         {
             public string Id;
             public IMetadataToClient Metadata;
         };
 
-        // filename / file contents
-        private static Dictionary<string, FileData> openedFilesData
-             = new Dictionary<string, FileData>();
+        class WriteQuorumVoting
+        {
+            public int Written = 0;
+            public int Failed = 0;
+
+            public void AddVote(bool vote)
+            {
+                if (vote) Written++; else Failed++;
+            }
+        };
+
         // filename / file metadata
         private static Dictionary<string, FileMetadata> openedFilesMetadata
              = new Dictionary<string, FileMetadata>();
@@ -38,6 +45,7 @@ namespace Client
         private static List<byte[]> byteRegisters = new List<byte[]>();
 
         private static Primary primary = new Primary() { Id = null, Metadata = null };
+        private static string id;
 
         public static void Main(string[] args)
         {
@@ -46,7 +54,7 @@ namespace Client
 
             Console.SetWindowSize(Helper.WINDOW_WIDTH, Helper.WINDOW_HEIGHT);
 
-            string id = args[0];
+            id = args[0];
             int port = Convert.ToInt32(args[1]);
 
             TcpChannel channel = new TcpChannel(port);
@@ -166,14 +174,21 @@ namespace Client
         {
             Console.WriteLine("READ FILE = " + fileRegister);
 
+            FileData fileData = ReadFileData(fileRegister, semantics);
+            byteRegisters.Insert(byteRegister, fileData.Contents);
+        }
+
+        private FileData ReadFileData(int fileRegister, Helper.Semantics semantics)
+        {
             if (fileRegister > (fileRegisters.Count - 1))
             {
                 Console.WriteLine("File register " + fileRegister + " does not exist");
-                return;
+                return null;
             }
 
             string filename = fileRegisters[fileRegister];
             FileMetadata fileMetadata = openedFilesMetadata[filename];
+            // data server id / file data
             ConcurrentDictionary<string, FileData> reads = new ConcurrentDictionary<string, FileData>();
             // data server id / thread
             ConcurrentDictionary<string, Thread> requests = new ConcurrentDictionary<string, Thread>();
@@ -206,7 +221,7 @@ namespace Client
 
                 // found the quorum file
                 if (quorumFile != null) break;
-                
+
                 // if did not found check if it has requests pending
                 if (requests.Count == 0)
                 {
@@ -233,12 +248,80 @@ namespace Client
                 }
             }
 
-            byteRegisters.Insert(byteRegister, quorumFile.Contents);
+            return quorumFile;
         }
 
-        public void Write(int fileRegister, string contents)
+        public void Write(int fileRegister, byte[] contents)
         {
+            Console.WriteLine("WRITE FILE = " + fileRegister);
 
+            if (fileRegister > (fileRegisters.Count - 1))
+            {
+                Console.WriteLine("File register " + fileRegister + " does not exist");
+                return;
+            }
+
+            // forces to get always the most recent file
+            FileData fileData = ReadFileData(fileRegister, Helper.Semantics.MONOTONIC);
+            fileData.Contents = contents;
+            fileData.IncrementVersion(Client.id);
+            string filename = fileRegisters[fileRegister];
+            FileMetadata fileMetadata = openedFilesMetadata[filename];
+            // data server id / bool write
+            ConcurrentDictionary<string, bool> writes = new ConcurrentDictionary<string, bool>();
+            // data server id / thread
+            ConcurrentDictionary<string, Thread> requests = new ConcurrentDictionary<string, Thread>();
+            bool quorumReached = false;
+
+            //QUORUM
+            while (true)
+            {
+                // voting
+                // number of trues / number of fales
+                WriteQuorumVoting quorum = new WriteQuorumVoting();
+                foreach (var entry in writes)
+                {
+                    bool vote = entry.Value;
+
+                    quorum.AddVote(vote);
+
+                    if (quorum.Written >= fileMetadata.WriteQuorum)
+                    {
+                        quorumReached = true;
+                        break;
+                    }
+                }
+
+                // found the quorum file
+                if (quorumReached) break;
+
+                // if did not found check if it has requests pending
+                if (requests.Count == 0)
+                {
+                    // broadcast to all dataServers that have that file
+                    foreach (var entry in fileMetadata.Locations)
+                    {
+                        string id = entry.Key;
+                        string location = entry.Value;
+                        string localFilename = fileMetadata.LocalFilenames[id];
+
+                        Thread request = new Thread(() =>
+                        {
+                            // missing checking if its down
+                            IDataServerToClient dataServer = (IDataServerToClient)Activator.GetObject(
+                                typeof(IDataServerToClient),
+                                location);
+                            dataServer.Write(localFilename, fileData);
+                            // falta verificar DS down
+                            writes[id] = true;
+                            Thread ignored;
+                            requests.TryRemove(id, out ignored);
+                        });
+                        requests[id] = request;
+                        request.Start();
+                    }
+                }
+            }
         }
 
         public void Write(int fileRegister, int stringRegister)
@@ -246,7 +329,7 @@ namespace Client
 
         }
         
-        public void Copy(int fileRegister1, Helper.Semantics semantics, int fileRegister2, string salt)
+        public void Copy(int fileRegister1, Helper.Semantics semantics, int fileRegister2, byte[] salt)
         {
             //
         }

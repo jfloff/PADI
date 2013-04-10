@@ -7,5 +7,6 @@ UNFREEZE d-3
 # id filename nb rq wq
 CREATE c-1, f1, 2, 2, 2
 #!
+WRITE c-1, 0, "Text contents of the file. Contents are a string delimited by double quotes as this one"
 READ c-1, 0, monotonic, 0
 DUMP c-1

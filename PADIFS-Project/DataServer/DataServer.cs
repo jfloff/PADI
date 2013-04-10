@@ -146,14 +146,27 @@ namespace DataServer
 
         public FileData Read(string localFilename)
         {
+            if (fail) throw new ProcessDownException(id);
+
             Console.WriteLine("READ " + localFilename);
 
-            return (files.ContainsKey(localFilename)) ? files[localFilename] : null;
+            if (!files.ContainsKey(localFilename))
+                throw new FileDoesNotExistException(localFilename);
+
+            return files[localFilename];
         }
 
-        public void Write(string localFilename, FileData newFileData)
+        public void Write(string localFilename, FileData newFile)
         {
-            Console.WriteLine("WRITE DATA");
+            if (fail) throw new ProcessDownException(id);
+
+            Console.WriteLine("WRITE " + localFilename);
+
+            if (!files.ContainsKey(localFilename))
+                throw new FileDoesNotExistException(localFilename);
+
+            FileData currentFile = files[localFilename];
+            files[localFilename] = FileData.LatestVersion(currentFile, newFile);
         }
     }
 }

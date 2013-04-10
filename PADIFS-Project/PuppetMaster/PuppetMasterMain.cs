@@ -1,19 +1,10 @@
 using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
 using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Forms;
-using System.Runtime.Remoting.Channels.Tcp;
-using System.Runtime.Remoting.Channels;
-using SharedLibrary.Interfaces;
-using Client;
-using System.Diagnostics;
-using System.Collections;
 using System.IO;
+using System.Linq;
+using System.Runtime.Remoting.Channels;
+using System.Runtime.Remoting.Channels.Tcp;
+using System.Windows.Forms;
 
 namespace PuppetMaster
 {
@@ -587,15 +578,16 @@ namespace PuppetMaster
                 // WRITE ID FILE-REGISTER CONTENTS
                 case "WRITE":
                     {
-                        if (steps.Length != 4)
+                        string[] writeSteps = lineToRun.Split(new char[] { ' ', ',' }, 4, StringSplitOptions.RemoveEmptyEntries);
+                        if (writeSteps.Length != 4)
                         {
                             SetStatus("[ERROR] Invalid Script at line " + lineNumber);
                             return false;
                         }
 
-                        string id = steps[1];
-                        int fileRegister = Convert.ToInt32(steps[2]);
-                        string contents = steps[3];
+                        string id = writeSteps[1];
+                        int fileRegister = Convert.ToInt32(writeSteps[2]);
+                        string contents = writeSteps[3];
                         string parsedContents;
 
                         if (contents.First() != '"'){
@@ -603,8 +595,8 @@ namespace PuppetMaster
                             PuppetMaster.WriteFile(id, fileRegister, Convert.ToInt32(contents));
                             return false;
                         }
-                        parsedContents = contents.Substring(1,contents.Length-1);
-                        PuppetMaster.WriteFile(id, fileRegister, contents);
+                        parsedContents = contents.Substring(1,contents.Length-2);
+                        PuppetMaster.WriteFile(id, fileRegister, parsedContents);
                         break;
                     }
 
