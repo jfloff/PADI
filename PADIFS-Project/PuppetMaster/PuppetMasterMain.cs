@@ -407,6 +407,7 @@ namespace PuppetMaster
                 length = this.scriptBox.Lines[previousLine].Length;
                 this.scriptBox.Select(start, length);
                 this.scriptBox.SelectionBackColor = Color.Green;
+                this.scriptBox.ScrollToCaret();
 
                 string lineToRun = this.scriptBox.SelectedText;
                 return ReadCommand(lineToRun, previousLine);
@@ -601,17 +602,19 @@ namespace PuppetMaster
                 // COPY ID FILE-REGISTER-1 SEMANTICS FILE-REGISTER-2 SALT
                 case "COPY":
                     {
-                        if (steps.Length != 6)
+                        string[] copySteps = lineToRun.Split(new char[] { ' ', ',' }, 6, StringSplitOptions.RemoveEmptyEntries);
+
+                        if (copySteps.Length != 6)
                         {
                             SetStatus("[ERROR] Invalid Script at line " + lineNumber);
                             return false;
                         }
 
-                        string id = steps[1];
-                        int fileRegister1 = Convert.ToInt32(steps[2]);
-                        int fileRegister2 = Convert.ToInt32(steps[4]);
-                        string semantic = steps[3];
-                        string salt = steps[5];
+                        string id = copySteps[1];
+                        int fileRegister1 = Convert.ToInt32(copySteps[2]);
+                        int fileRegister2 = Convert.ToInt32(copySteps[4]);
+                        string semantic = copySteps[3];
+                        string salt = copySteps[5].Substring(1, copySteps[5].Length - 2);
 
                         PuppetMaster.CopyFile(id, fileRegister1, semantic, fileRegister2, salt);
                         break;
