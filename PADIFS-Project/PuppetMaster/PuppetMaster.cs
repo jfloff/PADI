@@ -46,7 +46,7 @@ namespace PuppetMaster
 
         public static void StartMetadata(string id, int port)
         {
-            consoles.Add(Process.Start("Metadata " + id + ".exe", id + " " + port));
+            consoles.Add(Process.Start("Metadata.exe", id + " " + port));
             string location = Helper.GetUrl(id, port);
             IMetadataToPM metadata = (IMetadataToPM)Activator.GetObject(
                 typeof(IMetadataToPM),
@@ -60,7 +60,7 @@ namespace PuppetMaster
 
         public static void StartDataServer(string id, int port)
         {
-            consoles.Add(Process.Start("DataServer " + id + ".exe", id + " " + port));
+            consoles.Add(Process.Start("DataServer.exe", id + " " + port));
             IDataServerToPM dataServer = (IDataServerToPM)Activator.GetObject(
                 typeof(IDataServerToPM),
                 Helper.GetUrl(id, port)
@@ -71,7 +71,7 @@ namespace PuppetMaster
         
         public static void StartClient(string id, int port)
         {
-            consoles.Add(Process.Start("Client " + id + ".exe", id + " " + port));
+            consoles.Add(Process.Start("Client.exe", id + " " + port));
             IClientToPM client = (IClientToPM)Activator.GetObject(
                 typeof(IClientToPM),
                 Helper.GetUrl(id, port)

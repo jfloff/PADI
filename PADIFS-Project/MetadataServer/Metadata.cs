@@ -44,23 +44,25 @@ namespace Metadata
         }
 
         // filename / FileMetadata
-        private static Dictionary<string, FileMetadata> fileMetadataTable
-            = new Dictionary<string, FileMetadata>();
+        private static ConcurrentDictionary<string, FileMetadata> fileMetadataTable
+            = new ConcurrentDictionary<string, FileMetadata>();
         // filename
         private static List<string> openedFiles = new List<string>();
         // id / Interface
-        private static Dictionary<string, DataServerInfo> dataServers
-            = new Dictionary<string, DataServerInfo>();
+        private static ConcurrentDictionary<string, DataServerInfo> dataServers
+            = new ConcurrentDictionary<string, DataServerInfo>();
         // CREATE DICTIONARY FOR FAILED METADATAS
         // id / interface
         private static ConcurrentDictionary<string, IMetadataToMetadata> metadatas
             = new ConcurrentDictionary<string, IMetadataToMetadata>();
         // filename / queue for each file 
-        private static Dictionary<string, Queue<Action<string>>> pendingRequests = new Dictionary<string, Queue<Action<string>>>();
+        private static ConcurrentDictionary<string, Queue<Action<string>>> pendingRequests 
+            = new ConcurrentDictionary<string, Queue<Action<string>>>();
 
-        private static string primary;
-        private static string id;
-        private static bool fail = false;
+        // statics are all thread safe
+        private volatile static string primary;
+        private volatile static string id;
+        private volatile static bool fail = false;
 
 
         public static void Main(string[] args)
@@ -316,9 +318,9 @@ namespace Metadata
                 throw new FileDoesNotExistException(filename);
 
             DeleteFileOnDataServers(fileMetadataTable[filename]);
-            fileMetadataTable.Remove(filename);
+            FileMetadata fileRemove; fileMetadataTable.TryRemove(filename, out fileRemove);
             if (openedFiles.Contains(filename)) openedFiles.Remove(filename);
-            pendingRequests.Remove(filename);
+            Queue<Action<string>> queueRemove; pendingRequests.TryRemove(filename, out queueRemove);
         }
 
         /**
@@ -345,7 +347,7 @@ namespace Metadata
                 IDataServerToMetadata dataServer = (IDataServerToMetadata)Activator.GetObject(
                     typeof(IDataServerToMetadata),
                     location);
-                dataServers.Add(id, new DataServerInfo(location, dataServer));
+                dataServers[id] = new DataServerInfo(location, dataServer);
 
                 foreach (var entry in pendingRequests)
                 {
