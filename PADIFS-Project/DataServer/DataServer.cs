@@ -3,11 +3,13 @@ using SharedLibrary.Entities;
 using SharedLibrary.Exceptions;
 using SharedLibrary.Interfaces;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.Remoting;
 using System.Runtime.Remoting.Channels;
 using System.Runtime.Remoting.Channels.Tcp;
+using System.Threading;
 
 // @TODO Fix primary decision
 
@@ -22,17 +24,17 @@ namespace DataServer
         };
 
         // localFilename / FileData
-        private static Dictionary<string, FileData> files = new Dictionary<string, FileData>();
+        private static ConcurrentDictionary<string, FileData> files = new ConcurrentDictionary<string, FileData>();
 
         private static List<IMetadataToDataServer> metadatas = new List<IMetadataToDataServer>();
         private static Primary primary = new Primary() { Id = null, Metadata = null };
 
-        private static string id;
-        private static int port;
+        private volatile static string id;
+        private volatile static int port;
 
-        private static bool fail = false;
-        private static bool freeze = false;
-        private static Queue<Action> freezed = new Queue<Action>();
+        private volatile static bool fail = false;
+        private volatile static bool freeze = false;
+        private static ConcurrentQueue<Action> freezed = new ConcurrentQueue<Action>();
 
         public static void Main(string[] args)
         {
@@ -122,15 +124,11 @@ namespace DataServer
 
             Console.WriteLine("UNFREEZE");
             freeze = false;
-            // do this after introducing concurrency in the DS
-            //Thread unfreezeAll = new Thread(() =>
-            //{
-                while (freezed.Any())
-                {
-                    Action action = freezed.Dequeue();
-                    action();
-                }
-            //});
+            while (freezed.Any())
+            {
+                Action action;
+                if (freezed.TryDequeue(out action)) action();
+            }
         }
 
         /**
@@ -146,7 +144,7 @@ namespace DataServer
 
             if (!files.ContainsKey(localFilename))
             {
-                files.Add(localFilename, new FileData());
+                files[localFilename] = new FileData();
             }
         }
 
@@ -159,7 +157,7 @@ namespace DataServer
 
             if (files.ContainsKey(localFilename))
             {
-                files.Remove(localFilename);
+                FileData ignored; files.TryRemove(localFilename, out ignored);
             }
         }
 

@@ -20,10 +20,7 @@ Plataformas para Aplicações Distribuídas na Internet
 
 ### TODO
 *   Verificações de null objects nos activator get object.
-*   ASSINCRONO NO EXECRIPT
 *   DUMP NO PM
-*   REVER SCRIPTS NAO ESTA A FUNCAR
-*   TRATAR DE FILE DOES NO EXIST NO READ CLIENT
 *   CONCURRENCY METADATA E DATASERVER
 *   MONOTONIC/DEFAULT
 *   PIGGYBACKING DE UPDATE AOS FICHEIROS
