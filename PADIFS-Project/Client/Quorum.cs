@@ -1,4 +1,5 @@
-﻿using SharedLibrary.Entities;
+﻿using SharedLibrary;
+using SharedLibrary.Entities;
 using System.Collections.Generic;
 
 namespace Client
@@ -8,10 +9,12 @@ namespace Client
         private Dictionary<FileData, int> quorum = new Dictionary<FileData, int>();
         private int quorumSize;
         private int totalVotes = 0;
+        private Helper.Semantics semantics;
 
-        public ReadQuorum(int quorumSize) 
+        public ReadQuorum(int quorumSize, Helper.Semantics semantics)
         {
             this.quorumSize = quorumSize;
+            this.semantics = semantics;
         }
 
         public void AddVote(FileData vote)
@@ -30,15 +33,22 @@ namespace Client
             totalVotes++;
         }
 
-        public bool CheckQuorum(FileData vote)
+        public bool CheckQuorum(FileData vote, FileData original)
         {
-            if (vote == null) return false;
-            return (quorum[vote] >= this.quorumSize);
+            if ((vote != null) && (quorum[vote] >= this.quorumSize))
+            {
+                if ((semantics == Helper.Semantics.MONOTONIC) && (FileData.MostRecent(vote, original) < 0))
+                {
+                    return false;
+                }
+                return true;
+            }
+            return false;
         }
 
         public int Count
         {
-            get { return this.totalVotes;  }
+            get { return this.totalVotes; }
         }
     }
 
@@ -48,7 +58,7 @@ namespace Client
         private int failed = 0;
         protected int quorumSize;
 
-        public WriteQuorum(int quorumSize) 
+        public WriteQuorum(int quorumSize)
         {
             this.quorumSize = quorumSize;
         }

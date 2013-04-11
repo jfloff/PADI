@@ -29,9 +29,10 @@ namespace Client
         private static Dictionary<string, IMetadataToClient> metadatas
             = new Dictionary<string, IMetadataToClient>();
 
-        // filename 
-        private static List<string> fileRegisters = new List<string>();
-        private static List<byte[]> byteRegisters = new List<byte[]>();
+        // index / fileregister struct
+        FileRegister fileRegister = new FileRegister();
+        // index / byte contents
+        private static Dictionary<int, byte[]> byteRegister = new Dictionary<int, byte[]>();
 
         private static Primary primary = new Primary() { Id = null, Metadata = null };
         private static string id;
@@ -41,10 +42,11 @@ namespace Client
             if (args.Length != 2)
                 throw new Exception("Wrong arguments");
 
-            Console.SetWindowSize(Helper.WINDOW_WIDTH, Helper.WINDOW_HEIGHT);
-
             id = args[0];
             int port = Convert.ToInt32(args[1]);
+
+            Console.SetWindowSize(Helper.WINDOW_WIDTH, Helper.WINDOW_HEIGHT);
+            Console.Title = id;
 
             TcpChannel channel = new TcpChannel(port);
             ChannelServices.RegisterChannel(channel, true);
@@ -90,7 +92,10 @@ namespace Client
                 // missing testing if metadata is down
                 FileMetadata file = primary.Metadata.Create(filename, nbDataServers, readQuorum, writeQuorum);
                 openedFilesMetadata[filename] = file;
-                fileRegisters.Add(filename);
+                if (!fileRegister.Contains(filename))
+                {
+                    fileRegister.Add(filename);
+                }
             }
             catch (FileAlreadyExistsException e)
             {
@@ -103,15 +108,24 @@ namespace Client
             Console.WriteLine("OPEN CLIENT FILE " + filename);
             try
             {
-                FileMetadata fileMetadata = primary.Metadata.Open(filename);
-                openedFilesMetadata[filename] = fileMetadata;
-                fileRegisters.Add(filename);
+                FileMetadata fileMetadata = OpenFileMetada(filename);
+                if (!fileRegister.Contains(filename))
+                {
+                    fileRegister.Add(filename);
+                }
                 Console.WriteLine("FILE METADATA => " + fileMetadata.ToString());
             }
             catch (FileDoesNotExistException e)
             {
                 Console.WriteLine(e.Message);
             }
+        }
+
+        private static FileMetadata OpenFileMetada(string filename)
+        {
+            FileMetadata fileMetadata = primary.Metadata.Open(filename);
+            openedFilesMetadata[filename] = fileMetadata;
+            return fileMetadata;
         }
 
         public void Close(string filename)
@@ -121,9 +135,9 @@ namespace Client
             {
                 if (openedFilesMetadata.ContainsKey(filename))
                 {
-                    primary.Metadata.Close(filename);
                     openedFilesMetadata.Remove(filename);
-                    fileRegisters.Remove(filename);
+                    fileRegister.Remove(filename);
+                    primary.Metadata.Close(filename);
                 }
                 else
                 {
@@ -156,23 +170,18 @@ namespace Client
             }
         }
 
-        public void Read(int fileRegister, Helper.Semantics semantics, int byteRegister)
+        public void Read(int fileRegisterIndex, Helper.Semantics semantics, int byteRegisterIndex)
         {
-            Console.WriteLine("READ FILE = " + fileRegister);
+            Console.WriteLine("READ FILE = " + fileRegisterIndex);
 
-            FileData fileData = ReadFileData(fileRegister, semantics);
-            byteRegisters.Insert(byteRegister, fileData.Contents);
+            FileData fileData = ReadFileData(fileRegisterIndex, semantics);
+            byteRegister.Add(byteRegisterIndex, fileData.Contents);
         }
 
-        private FileData ReadFileData(int fileRegister, Helper.Semantics semantics)
+        private FileData ReadFileData(int fileRegisterIndex, Helper.Semantics semantics)
         {
-            if (fileRegister > (fileRegisters.Count - 1))
-            {
-                Console.WriteLine("File register " + fileRegister + " does not exist");
-                return null;
-            }
-
-            string filename = fileRegisters[fileRegister];
+            FileData original = fileRegister.FileDataAt(fileRegisterIndex);
+            string filename = fileRegister.FilenameAt(fileRegisterIndex);
             FileMetadata fileMetadata = openedFilesMetadata[filename];
             // data server id / file data
             ConcurrentDictionary<string, FileData> reads = new ConcurrentDictionary<string, FileData>();
@@ -183,14 +192,13 @@ namespace Client
             while (true)
             {
                 // voting
-                ReadQuorum quorum = new ReadQuorum(fileMetadata.ReadQuorum);
-
+                ReadQuorum quorum = new ReadQuorum(fileMetadata.ReadQuorum, semantics);
                 foreach (var entry in reads)
                 {
                     FileData vote = entry.Value;
 
                     quorum.AddVote(vote);
-                    if (quorum.CheckQuorum(vote))
+                    if (quorum.CheckQuorum(vote, original))
                     {
                         quorumFile = vote;
                         break;
@@ -204,6 +212,10 @@ namespace Client
                 // stops when all requests are counted (requests = 0)
                 if (quorum.Count == (requests + quorum.Count))
                 {
+                    // get possible new fileMetadata locations
+                    // possible optimization
+                    fileMetadata = OpenFileMetada(filename);
+
                     // broadcast to all dataServers that have that file
                     foreach (var entry in fileMetadata.Locations)
                     {
@@ -237,25 +249,21 @@ namespace Client
                 }
             }
 
+            // update file registers
+            fileRegister.SetFileDataAt(fileRegisterIndex, quorumFile);
             return quorumFile;
         }
 
-        public void Write(int fileRegister, byte[] contents)
+        public void Write(int fileRegisterIndex, byte[] contents)
         {
-            Console.WriteLine("WRITE FILE = " + fileRegister);
-
-            if (fileRegister > (fileRegisters.Count - 1))
-            {
-                Console.WriteLine("File register " + fileRegister + " does not exist");
-                return;
-            }
+            Console.WriteLine("WRITE FILE = " + fileRegisterIndex);
 
             // forces to get always the most recent file
-            FileData fileData = ReadFileData(fileRegister, Helper.Semantics.MONOTONIC);
+            FileData fileData = ReadFileData(fileRegisterIndex, Helper.Semantics.MONOTONIC);
             fileData.Contents = contents;
             fileData.IncrementVersion(Client.id);
 
-            string filename = fileRegisters[fileRegister];
+            string filename = fileRegister.FilenameAt(fileRegisterIndex);
             FileMetadata fileMetadata = openedFilesMetadata[filename];
             // data server id / bool write
             ConcurrentDictionary<string, bool> writes = new ConcurrentDictionary<string, bool>();
@@ -286,6 +294,10 @@ namespace Client
                 // stops when all requests are counted (requests = 0)
                 if (quorum.Count == (requests + quorum.Count))
                 {
+                    // get possible new fileMetadata locations
+                    // possible optimization
+                    fileMetadata = OpenFileMetada(filename);
+
                     // broadcast to all dataServers that have that file
                     foreach (var entry in fileMetadata.Locations)
                     {
@@ -318,38 +330,29 @@ namespace Client
                     }
                 }
             }
+
+            // update file registers
+            fileRegister.SetFileDataAt(fileRegisterIndex, fileData);
         }
 
-        public void Write(int fileRegister, int byteRegister)
+        public void Write(int fileRegisterIndex, int byteRegisterIndex)
         {
-            if ((byteRegister > (byteRegisters.Count - 1)) || (byteRegisters[byteRegister] == null))
+            if ((byteRegisterIndex > (byteRegister.Count - 1)) || (byteRegister[byteRegisterIndex] == null))
             {
-                Console.WriteLine("Byte register " + byteRegister + " does not exist");
+                Console.WriteLine("Byte register " + byteRegisterIndex + " does not exist");
                 return;
             }
 
-            Write(fileRegister, byteRegisters[byteRegister]);
+            Write(fileRegisterIndex, byteRegister[byteRegisterIndex]);
         }
 
-        public void Copy(int fileRegister1, Helper.Semantics semantics, int fileRegister2, byte[] salt)
+        public void Copy(int fileRegisterIndex1, Helper.Semantics semantics, int fileRegisterIndex2, byte[] salt)
         {
-            Console.WriteLine("COPY FILE " + fileRegister1 + " TO + " + fileRegister2);
+            Console.WriteLine("COPY FILE " + fileRegisterIndex1 + " TO + " + fileRegisterIndex2);
 
-            if (fileRegister1 > (fileRegisters.Count - 1))
-            {
-                Console.WriteLine("File register " + fileRegister1 + " does not exist");
-                return;
-            }
-
-            if (fileRegister2 > (fileRegisters.Count - 1))
-            {
-                Console.WriteLine("File register " + fileRegister2 + " does not exist");
-                return;
-            }
-
-            FileData fileData = ReadFileData(fileRegister1, semantics);
+            FileData fileData = ReadFileData(fileRegisterIndex1, semantics);
             byte[] saltedContents = Helper.AppendBytes(fileData.Contents, salt);
-            Write(fileRegister2, saltedContents);
+            Write(fileRegisterIndex2, saltedContents);
         }
 
         public void Dump()
@@ -365,14 +368,11 @@ namespace Client
                 Console.WriteLine("    " + fileMetadata.ToString());
             }
             Console.WriteLine("File Registers");
-            for (int i = 0; i < fileRegisters.Count; i++)
-            {
-                Console.WriteLine("  " + i + ":" + fileRegisters[i]);
-            }
+            Console.WriteLine(fileRegister);
             Console.WriteLine("Byte Registers");
-            for (int i = 0; i < byteRegisters.Count; i++)
+            for (int i = 0; i < byteRegister.Count; i++)
             {
-                Console.WriteLine("  " + i + ":" + Helper.BytesToString(byteRegisters[i]));
+                Console.WriteLine("  " + i + ":" + Helper.BytesToString(byteRegister[i]));
             }
         }
     }

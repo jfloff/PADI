@@ -45,8 +45,20 @@ namespace SharedLibrary.Entities
             this.version.Clock++;
         }
 
+        // Returns:
+        // >0  - if f1 is more recent than file f2
+        // 0  - if they are the same
+        // <0 - if f2 is more recent than f1
+        public static int MostRecent(FileData f1, FileData f2)
+        {
+            int clockDiff = f1.version.Clock - f2.version.Clock;
+            if (clockDiff == 0) return string.Compare(f2.version.ClientId, f1.version.ClientId);
+            return clockDiff;
+        }
+
+
         // Returns most recent version amongts a variable number of file datas
-        //Clock is king. In case of draw, lowest clientId wins.
+        // Clock is king. In case of draw, lowest clientId wins.
         public static FileData LatestVersion(params FileData[] fileDatas)
         {
             if (fileDatas.Length == 0) return null;
@@ -54,17 +66,7 @@ namespace SharedLibrary.Entities
             FileData latest = fileDatas[0];
             for (int i = 1; i < fileDatas.Length; i++)
             {
-                if (fileDatas[i].version.Clock > latest.version.Clock)
-                {
-                    latest = fileDatas[i];
-                }
-                if (fileDatas[i].version.Clock == latest.version.Clock)
-                {
-                    if (string.Compare(latest.version.ClientId, fileDatas[i].version.ClientId) > 0)
-                    {
-                        latest = fileDatas[i];
-                    }
-                }
+                if (MostRecent(fileDatas[i], latest) > 0) latest = fileDatas[i];
             }
             return latest;
         }

@@ -11,8 +11,6 @@ using System.Runtime.Remoting.Channels;
 using System.Runtime.Remoting.Channels.Tcp;
 using System.Threading;
 
-//@TODO MISSING CONCURRENCY
-
 namespace Metadata
 {
     class Metadata : MarshalByRefObject, IMetadataToPM, IMetadataToMetadata, IMetadataToClient, IMetadataToDataServer
@@ -70,10 +68,11 @@ namespace Metadata
             if (args.Length != 2)
                 throw new Exception("Wrong Arguments");
 
-            //Console.SetWindowSize(Helper.WINDOW_WIDTH, Helper.WINDOW_HEIGHT);
-
             id = primary = args[0];
             int port = Convert.ToInt32(args[1]);
+
+            Console.SetWindowSize(Helper.WINDOW_WIDTH, Helper.WINDOW_HEIGHT);
+            Console.Title = id;
 
             TcpChannel channel = new TcpChannel(port);
             ChannelServices.RegisterChannel(channel, true);
