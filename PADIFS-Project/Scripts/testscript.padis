@@ -1,0 +1,5 @@
+# goal is to test the EXESCRIPT COMMAND
+RECOVER m-1
+UNFREEZE d-1
+UNFREEZE d-2
+EXESCRIPT c-1 script1.padis

@@ -1,12 +1,9 @@
 ﻿using SharedLibrary;
 using SharedLibrary.Interfaces;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace PuppetMaster
 {
@@ -49,7 +46,7 @@ namespace PuppetMaster
 
         public static void StartMetadata(string id, int port)
         {
-            consoles.Add(Process.Start("Metadata.exe", id + " " + port));
+            consoles.Add(Process.Start("Metadata " + id + ".exe", id + " " + port));
             string location = Helper.GetUrl(id, port);
             IMetadataToPM metadata = (IMetadataToPM)Activator.GetObject(
                 typeof(IMetadataToPM),
@@ -57,29 +54,29 @@ namespace PuppetMaster
             SendMetadataLocations(metadata);
             NewMetadataLocationToProcesses(id, location);
             // keep as last line to avoid pings to self
-            metadataLocations.Add(id, location);
-            processes.Add(id, metadata);
+            metadataLocations[id] = location;
+            processes[id] = metadata;
         }
 
         public static void StartDataServer(string id, int port)
         {
-            consoles.Add(Process.Start("DataServer.exe", id + " " + port));
+            consoles.Add(Process.Start("DataServer " + id + ".exe", id + " " + port));
             IDataServerToPM dataServer = (IDataServerToPM)Activator.GetObject(
                 typeof(IDataServerToPM),
                 Helper.GetUrl(id, port)
             );
-            processes.Add(id, dataServer);
+            processes[id] = dataServer;
             SendMetadataLocations(dataServer);
         }
         
         public static void StartClient(string id, int port)
         {
-            consoles.Add(Process.Start("Client.exe", id + " " + port));
+            consoles.Add(Process.Start("Client " + id + ".exe", id + " " + port));
             IClientToPM client = (IClientToPM)Activator.GetObject(
                 typeof(IClientToPM),
                 Helper.GetUrl(id, port)
             );
-            processes.Add(id, client);
+            processes[id] = client;
             SendMetadataLocations(client);
         }
 
@@ -150,7 +147,6 @@ namespace PuppetMaster
         public static void ReadFile(string id, int fileRegister, string semantics, int byteRegister)
         {
             Helper.Semantics semanticsId = getSemanticsId(semantics);
-
             IClientToPM client = (IClientToPM)GetProcess(id);
             client.Read(fileRegister, semanticsId, byteRegister);
         }

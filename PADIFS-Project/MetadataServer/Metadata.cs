@@ -3,6 +3,7 @@ using SharedLibrary.Entities;
 using SharedLibrary.Exceptions;
 using SharedLibrary.Interfaces;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.Remoting;
@@ -52,8 +53,8 @@ namespace Metadata
             = new Dictionary<string, DataServerInfo>();
         // CREATE DICTIONARY FOR FAILED METADATAS
         // id / interface
-        private static Dictionary<string, IMetadataToMetadata> metadatas
-            = new Dictionary<string, IMetadataToMetadata>();
+        private static ConcurrentDictionary<string, IMetadataToMetadata> metadatas
+            = new ConcurrentDictionary<string, IMetadataToMetadata>();
         // filename / queue for each file 
         private static Dictionary<string, Queue<Action<string>>> pendingRequests = new Dictionary<string, Queue<Action<string>>>();
 
@@ -67,7 +68,7 @@ namespace Metadata
             if (args.Length != 2)
                 throw new Exception("Wrong Arguments");
 
-            // Console.SetWindowSize(Helper.WINDOW_WIDTH, Helper.WINDOW_HEIGHT);
+            //Console.SetWindowSize(Helper.WINDOW_WIDTH, Helper.WINDOW_HEIGHT);
 
             id = primary = args[0];
             int port = Convert.ToInt32(args[1]);
@@ -205,7 +206,7 @@ namespace Metadata
             IMetadataToMetadata metadata = (IMetadataToMetadata)Activator.GetObject(
                 typeof(IMetadataToMetadata),
                 location);
-            metadatas.Add(id, metadata);
+            metadatas[id] = metadata;
 
             //Force invocation of primary decision
             FindPrimary();
@@ -264,8 +265,8 @@ namespace Metadata
 
             //Select Data Servers and creates files within them
             FileMetadata fileMetadata = new FileMetadata(filename, nbDataServers, readQuorum, writeQuorum);
+            fileMetadataTable[filename] = fileMetadata;
             pendingRequests[filename] = new Queue<Action<string>>();
-            fileMetadataTable.Add(filename, fileMetadata);
             openedFiles.Add(filename);
             CreateFileOnDataServers(fileMetadata);
             return fileMetadata;
@@ -314,13 +315,10 @@ namespace Metadata
             if (!fileMetadataTable.ContainsKey(filename))
                 throw new FileDoesNotExistException(filename);
 
-            if (openedFiles.Contains(filename))
-                throw new FileCurrentlyOpenException(filename);
-
-            fileMetadataTable.Remove(filename);
-            openedFiles.Remove(filename);
-            pendingRequests.Remove(filename);
             DeleteFileOnDataServers(fileMetadataTable[filename]);
+            fileMetadataTable.Remove(filename);
+            if (openedFiles.Contains(filename)) openedFiles.Remove(filename);
+            pendingRequests.Remove(filename);
         }
 
         /**

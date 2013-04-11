@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Runtime.Remoting.Channels;
 using System.Runtime.Remoting.Channels.Tcp;
+using System.Threading;
 using System.Windows.Forms;
 
 namespace PuppetMaster
@@ -648,11 +649,15 @@ namespace PuppetMaster
 
                         string path = Application.StartupPath.Remove(Application.StartupPath.Length - 22) + "Scripts\\";
 
-                        int linenumber = 0;
-                        foreach (string line in File.ReadLines(path + filename))
+                        Thread script = new Thread(() =>
                         {
-                            return ReadCommand(line, linenumber++);
-                        }
+                            int linenumber = 0;
+                            foreach (string line in File.ReadLines(path + filename))
+                            {
+                                ReadCommand(line, linenumber++);
+                            }
+                        });
+                        script.Start();
 
                         break;
                     }

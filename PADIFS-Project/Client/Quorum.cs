@@ -32,6 +32,7 @@ namespace Client
 
         public bool CheckQuorum(FileData vote)
         {
+            if (vote == null) return false;
             return (quorum[vote] >= this.quorumSize);
         }
 

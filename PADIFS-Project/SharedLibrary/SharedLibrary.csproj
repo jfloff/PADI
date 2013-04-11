@@ -39,10 +39,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Exceptions\FileCurrentlyOpenException.cs" />
     <Compile Include="Exceptions\ProcessDownException.cs" />
     <Compile Include="Helper.cs" />
-    <Compile Include="Exceptions\NotEnoughDataServersException.cs" />
     <Compile Include="Exceptions\FileAlreadyExistsException.cs" />
     <Compile Include="Entities\FileData.cs" />
     <Compile Include="Exceptions\FileDoesNotExistException.cs" />
