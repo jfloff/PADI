@@ -26,7 +26,7 @@ namespace Client
         private static Dictionary<string, FileMetadata> openedFilesMetadata
              = new Dictionary<string, FileMetadata>();
         // metadataId / Proxy to metadata
-        private static Dictionary<string, IMetadataToClient> metadatas 
+        private static Dictionary<string, IMetadataToClient> metadatas
             = new Dictionary<string, IMetadataToClient>();
 
         // filename 
@@ -66,7 +66,7 @@ namespace Client
             Console.WriteLine("RECEIVED METADATA LOCATION " + location);
 
             IMetadataToClient metadata = (IMetadataToClient)Activator.GetObject(
-                typeof(IMetadataToClient), 
+                typeof(IMetadataToClient),
                 location);
             metadatas[id] = metadata;
 
@@ -84,7 +84,7 @@ namespace Client
 
             try
             {
-                if (openedFilesMetadata.ContainsKey(filename)) 
+                if (openedFilesMetadata.ContainsKey(filename))
                     throw new FileAlreadyExistsException(filename);
 
                 // missing testing if metadata is down
@@ -184,6 +184,7 @@ namespace Client
             {
                 // voting
                 ReadQuorum quorum = new ReadQuorum(fileMetadata.ReadQuorum);
+
                 foreach (var entry in reads)
                 {
                     FileData vote = entry.Value;
@@ -196,11 +197,14 @@ namespace Client
                     }
                 }
 
+                Console.Write(quorum.Count + ";" + requests);
+
                 // found the quorum file
                 if (quorumFile != null) break;
 
-                // if he voted with all the requests responses available
-                if (quorum.Count == requests)
+                // if all the votes arrived at the quorum
+                // stops when all requests are counted (requests = 0)
+                if (quorum.Count == (requests + quorum.Count))
                 {
                     // broadcast to all dataServers that have that file
                     foreach (var entry in fileMetadata.Locations)
@@ -209,19 +213,26 @@ namespace Client
                         string location = entry.Value;
                         string localFilename = fileMetadata.LocalFilenames[id];
 
+                        // increment right away so it doesn't request untill its decremented
+                        Interlocked.Increment(ref requests);
                         Thread request = new Thread(() =>
                         {
-                            // missing checking if its down
                             IDataServerToClient dataServer = (IDataServerToClient)Activator.GetObject(
                                 typeof(IDataServerToClient),
                                 location);
+                            FileData fileData = null;
                             try
                             {
-                                reads[id] = dataServer.Read(localFilename);
-                                Interlocked.Increment(ref requests);
+                                fileData = dataServer.Read(localFilename);
+
                             }
                             catch (ProcessDownException) { }
                             catch (FileDoesNotExistException) { }
+                            finally
+                            {
+                                reads[id] = fileData;
+                                Interlocked.Decrement(ref requests);
+                            }
                         });
                         request.Start();
                     }
@@ -273,10 +284,10 @@ namespace Client
                 // found the quorum file
                 if (quorumReached) break;
 
-                // if he voted with all the requests responses available
-                if (quorum.Count == requests)
+                // if all the votes arrived at the quorum
+                // stops when all requests are counted (requests = 0)
+                if (quorum.Count == (requests + quorum.Count))
                 {
-                    requests = 0;
                     // broadcast to all dataServers that have that file
                     foreach (var entry in fileMetadata.Locations)
                     {
@@ -284,20 +295,26 @@ namespace Client
                         string location = entry.Value;
                         string localFilename = fileMetadata.LocalFilenames[id];
 
+                        // increment right away so it doesn't request untill its decremented
+                        Interlocked.Increment(ref requests);
                         Thread request = new Thread(() =>
                         {
-                            // missing checking if its down
                             IDataServerToClient dataServer = (IDataServerToClient)Activator.GetObject(
                                 typeof(IDataServerToClient),
                                 location);
+                            bool vote = false;
                             try
                             {
                                 dataServer.Write(localFilename, fileData);
-                                writes[id] = true;
-                                Interlocked.Increment(ref requests);
+                                vote = true;
                             }
-                            catch (ProcessDownException) { writes[id] = false; }
-                            catch (FileDoesNotExistException) { writes[id] = false; }
+                            catch (ProcessDownException) { }
+                            catch (FileDoesNotExistException) { }
+                            finally
+                            {
+                                writes[id] = vote;
+                                Interlocked.Decrement(ref requests);
+                            }
                         });
                         request.Start();
                     }
@@ -315,7 +332,7 @@ namespace Client
 
             Write(fileRegister, byteRegisters[byteRegister]);
         }
-        
+
         public void Copy(int fileRegister1, Helper.Semantics semantics, int fileRegister2, byte[] salt)
         {
             Console.WriteLine("COPY FILE " + fileRegister1 + " TO + " + fileRegister2);
@@ -357,7 +374,7 @@ namespace Client
             Console.WriteLine("Byte Registers");
             for (int i = 0; i < byteRegisters.Count; i++)
             {
-                Console.WriteLine("  " + i + ":"+  Helper.BytesToString(byteRegisters[i]));
+                Console.WriteLine("  " + i + ":" + Helper.BytesToString(byteRegisters[i]));
             }
         }
     }

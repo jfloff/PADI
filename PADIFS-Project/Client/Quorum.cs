@@ -7,7 +7,7 @@ namespace Client
     {
         private Dictionary<FileData, int> quorum = new Dictionary<FileData, int>();
         private int quorumSize;
-        private int voteCount = 0;
+        private int totalVotes = 0;
 
         public ReadQuorum(int quorumSize) 
         {
@@ -16,15 +16,18 @@ namespace Client
 
         public void AddVote(FileData vote)
         {
-            if (quorum.ContainsKey(vote))
+            if (vote != null)
             {
-                quorum[vote]++;
+                if (quorum.ContainsKey(vote))
+                {
+                    quorum[vote]++;
+                }
+                else
+                {
+                    quorum[vote] = 1;
+                }
             }
-            else
-            {
-                quorum[vote] = 1;
-            }
-            voteCount++;
+            totalVotes++;
         }
 
         public bool CheckQuorum(FileData vote)
@@ -34,7 +37,7 @@ namespace Client
 
         public int Count
         {
-            get { return this.voteCount;  }
+            get { return this.totalVotes;  }
         }
     }
 

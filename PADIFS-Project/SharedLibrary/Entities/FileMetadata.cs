@@ -14,20 +14,17 @@ namespace SharedLibrary.Entities
         private int readQuorum;
         private int writeQuorum;
         // data Server id / local filename
-        private Dictionary<string, string> localFilenames;
+        private Dictionary<string, string> localFilenames = new Dictionary<string, string>();
         // data Server id / locations
-        private Dictionary<string, string> locations;
+        private Dictionary<string, string> locations = new Dictionary<string, string>();
 
 
-        public FileMetadata(string filename, int nbDataServers, int readQuorum, int writeQuorum, 
-            Dictionary<string, string> localFilenames, Dictionary<string, string> locations)
+        public FileMetadata(string filename, int nbDataServers, int readQuorum, int writeQuorum)
         {
             this.filename = filename;
             this.nbDataServers = nbDataServers;
             this.readQuorum = readQuorum;
             this.writeQuorum = writeQuorum;
-            this.localFilenames = localFilenames;
-            this.locations = locations;
         }
 
         public string Filename

@@ -50,6 +50,7 @@ namespace Metadata
         // id / Interface
         private static Dictionary<string, DataServerInfo> dataServers
             = new Dictionary<string, DataServerInfo>();
+        // CREATE DICTIONARY FOR FAILED METADATAS
         // id / interface
         private static Dictionary<string, IMetadataToMetadata> metadatas
             = new Dictionary<string, IMetadataToMetadata>();
@@ -123,38 +124,26 @@ namespace Metadata
          */
 
         // returns localFilename for dataServer
-        private static string localFilename(string filename)
+        private static string LocalFilename(string filename)
         {
             // GUID better probably?
             return filename + "$" + filename.GetHashCode();
         }
 
-        // Returns a dictionray dataServerId / localFilename
-        private SelectedServers SelectDataServers(int nbDataServers, string filename)
-        {
-            Dictionary<string, string> localFilenames = new Dictionary<string, string>();
-            Dictionary<string, string> locations = new Dictionary<string, string>();
-
-            int nbDataServersSelected = 0;
-            foreach (var entry in dataServers)
-            {
-                if (nbDataServersSelected++ > nbDataServers) break;
-
-                string dataServerId = entry.Key;
-                string dataServerLocation = entry.Value.Location;
-                localFilenames.Add(dataServerId, localFilename(filename));
-                locations.Add(dataServerId, dataServerLocation);
-            }
-            return new SelectedServers(localFilenames, locations);
-        }
-
         // Places files in the given dataServers. Doesn't care if they were created or not.
         public void CreateFileOnDataServers(FileMetadata fileMetadata)
         {
-            foreach (var entry in fileMetadata.LocalFilenames)
+            int nbDataServersSelected = 1;
+            foreach (var entry in dataServers)
             {
+                if (nbDataServersSelected++ > fileMetadata.NbDataServers) break;
+
                 string id = entry.Key;
-                string localFilename = entry.Value;
+                string location = entry.Value.Location;
+                string localFilename = LocalFilename(fileMetadata.Filename);
+
+                fileMetadata.LocalFilenames.Add(id, localFilename);
+                fileMetadata.Locations.Add(id, location);
 
                 Thread request = new Thread(() =>
                 {
@@ -251,9 +240,7 @@ namespace Metadata
                 throw new FileAlreadyExistsException(filename);
 
             //Select Data Servers and creates files within them
-            SelectedServers selectedServers = SelectDataServers(nbDataServers, filename);
-            FileMetadata fileMetadata = new FileMetadata(filename, nbDataServers, readQuorum, writeQuorum, 
-                selectedServers.LocalFilenames, selectedServers.Locations);
+            FileMetadata fileMetadata = new FileMetadata(filename, nbDataServers, readQuorum, writeQuorum);
             CreateFileOnDataServers(fileMetadata);
             fileMetadataTable.Add(filename, fileMetadata);
             openedFiles.Add(filename);
