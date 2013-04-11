@@ -4,10 +4,10 @@ using SharedLibrary.Exceptions;
 using SharedLibrary.Interfaces;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.Remoting;
 using System.Runtime.Remoting.Channels;
 using System.Runtime.Remoting.Channels.Tcp;
-using System.Threading;
 
 // @TODO Fix primary decision
 
@@ -125,7 +125,7 @@ namespace DataServer
             // do this after introducing concurrency in the DS
             //Thread unfreezeAll = new Thread(() =>
             //{
-                while (freezed.Count != 0)
+                while (freezed.Any())
                 {
                     Action action = freezed.Dequeue();
                     action();

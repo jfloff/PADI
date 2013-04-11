@@ -22,7 +22,7 @@ namespace Metadata
             public Dictionary<string, string> LocalFilenames;
             public Dictionary<string, string> Locations;
 
-            public SelectedServers(Dictionary<string, string> localFilenames, Dictionary<string, string> locations) 
+            public SelectedServers(Dictionary<string, string> localFilenames, Dictionary<string, string> locations)
             {
                 this.LocalFilenames = localFilenames;
                 this.Locations = locations;
@@ -35,7 +35,7 @@ namespace Metadata
             public string Location;
             public IDataServerToMetadata DataServer;
 
-            public DataServerInfo(string location, IDataServerToMetadata dataServer) 
+            public DataServerInfo(string location, IDataServerToMetadata dataServer)
             {
                 this.Location = location;
                 this.DataServer = dataServer;
@@ -54,6 +54,8 @@ namespace Metadata
         // id / interface
         private static Dictionary<string, IMetadataToMetadata> metadatas
             = new Dictionary<string, IMetadataToMetadata>();
+        // filename / queue for each file 
+        private static Dictionary<string, Queue<Action<string>>> pendingRequests = new Dictionary<string, Queue<Action<string>>>();
 
         private static string primary;
         private static string id;
@@ -78,8 +80,8 @@ namespace Metadata
                 WellKnownObjectMode.Singleton);
 
             // Start pinging the metatadas in a set interval
-            Thread t = new Thread(() => 
-            { 
+            Thread t = new Thread(() =>
+            {
                 while (true)
                 {
                     // if in fail doesn't ping anyone either
@@ -130,31 +132,48 @@ namespace Metadata
             return filename + "$" + filename.GetHashCode();
         }
 
-        // Places files in the given dataServers. Doesn't care if they were created or not.
+        // create file on a single data server. refactored for future creates
+        private static void CreateFileOnDataServer(string id, FileMetadata fileMetadata)
+        {
+            string location = dataServers[id].Location;
+            string localFilename = LocalFilename(fileMetadata.Filename);
+
+            fileMetadata.AddDataServer(id, location, localFilename);
+
+            Thread request = new Thread(() =>
+            {
+                IDataServerToMetadata dataServer = dataServers[id].DataServer;
+                try
+                {
+                    dataServer.Create(localFilename);
+                }
+                catch (ProcessDownException) { };
+            });
+            request.Start();
+        }
+
+        // Places files in dataServers. Doesn't care if they were created or not.
         public void CreateFileOnDataServers(FileMetadata fileMetadata)
         {
-            int nbDataServersSelected = 1;
+            int nbDataServersSelected = 0;
+            
+            // create possible ones
             foreach (var entry in dataServers)
             {
-                if (nbDataServersSelected++ > fileMetadata.NbDataServers) break;
+                if (++nbDataServersSelected > fileMetadata.NbDataServers) break;
 
                 string id = entry.Key;
-                string location = entry.Value.Location;
-                string localFilename = LocalFilename(fileMetadata.Filename);
+                CreateFileOnDataServer(id, fileMetadata);
+            }
 
-                fileMetadata.LocalFilenames.Add(id, localFilename);
-                fileMetadata.Locations.Add(id, location);
-
-                Thread request = new Thread(() =>
-                {
-                    IDataServerToMetadata dataServer = dataServers[id].DataServer;
-                    dataServer.Create(localFilename);
-                });
-                request.Start();
+            // create requests for future creates
+            for(int i = nbDataServersSelected ; i < fileMetadata.NbDataServers ; i++)
+            {
+                pendingRequests[fileMetadata.Filename].Enqueue((futureId) => CreateFileOnDataServer(futureId, fileMetadata));
             }
         }
 
-        //Tratar o caso em que possivelmente algum dos servidores não conseguiu apagar o ficheiro
+        // Not dealing with files that are already deleted
         public void DeleteFileOnDataServers(FileMetadata fileMetadata)
         {
             foreach (var entry in fileMetadata.LocalFilenames)
@@ -165,7 +184,11 @@ namespace Metadata
                 Thread request = new Thread(() =>
                 {
                     IDataServerToMetadata dataServer = dataServers[id].DataServer;
-                    dataServer.Delete(localFilename);
+                    try
+                    {
+                        dataServer.Delete(localFilename);
+                    }
+                    catch (ProcessDownException) { };
                 });
                 request.Start();
             }
@@ -241,9 +264,10 @@ namespace Metadata
 
             //Select Data Servers and creates files within them
             FileMetadata fileMetadata = new FileMetadata(filename, nbDataServers, readQuorum, writeQuorum);
-            CreateFileOnDataServers(fileMetadata);
+            pendingRequests[filename] = new Queue<Action<string>>();
             fileMetadataTable.Add(filename, fileMetadata);
             openedFiles.Add(filename);
+            CreateFileOnDataServers(fileMetadata);
             return fileMetadata;
         }
 
@@ -261,7 +285,7 @@ namespace Metadata
             {
                 openedFiles.Add(filename);
             }
-            
+
             return fileMetadataTable[filename];
         }
 
@@ -271,7 +295,7 @@ namespace Metadata
 
             Console.WriteLine("CLOSE METADATA FILE " + filename);
 
-            if (!fileMetadataTable.ContainsKey(filename)) 
+            if (!fileMetadataTable.ContainsKey(filename))
                 throw new FileDoesNotExistException(filename);
 
             // does nothing if file was never open
@@ -287,17 +311,16 @@ namespace Metadata
 
             Console.WriteLine("DELETE METADATA FILE " + filename);
 
-            if (!fileMetadataTable.ContainsKey(filename)) 
+            if (!fileMetadataTable.ContainsKey(filename))
                 throw new FileDoesNotExistException(filename);
 
             if (openedFiles.Contains(filename))
                 throw new FileCurrentlyOpenException(filename);
 
-            openedFiles.Remove(filename);
-
-            // missing check if they are all deleted?
-            DeleteFileOnDataServers(fileMetadataTable[filename]);
             fileMetadataTable.Remove(filename);
+            openedFiles.Remove(filename);
+            pendingRequests.Remove(filename);
+            DeleteFileOnDataServers(fileMetadataTable[filename]);
         }
 
         /**
@@ -325,6 +348,15 @@ namespace Metadata
                     typeof(IDataServerToMetadata),
                     location);
                 dataServers.Add(id, new DataServerInfo(location, dataServer));
+
+                foreach (var entry in pendingRequests)
+                {
+                    Queue<Action<string>> pending = entry.Value;
+                    if (pending.Any())
+                    {
+                        pending.Dequeue()(id);
+                    }
+                }
             }
         }
     }

@@ -16,6 +16,7 @@ CREATE c-1, f2, 3, 2, 2
 OPEN c-1, f1
 OPEN c-1, f2
 # more data servers
+#!
 UNFREEZE d-2
 UNFREEZE d-3
 # more metadata servers

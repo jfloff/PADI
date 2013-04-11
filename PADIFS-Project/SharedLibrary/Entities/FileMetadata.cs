@@ -17,6 +17,7 @@ namespace SharedLibrary.Entities
         private Dictionary<string, string> localFilenames = new Dictionary<string, string>();
         // data Server id / locations
         private Dictionary<string, string> locations = new Dictionary<string, string>();
+        private int currentNbDataServers = 0;
 
 
         public FileMetadata(string filename, int nbDataServers, int readQuorum, int writeQuorum)
@@ -51,16 +52,26 @@ namespace SharedLibrary.Entities
             set { this.writeQuorum = value; }
         }
 
+        public int CurrentNbDataServers
+        {
+            get { return this.currentNbDataServers; }
+        }
+
         public Dictionary<string, string> LocalFilenames
         {
             get { return this.localFilenames; }
-            set { this.localFilenames = value; }
         }
 
         public Dictionary<string, string> Locations
         {
             get { return this.locations; }
-            set { this.locations = value; }
+        }
+
+        public void AddDataServer(string id, string location, string localFilename)
+        {
+            this.Locations[id] = location;
+            this.LocalFilenames[id] = localFilename;
+            this.currentNbDataServers++;
         }
 
         public override string ToString()

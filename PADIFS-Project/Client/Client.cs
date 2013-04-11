@@ -197,8 +197,6 @@ namespace Client
                     }
                 }
 
-                Console.Write(quorum.Count + ";" + requests);
-
                 // found the quorum file
                 if (quorumFile != null) break;
 
