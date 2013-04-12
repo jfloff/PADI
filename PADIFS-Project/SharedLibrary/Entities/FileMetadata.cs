@@ -81,15 +81,12 @@ namespace SharedLibrary.Entities
             {
                 string id = entry.Key;
                 string localFilename = entry.Value;
-                dataServers += " (" + id + "," + localFilename + ")";
+                dataServers += " <" + id + ":" + localFilename + ">";
             }
             dataServers += " ]";
 
             // missing dataServersLocalFiles
-            return "Filename = " + this.filename + " : "
-                + "NbDataServer = " + this.nbDataServers + " : "
-                + "Read Quorum = " + this.readQuorum + " : "
-                + "Write Quorum = " + this.writeQuorum + " : "
+            return "(" + this.filename + ":" + this.nbDataServers + ":" + this.readQuorum + " : " + this.writeQuorum + " : "
                 + "Data Servers = " + dataServers;
         }
     }

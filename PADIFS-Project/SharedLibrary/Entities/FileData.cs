@@ -74,8 +74,8 @@ namespace SharedLibrary.Entities
         public override string ToString()
         {
             // missing dataServersLocalFiles
-            return "Version = (" + this.version.ClientId + "," + this.version.Clock + ") : "
-                + "Contents = " + this.contents;
+            return "Version = (" + this.version.ClientId + ":" + this.version.Clock + ") => "
+                + "Contents = " + Helper.BytesToString(this.contents);
         }
 
         // Operation overrides needed for Dictionaries
