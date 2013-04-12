@@ -104,7 +104,7 @@ namespace Metadata
                     metadata.Ping();
                     pings.Add(id);
                 }
-                catch (ProcessDownException) { }
+                catch (ProcessFailedException) { }
             }
             pings.Add(Metadata.id);
             primary = pings.Min();
@@ -135,7 +135,8 @@ namespace Metadata
                 {
                     dataServers[id].DataServer.Create(localFilename);
                 }
-                catch (ProcessDownException) { };
+                catch (ProcessFailedException) { }
+                catch (ProcessFreezedException) { }
             });
             request.Start();
             CreateOrUpdateOnMetadatas(fileMetadata);
@@ -177,7 +178,8 @@ namespace Metadata
                     {
                         dataServers[id].DataServer.Delete(localFilename);
                     }
-                    catch (ProcessDownException) { };
+                    catch (ProcessFailedException) { }
+                    catch (ProcessFreezedException) { }
                 });
                 request.Start();
             }
@@ -196,10 +198,11 @@ namespace Metadata
                     IMetadataToMetadata metadata = entry.Value;
                     metadata.CreateOrUpdate(fileMetadata);
                 }
-                catch (ProcessDownException)
+                catch (ProcessFailedException)
                 {
                     fileMetadataTable.AddMark(id);
                 }
+
             }
         }
         // Missing threading & FAILURES
@@ -212,7 +215,7 @@ namespace Metadata
                     IMetadataToMetadata metadata = entry.Value;
                     metadata.Delete(fileMetadata);
                 }
-                catch (ProcessDownException)
+                catch (ProcessFailedException)
                 {
                     fileMetadataTable.AddMark(id);
                 }
@@ -263,7 +266,7 @@ namespace Metadata
 
         public void Ping()
         {
-            if (fail) throw new ProcessDownException(id);
+            if (fail) throw new ProcessFailedException(id);
 
             // Console.WriteLine("PING");
         }
@@ -296,7 +299,7 @@ namespace Metadata
          */
         public FileMetadata Create(string filename, int nbDataServers, int readQuorum, int writeQuorum)
         {
-            if (fail) throw new ProcessDownException(id);
+            if (fail) throw new ProcessFailedException(id);
 
             if (fileMetadataTable.Contains(filename))
                 throw new FileAlreadyExistsException(filename);
@@ -315,7 +318,7 @@ namespace Metadata
 
         public FileMetadata Open(string filename)
         {
-            if (fail) throw new ProcessDownException(id);
+            if (fail) throw new ProcessFailedException(id);
 
             Console.WriteLine("OPEN METADATA FILE " + filename);
 
@@ -327,7 +330,7 @@ namespace Metadata
 
         public void Close(string filename)
         {
-            if (fail) throw new ProcessDownException(id);
+            if (fail) throw new ProcessFailedException(id);
 
             Console.WriteLine("CLOSE METADATA FILE " + filename);
 
@@ -337,7 +340,7 @@ namespace Metadata
 
         public void Delete(string filename)
         {
-            if (fail) throw new ProcessDownException(id);
+            if (fail) throw new ProcessFailedException(id);
 
             Console.WriteLine("DELETE METADATA FILE " + filename);
 
@@ -358,7 +361,7 @@ namespace Metadata
 
         public Heartbeat Heartbeat(string id)
         {
-            if (fail) throw new ProcessDownException(id);
+            if (fail) throw new ProcessFailedException(id);
 
             // what should the system do if a data-server fails?
             Console.WriteLine("HEARTBEAT");
@@ -367,7 +370,7 @@ namespace Metadata
 
         public void RegisterDataServer(string id, string location)
         {
-            if (fail) throw new ProcessDownException(id);
+            if (fail) throw new ProcessFailedException(id);
 
             Console.WriteLine("REGISTER DATA SERVER " + id);
 

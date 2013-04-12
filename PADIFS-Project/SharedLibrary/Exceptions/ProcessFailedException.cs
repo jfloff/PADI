@@ -4,19 +4,19 @@ using System.Runtime.Serialization;
 namespace SharedLibrary.Exceptions
 {
     [Serializable]
-    public class ProcessDownException : ApplicationException
+    public class ProcessFailedException : ApplicationException
     {
         private string id;
 
-        public ProcessDownException() { }
+        public ProcessFailedException() { }
 
-        public ProcessDownException(string id)
+        public ProcessFailedException(string id)
             : base("Process " + id + " is down.")
         {
             this.id = id;
         }
 
-        public ProcessDownException(SerializationInfo info, StreamingContext context)
+        public ProcessFailedException(SerializationInfo info, StreamingContext context)
             : base(info, context)
         {
         }

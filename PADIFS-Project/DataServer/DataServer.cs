@@ -26,7 +26,7 @@ namespace DataServer
         private static ConcurrentDictionary<string, FileData> files = new ConcurrentDictionary<string, FileData>();
 
         // id / interface
-        private static ConcurrentDictionary<string, IMetadataToDataServer> metadatas 
+        private static ConcurrentDictionary<string, IMetadataToDataServer> metadatas
             = new ConcurrentDictionary<string, IMetadataToDataServer>();
         private static Primary primary = new Primary() { Id = null, Metadata = null };
 
@@ -95,15 +95,22 @@ namespace DataServer
 
         public void Fail()
         {
-            if (freeze) freezed.Enqueue(() => Fail());
-
+            if (freeze)
+            {
+                freezed.Enqueue(() => Fail());
+                throw new ProcessFreezedException(id);
+            }
             Console.WriteLine("FAIL");
             fail = true;
         }
 
         public void Recover()
         {
-            if (freeze) freezed.Enqueue(() => Recover());
+            if (freeze)
+            {
+                freezed.Enqueue(() => Recover());
+                throw new ProcessFreezedException(id);
+            }
 
             Console.WriteLine("RECOVER");
             fail = false;
@@ -111,7 +118,7 @@ namespace DataServer
 
         public void Freeze()
         {
-            if (fail) throw new ProcessDownException(id);
+            if (fail) throw new ProcessFailedException(id);
 
             Console.WriteLine("FREEZE");
             freeze = true;
@@ -119,10 +126,11 @@ namespace DataServer
 
         public void Unfreeze()
         {
-            if (fail) throw new ProcessDownException(id);
+            if (fail) throw new ProcessFailedException(id);
 
             Console.WriteLine("UNFREEZE");
             freeze = false;
+            // missing threading
             while (freezed.Any())
             {
                 Action action;
@@ -136,9 +144,12 @@ namespace DataServer
 
         public void Create(string localFilename)
         {
-            if (fail) throw new ProcessDownException(id);
-            if (freeze) freezed.Enqueue(() => Create(localFilename));
-
+            if (fail) throw new ProcessFailedException(id);
+            if (freeze)
+            {
+                freezed.Enqueue(() => Create(localFilename));
+                throw new ProcessFreezedException(id);
+            }
             Console.WriteLine("CREATE FILE " + localFilename);
 
             if (!files.ContainsKey(localFilename))
@@ -149,8 +160,12 @@ namespace DataServer
 
         public void Delete(string localFilename)
         {
-            if (fail) throw new ProcessDownException(id);
-            if (freeze) freezed.Enqueue(() => Delete(localFilename));
+            if (fail) throw new ProcessFailedException(id);
+            if (freeze)
+            {
+                freezed.Enqueue(() => Delete(localFilename));
+                throw new ProcessFreezedException(id);
+            }
 
             Console.WriteLine("DELETE FILE " + localFilename);
 
@@ -166,8 +181,12 @@ namespace DataServer
 
         public FileData Read(string localFilename)
         {
-            if (fail) throw new ProcessDownException(id);
-            if (freeze) freezed.Enqueue(() => Read(localFilename));
+            if (fail) throw new ProcessFailedException(id);
+            if (freeze)
+            {
+                freezed.Enqueue(() => Read(localFilename));
+                throw new ProcessFreezedException(id);
+            }
 
             Console.WriteLine("READ " + localFilename);
 
@@ -179,7 +198,7 @@ namespace DataServer
 
         public void Write(string localFilename, FileData newFile)
         {
-            if (fail) throw new ProcessDownException(id);
+            if (fail) throw new ProcessFailedException(id);
             if (freeze) freezed.Enqueue(() => Write(localFilename, newFile));
 
             Console.WriteLine("WRITE " + localFilename);

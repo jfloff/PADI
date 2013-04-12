@@ -214,7 +214,8 @@ namespace Client
                                 fileData = dataServer.Read(localFilename);
 
                             }
-                            catch (ProcessDownException) { }
+                            catch (ProcessFailedException) { }
+                            catch (ProcessFreezedException) { }
                             catch (FileDoesNotExistException) { }
                             finally
                             {
@@ -296,7 +297,8 @@ namespace Client
                                 dataServer.Write(localFilename, fileData);
                                 vote = true;
                             }
-                            catch (ProcessDownException) { }
+                            catch (ProcessFailedException) { }
+                            catch (ProcessFreezedException) { }
                             catch (FileDoesNotExistException) { }
                             finally
                             {
