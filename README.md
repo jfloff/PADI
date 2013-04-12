@@ -23,7 +23,6 @@ Plataformas para Aplicações Distribuídas na Internet
 *   DUMP NO PM + IMPROVED LOG
 *   OPTIMIZACAO DE UPDATE DE DATASERVERS
 *   HEARTBEATS DE DSs --> SE "FAILED" DS RETIRAR DA DECISAO E ATRIBUIR EXISTENTES A OUTROS
-*   STATE TRANSFER BETWEEN METADATA
 
 ### DUVIDAS
 ### Esclarecidas
@@ -31,3 +30,6 @@ Plataformas para Aplicações Distribuídas na Internet
     *   Garantir que o ficheiro está sempre naquele numero de servers, >>SE<< tivermos aquele numro de servers
 
 ## A Tirar
+
+### Intruções
+*   renomear scripts para extensão .padis
