@@ -66,11 +66,18 @@ namespace Metadata
         }
 
         // removes mark
-        public ConcurrentDictionary<string, FileMetadata> RemoveMark(string mark)
+        public void RemoveMark(string mark)
         {
-            ConcurrentDictionary<string, FileMetadata> ret; 
-            marks.TryRemove(mark, out ret);
-            return ret;
+            ConcurrentDictionary<string, FileMetadata> ignored; marks.TryRemove(mark, out ignored);
+        }
+
+        public ConcurrentDictionary<string, FileMetadata> Snapshot(string mark)
+        {
+            if (!marks.ContainsKey(mark))
+            {
+                return table;
+            }
+            return marks[mark];
         }
     }
 }
