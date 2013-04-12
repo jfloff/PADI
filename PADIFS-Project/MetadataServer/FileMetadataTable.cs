@@ -5,24 +5,13 @@ using System.Collections.Generic;
 
 namespace Metadata
 {
-    class FileMetadataTable : IEnumerable<KeyValuePair<string, FileMetadata>>
+    class FileMetadataTable
     {
         // filename / FileMetadata
         private ConcurrentDictionary<string, FileMetadata> table = new ConcurrentDictionary<string, FileMetadata>();
         // metadata id / dictionary
         private ConcurrentDictionary<string, ConcurrentDictionary<string, FileMetadata>> marks
             = new ConcurrentDictionary<string, ConcurrentDictionary<string, FileMetadata>>();
-
-        public IEnumerator<KeyValuePair<string, FileMetadata>> GetEnumerator()
-        {
-            foreach (var entry in table)
-                yield return entry;
-        }
-
-        IEnumerator IEnumerable.GetEnumerator()
-        {
-            return GetEnumerator();
-        }
 
         public bool ContainsKey(string filename)
         {
