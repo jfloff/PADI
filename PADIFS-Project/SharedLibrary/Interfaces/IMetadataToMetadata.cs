@@ -8,9 +8,11 @@ using System.Threading.Tasks;
 
 namespace SharedLibrary.Interfaces
 {
-    public interface IMetadataToMetadata : IMetadataToClient
+    public interface IMetadataToMetadata
     {
         void Ping();
-        void Update(MetadataSnapshot metadataSnapshot);
+        void Update(MetadataState metadataSnapshot);
+        void CreateOrUpdate(FileMetadata fileMetadata);
+        void Delete(FileMetadata fileMetadata);
     }
 }

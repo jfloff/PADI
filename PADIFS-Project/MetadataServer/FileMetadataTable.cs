@@ -7,11 +7,23 @@ namespace Metadata
 {
     public class FileMetadataTable
     {
+        private struct Snapshot
+        {
+            public int clock;
+            public Dictionary<string, FileMetadata> state;
+
+            public Snapshot(int clock, ConcurrentDictionary<string, FileMetadata> state)
+            {
+                this.clock = clock;
+                this.state = new Dictionary<string, FileMetadata>(state);
+            }
+        }
+
         // filename / FileMetadata
         private ConcurrentDictionary<string, FileMetadata> table;
-        // metadata id / dictionary
-        private ConcurrentDictionary<string, ConcurrentDictionary<string, FileMetadata>> marks
-            = new ConcurrentDictionary<string, ConcurrentDictionary<string, FileMetadata>>();
+        // medata id / clock
+        private ConcurrentDictionary<string, Snapshot> marks = new ConcurrentDictionary<string, Snapshot>();
+        private int clock = 0;
 
         public FileMetadataTable(ConcurrentDictionary<string, FileMetadata> table)
         {
@@ -23,7 +35,7 @@ namespace Metadata
             this.table = new ConcurrentDictionary<string, FileMetadata>();
         }
 
-        public bool ContainsKey(string filename)
+        public bool Contains(string filename)
         {
             return table.ContainsKey(filename);
         }
@@ -31,19 +43,19 @@ namespace Metadata
         public FileMetadata this[string filename]
         {
             get { return table[filename]; }
-            set
-            {
-                table[filename] = value;
-                foreach (var mark in marks)
-                {
-                    mark.Value[filename] = value;
-                }
-            }
+            set { Add(filename, value); }
         }
 
         public void Remove(string filename)
         {
             FileMetadata ignored; table.TryRemove(filename, out ignored);
+            clock++;
+        }
+
+        public void Add(string filename, FileMetadata fileMetadata)
+        {
+            table[filename] = fileMetadata;
+            clock++;
         }
 
         public override string ToString()
@@ -59,32 +71,43 @@ namespace Metadata
             return ret + " ]";
         }
 
+        /**
+         * Mark Management
+         */
+
         // adds mark to start keeping states
         public void AddMark(string mark)
         {
-            marks[mark] = new ConcurrentDictionary<string, FileMetadata>();
+            marks[mark] = new Snapshot(clock, table);
         }
 
         // removes mark
         public void RemoveMark(string mark)
         {
-            ConcurrentDictionary<string, FileMetadata> ignored; marks.TryRemove(mark, out ignored);
+            Snapshot ignored; marks.TryRemove(mark, out ignored);
         }
 
-        public MetadataSnapshot Snapshot(string mark)
+        public MetadataState State(string mark)
         {
             if (!marks.ContainsKey(mark))
             {
-                return new MetadataSnapshot(table);
+                return new MetadataState(new Dictionary<string, FileMetadata>(table));
             }
-            return new MetadataSnapshot(marks[mark]);
+            return new MetadataState(marks[mark].state);
         }
 
-        public void MergeSnapshot(MetadataSnapshot snapshot)
+        public void MergeState(MetadataState newState)
         {
-            foreach (var entry in snapshot)
+            foreach (var entry in newState)
             {
-                table[entry.Key] = entry.Value;
+                if (table.ContainsKey(entry.Key))
+                {
+                    Remove(entry.Key);
+                }
+                else
+                {
+                    table[entry.Key] = entry.Value;
+                }
             }
         }
     }

@@ -37,7 +37,7 @@ namespace Metadata
         private static ConcurrentDictionary<string, IMetadataToMetadata> metadatas
             = new ConcurrentDictionary<string, IMetadataToMetadata>();
         // filename / queue for each file 
-        private static ConcurrentDictionary<string, Queue<Action<string>>> pendingRequests 
+        private static ConcurrentDictionary<string, Queue<Action<string>>> pendingRequests
             = new ConcurrentDictionary<string, Queue<Action<string>>>();
 
         // statics are all thread safe
@@ -85,6 +85,11 @@ namespace Metadata
          * PING / Fault Detection functions
          */
 
+        private bool ImPrimary()
+        {
+            return (id == primary);
+        }
+
         // Function to run perodically to detect metadatas faults.
         // Pings all the known metadatas and chooses the lowest id.
         private static void FindPrimary()
@@ -118,13 +123,12 @@ namespace Metadata
         }
 
         // create file on a single data server. refactored for future creates
-        private static void CreateFileOnDataServer(string id, FileMetadata fileMetadata)
+        private void CreateOnDataServer(string id, FileMetadata fileMetadata)
         {
             string location = dataServers[id].Location;
             string localFilename = LocalFilename(fileMetadata.Filename);
 
             fileMetadata.AddDataServer(id, location, localFilename);
-
             Thread request = new Thread(() =>
             {
                 try
@@ -134,32 +138,33 @@ namespace Metadata
                 catch (ProcessDownException) { };
             });
             request.Start();
+            CreateOrUpdateOnMetadatas(fileMetadata);
         }
 
         // Places files in dataServers. Doesn't care if they were created or not.
-        public void CreateFileOnDataServers(FileMetadata fileMetadata)
+        public void CreateOnDataServers(FileMetadata fileMetadata)
         {
             int nbDataServersSelected = 0;
-            
+
             // create possible ones
             foreach (var entry in dataServers)
             {
                 if (++nbDataServersSelected > fileMetadata.NbDataServers) break;
 
                 string id = entry.Key;
-                CreateFileOnDataServer(id, fileMetadata);
+                CreateOnDataServer(id, fileMetadata);
             }
 
             // create requests for future creates
-            for(int i = nbDataServersSelected ; i < fileMetadata.NbDataServers ; i++)
+            for (int i = nbDataServersSelected; i < fileMetadata.NbDataServers; i++)
             {
                 pendingRequests[fileMetadata.Filename].Enqueue(
-                    (futureId) => CreateFileOnDataServer(futureId, fileMetadata));
+                    (futureId) => CreateOnDataServer(futureId, fileMetadata));
             }
         }
 
         // Not dealing with files that are already deleted
-        public void DeleteFileOnDataServers(FileMetadata fileMetadata)
+        public void DeleteOnDataServers(FileMetadata fileMetadata)
         {
             foreach (var entry in fileMetadata.LocalFilenames)
             {
@@ -179,6 +184,42 @@ namespace Metadata
         }
 
         /**
+         * Functions to deal with other metadatas
+         */
+        // Missing threading & FAILURES
+        private void CreateOrUpdateOnMetadatas(FileMetadata fileMetadata)
+        {
+            foreach (var entry in metadatas)
+            {
+                try
+                {
+                    IMetadataToMetadata metadata = entry.Value;
+                    metadata.CreateOrUpdate(fileMetadata);
+                }
+                catch (ProcessDownException)
+                {
+                    fileMetadataTable.AddMark(id);
+                }
+            }
+        }
+        // Missing threading & FAILURES
+        private void DeleteOnMetadatas(FileMetadata fileMetadata)
+        {
+            foreach (var entry in metadatas)
+            {
+                try
+                {
+                    IMetadataToMetadata metadata = entry.Value;
+                    metadata.Delete(fileMetadata);
+                }
+                catch (ProcessDownException)
+                {
+                    fileMetadataTable.AddMark(id);
+                }
+            }
+        }
+
+        /**
          * IMetadataToPM Methods
          */
 
@@ -194,7 +235,7 @@ namespace Metadata
             //Force invocation of primary decision
             FindPrimary();
             //sends the current metadata state
-            metadata.Update(fileMetadataTable.Snapshot(id));
+            if (ImPrimary()) metadata.Update(fileMetadataTable.State(id));
         }
 
         public void Dump()
@@ -227,30 +268,48 @@ namespace Metadata
             // Console.WriteLine("PING");
         }
 
-        public void Update(MetadataSnapshot snapshot)
+        public void Update(MetadataState snapshot)
         {
-            fileMetadataTable.MergeSnapshot(snapshot);
+            fileMetadataTable.MergeState(snapshot);
+        }
+
+        public void CreateOrUpdate(FileMetadata fileMetadata)
+        {
+            if (!fileMetadataTable.Contains(fileMetadata.Filename))
+            {
+                pendingRequests[fileMetadata.Filename] = new Queue<Action<string>>();
+            }
+            fileMetadataTable[fileMetadata.Filename] = fileMetadata;
+        }
+
+        public void Delete(FileMetadata fileMetadata)
+        {
+            if (fileMetadataTable.Contains(fileMetadata.Filename))
+            {
+                fileMetadataTable.Remove(fileMetadata.Filename);
+                Queue<Action<string>> queueRemove; pendingRequests.TryRemove(fileMetadata.Filename, out queueRemove);
+            }
         }
 
         /**
          * IMetadataToClient Methods
          */
-
         public FileMetadata Create(string filename, int nbDataServers, int readQuorum, int writeQuorum)
         {
             if (fail) throw new ProcessDownException(id);
 
+            if (fileMetadataTable.Contains(filename))
+                throw new FileAlreadyExistsException(filename);
+
             Console.WriteLine("CREATE METADATA FILENAME: " + filename + " NBDATASERVERS: " + nbDataServers
                 + " READQUORUM: " + readQuorum + " WRITEQUORUM: " + writeQuorum);
 
-            if (fileMetadataTable.ContainsKey(filename))
-                throw new FileAlreadyExistsException(filename);
-
             //Select Data Servers and creates files within them
             FileMetadata fileMetadata = new FileMetadata(filename, nbDataServers, readQuorum, writeQuorum);
-            fileMetadataTable[filename] = fileMetadata;
             pendingRequests[filename] = new Queue<Action<string>>();
-            CreateFileOnDataServers(fileMetadata);
+            CreateOnDataServers(fileMetadata);
+            CreateOrUpdateOnMetadatas(fileMetadata);
+            fileMetadataTable[filename] = fileMetadata;
             return fileMetadata;
         }
 
@@ -260,7 +319,7 @@ namespace Metadata
 
             Console.WriteLine("OPEN METADATA FILE " + filename);
 
-            if (!fileMetadataTable.ContainsKey(filename))
+            if (!fileMetadataTable.Contains(filename))
                 throw new FileDoesNotExistException(filename);
 
             return fileMetadataTable[filename];
@@ -272,7 +331,7 @@ namespace Metadata
 
             Console.WriteLine("CLOSE METADATA FILE " + filename);
 
-            if (!fileMetadataTable.ContainsKey(filename))
+            if (!fileMetadataTable.Contains(filename))
                 throw new FileDoesNotExistException(filename);
         }
 
@@ -282,12 +341,15 @@ namespace Metadata
 
             Console.WriteLine("DELETE METADATA FILE " + filename);
 
-            if (!fileMetadataTable.ContainsKey(filename))
+            if (!fileMetadataTable.Contains(filename))
                 throw new FileDoesNotExistException(filename);
 
-            DeleteFileOnDataServers(fileMetadataTable[filename]);
+            FileMetadata fileMetadata = fileMetadataTable[filename];
             fileMetadataTable.Remove(filename);
             Queue<Action<string>> queueRemove; pendingRequests.TryRemove(filename, out queueRemove);
+
+            DeleteOnDataServers(fileMetadata);
+            DeleteOnMetadatas(fileMetadata);
         }
 
         /**
