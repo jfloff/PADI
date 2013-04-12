@@ -85,11 +85,12 @@ namespace DataServer
         public void Dump()
         {
             Console.WriteLine("DUMP");
-            Console.WriteLine("Opened File Metadatas");
+            Console.WriteLine("Opened File Datas");
             foreach (var entry in files)
             {
+                string filename = entry.Key;
                 FileData fileData = entry.Value;
-                Console.WriteLine(fileData);
+                Console.WriteLine(filename + ":" + fileData);
             }
         }
 
@@ -199,7 +200,11 @@ namespace DataServer
         public void Write(string localFilename, FileData newFile)
         {
             if (fail) throw new ProcessFailedException(id);
-            if (freeze) freezed.Enqueue(() => Write(localFilename, newFile));
+            if (freeze)
+            {
+                freezed.Enqueue(() => Write(localFilename, newFile));
+                throw new ProcessFreezedException(id);
+            }
 
             Console.WriteLine("WRITE " + localFilename);
 

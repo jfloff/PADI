@@ -40,7 +40,8 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Entities\MetadataState.cs" />
-    <Compile Include="Exceptions\ProcessDownException.cs" />
+    <Compile Include="Exceptions\ProcessFreezedException.cs" />
+    <Compile Include="Exceptions\ProcessFailedException.cs" />
     <Compile Include="Helper.cs" />
     <Compile Include="Exceptions\FileAlreadyExistsException.cs" />
     <Compile Include="Entities\FileData.cs" />
