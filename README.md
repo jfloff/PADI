@@ -20,9 +20,10 @@ Plataformas para Aplicações Distribuídas na Internet
 
 ### TODO
 *   Verificações de null objects nos activator get object.
-*   DUMP NO PM
+*   DUMP NO PM + IMPROVED LOG
 *   OPTIMIZACAO DE UPDATE DE DATASERVERS
-*   HEARTBEATS DE DSs
+*   HEARTBEATS DE DSs --> SE "FAILED" DS RETIRAR DA DECISAO E ATRIBUIR EXISTENTES A OUTROS
+*   STATE TRANSFER BETWEEN METADATA
 
 ### DUVIDAS
 ### Esclarecidas

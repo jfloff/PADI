@@ -28,9 +28,7 @@ namespace Metadata
             }
         }
 
-        // filename / FileMetadata
-        private static ConcurrentDictionary<string, FileMetadata> fileMetadataTable
-            = new ConcurrentDictionary<string, FileMetadata>();
+        private static FileMetadataTable fileMetadataTable = new FileMetadataTable();
         // id / Interface
         private static ConcurrentDictionary<string, DataServerInfo> dataServers
             = new ConcurrentDictionary<string, DataServerInfo>();
@@ -201,15 +199,7 @@ namespace Metadata
         {
             Console.WriteLine("DUMP");
             Console.WriteLine("File Metadatas");
-            Console.WriteLine("[");
-            foreach (var entry in fileMetadataTable)
-            {
-                string filename = entry.Key;
-                FileMetadata fileMetadata = entry.Value;
-
-                Console.WriteLine(" <" + fileMetadata + "> " );
-            }
-            Console.WriteLine("]");
+            Console.WriteLine(fileMetadataTable);
         }
 
         public void Fail()
@@ -289,7 +279,7 @@ namespace Metadata
                 throw new FileDoesNotExistException(filename);
 
             DeleteFileOnDataServers(fileMetadataTable[filename]);
-            FileMetadata fileRemove; fileMetadataTable.TryRemove(filename, out fileRemove);
+            fileMetadataTable.Remove(filename);
             Queue<Action<string>> queueRemove; pendingRequests.TryRemove(filename, out queueRemove);
         }
 
