@@ -6,10 +6,10 @@ namespace Client
 {
     class ReadQuorum
     {
-        private Dictionary<FileData, int> quorum = new Dictionary<FileData, int>();
         private int quorumSize;
-        private int totalVotes = 0;
         private Helper.Semantics semantics;
+        private Dictionary<FileData, int> quorum = new Dictionary<FileData, int>();
+        private int totalVotes = 0;
 
         public ReadQuorum(int quorumSize, Helper.Semantics semantics)
         {
@@ -21,14 +21,8 @@ namespace Client
         {
             if (vote != null)
             {
-                if (quorum.ContainsKey(vote))
-                {
-                    quorum[vote]++;
-                }
-                else
-                {
-                    quorum[vote] = 1;
-                }
+                if (quorum.ContainsKey(vote)) quorum[vote]++;
+                else quorum[vote] = 1;
             }
             totalVotes++;
         }
@@ -55,7 +49,7 @@ namespace Client
     class WriteQuorum
     {
         private int written = 0;
-        private int failed = 0;
+        private int totalVotes = 0;
         protected int quorumSize;
 
         public WriteQuorum(int quorumSize)
@@ -65,12 +59,13 @@ namespace Client
 
         public void AddVote(bool vote)
         {
-            if (vote) written++; else failed++;
+            if (vote) written++; 
+            totalVotes++;
         }
 
         public int Count
         {
-            get { return this.written + this.failed; }
+            get { return this.totalVotes; }
         }
 
         public bool CheckQuorum()

@@ -15,19 +15,6 @@ namespace Metadata
 {
     class Metadata : MarshalByRefObject, IMetadataToPM, IMetadataToMetadata, IMetadataToClient, IMetadataToDataServer
     {
-        // Return of SelectDataServers Function
-        private struct SelectedServers
-        {
-            public Dictionary<string, string> LocalFilenames;
-            public Dictionary<string, string> Locations;
-
-            public SelectedServers(Dictionary<string, string> localFilenames, Dictionary<string, string> locations)
-            {
-                this.LocalFilenames = localFilenames;
-                this.Locations = locations;
-            }
-        }
-
         // Store on each entry of the data servers dictionary
         private struct DataServerInfo
         {
@@ -44,8 +31,6 @@ namespace Metadata
         // filename / FileMetadata
         private static ConcurrentDictionary<string, FileMetadata> fileMetadataTable
             = new ConcurrentDictionary<string, FileMetadata>();
-        // filename
-        private static List<string> openedFiles = new List<string>();
         // id / Interface
         private static ConcurrentDictionary<string, DataServerInfo> dataServers
             = new ConcurrentDictionary<string, DataServerInfo>();
@@ -144,10 +129,9 @@ namespace Metadata
 
             Thread request = new Thread(() =>
             {
-                IDataServerToMetadata dataServer = dataServers[id].DataServer;
                 try
                 {
-                    dataServer.Create(localFilename);
+                    dataServers[id].DataServer.Create(localFilename);
                 }
                 catch (ProcessDownException) { };
             });
@@ -171,7 +155,8 @@ namespace Metadata
             // create requests for future creates
             for(int i = nbDataServersSelected ; i < fileMetadata.NbDataServers ; i++)
             {
-                pendingRequests[fileMetadata.Filename].Enqueue((futureId) => CreateFileOnDataServer(futureId, fileMetadata));
+                pendingRequests[fileMetadata.Filename].Enqueue(
+                    (futureId) => CreateFileOnDataServer(futureId, fileMetadata));
             }
         }
 
@@ -185,10 +170,9 @@ namespace Metadata
 
                 Thread request = new Thread(() =>
                 {
-                    IDataServerToMetadata dataServer = dataServers[id].DataServer;
                     try
                     {
-                        dataServer.Delete(localFilename);
+                        dataServers[id].DataServer.Delete(localFilename);
                     }
                     catch (ProcessDownException) { };
                 });
@@ -217,14 +201,15 @@ namespace Metadata
         {
             Console.WriteLine("DUMP");
             Console.WriteLine("File Metadatas");
+            Console.WriteLine("[");
             foreach (var entry in fileMetadataTable)
             {
                 string filename = entry.Key;
                 FileMetadata fileMetadata = entry.Value;
 
-                Console.WriteLine("  " + filename);
-                Console.WriteLine("    " + fileMetadata.ToString());
+                Console.WriteLine(" <" + fileMetadata + "> " );
             }
+            Console.WriteLine("]");
         }
 
         public void Fail()
@@ -268,7 +253,6 @@ namespace Metadata
             FileMetadata fileMetadata = new FileMetadata(filename, nbDataServers, readQuorum, writeQuorum);
             fileMetadataTable[filename] = fileMetadata;
             pendingRequests[filename] = new Queue<Action<string>>();
-            openedFiles.Add(filename);
             CreateFileOnDataServers(fileMetadata);
             return fileMetadata;
         }
@@ -282,12 +266,6 @@ namespace Metadata
             if (!fileMetadataTable.ContainsKey(filename))
                 throw new FileDoesNotExistException(filename);
 
-            // does nothing if file is already open
-            if (!openedFiles.Contains(filename))
-            {
-                openedFiles.Add(filename);
-            }
-
             return fileMetadataTable[filename];
         }
 
@@ -299,12 +277,6 @@ namespace Metadata
 
             if (!fileMetadataTable.ContainsKey(filename))
                 throw new FileDoesNotExistException(filename);
-
-            // does nothing if file was never open
-            if (openedFiles.Contains(filename))
-            {
-                openedFiles.Remove(filename);
-            }
         }
 
         public void Delete(string filename)
@@ -318,7 +290,6 @@ namespace Metadata
 
             DeleteFileOnDataServers(fileMetadataTable[filename]);
             FileMetadata fileRemove; fileMetadataTable.TryRemove(filename, out fileRemove);
-            if (openedFiles.Contains(filename)) openedFiles.Remove(filename);
             Queue<Action<string>> queueRemove; pendingRequests.TryRemove(filename, out queueRemove);
         }
 
@@ -348,6 +319,7 @@ namespace Metadata
                     location);
                 dataServers[id] = new DataServerInfo(location, dataServer);
 
+                // missing threading
                 foreach (var entry in pendingRequests)
                 {
                     Queue<Action<string>> pending = entry.Value;

@@ -9,7 +9,6 @@ using System.Linq;
 using System.Runtime.Remoting;
 using System.Runtime.Remoting.Channels;
 using System.Runtime.Remoting.Channels.Tcp;
-using System.Threading;
 
 // @TODO Fix primary decision
 
@@ -26,7 +25,9 @@ namespace DataServer
         // localFilename / FileData
         private static ConcurrentDictionary<string, FileData> files = new ConcurrentDictionary<string, FileData>();
 
-        private static List<IMetadataToDataServer> metadatas = new List<IMetadataToDataServer>();
+        // id / interface
+        private static ConcurrentDictionary<string, IMetadataToDataServer> metadatas 
+            = new ConcurrentDictionary<string, IMetadataToDataServer>();
         private static Primary primary = new Primary() { Id = null, Metadata = null };
 
         private volatile static string id;
@@ -70,7 +71,7 @@ namespace DataServer
             IMetadataToDataServer metadata = (IMetadataToDataServer)Activator.GetObject(
                 typeof(IMetadataToDataServer),
                 location);
-            metadatas.Add(metadata);
+            metadatas[id] = metadata;
 
             if (primary.Id == null)
             {
@@ -87,11 +88,8 @@ namespace DataServer
             Console.WriteLine("Opened File Metadatas");
             foreach (var entry in files)
             {
-                string localFilename = entry.Key;
                 FileData fileData = entry.Value;
-
-                Console.WriteLine("  " + localFilename);
-                Console.WriteLine("    " + fileData.ToString());
+                Console.WriteLine(fileData);
             }
         }
 
