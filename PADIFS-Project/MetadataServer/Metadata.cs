@@ -193,6 +193,8 @@ namespace Metadata
 
             //Force invocation of primary decision
             FindPrimary();
+            //sends the current metadata state
+            metadata.Update(fileMetadataTable.Snapshot(id));
         }
 
         public void Dump()
@@ -223,6 +225,11 @@ namespace Metadata
             if (fail) throw new ProcessDownException(id);
 
             // Console.WriteLine("PING");
+        }
+
+        public void Update(MetadataSnapshot snapshot)
+        {
+            fileMetadataTable.MergeSnapshot(snapshot);
         }
 
         /**

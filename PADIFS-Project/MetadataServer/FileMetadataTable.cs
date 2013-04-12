@@ -5,13 +5,23 @@ using System.Collections.Generic;
 
 namespace Metadata
 {
-    class FileMetadataTable
+    public class FileMetadataTable
     {
         // filename / FileMetadata
-        private ConcurrentDictionary<string, FileMetadata> table = new ConcurrentDictionary<string, FileMetadata>();
+        private ConcurrentDictionary<string, FileMetadata> table;
         // metadata id / dictionary
         private ConcurrentDictionary<string, ConcurrentDictionary<string, FileMetadata>> marks
             = new ConcurrentDictionary<string, ConcurrentDictionary<string, FileMetadata>>();
+
+        public FileMetadataTable(ConcurrentDictionary<string, FileMetadata> table)
+        {
+            this.table = table;
+        }
+
+        public FileMetadataTable()
+        {
+            this.table = new ConcurrentDictionary<string, FileMetadata>();
+        }
 
         public bool ContainsKey(string filename)
         {
@@ -21,7 +31,8 @@ namespace Metadata
         public FileMetadata this[string filename]
         {
             get { return table[filename]; }
-            set { 
+            set
+            {
                 table[filename] = value;
                 foreach (var mark in marks)
                 {
@@ -60,13 +71,21 @@ namespace Metadata
             ConcurrentDictionary<string, FileMetadata> ignored; marks.TryRemove(mark, out ignored);
         }
 
-        public ConcurrentDictionary<string, FileMetadata> Snapshot(string mark)
+        public MetadataSnapshot Snapshot(string mark)
         {
             if (!marks.ContainsKey(mark))
             {
-                return table;
+                return new MetadataSnapshot(table);
             }
-            return marks[mark];
+            return new MetadataSnapshot(marks[mark]);
+        }
+
+        public void MergeSnapshot(MetadataSnapshot snapshot)
+        {
+            foreach (var entry in snapshot)
+            {
+                table[entry.Key] = entry.Value;
+            }
         }
     }
 }
