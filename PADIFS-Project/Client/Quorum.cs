@@ -8,7 +8,7 @@ namespace Client
     {
         private int quorumSize;
         private Helper.Semantics semantics;
-        private Dictionary<FileData, int> quorum = new Dictionary<FileData, int>();
+        private Dictionary<FileVersion, int> quorum = new Dictionary<FileVersion, int>();
         private int totalVotes = 0;
 
         public ReadQuorum(int quorumSize, Helper.Semantics semantics)
@@ -17,7 +17,7 @@ namespace Client
             this.semantics = semantics;
         }
 
-        public void AddVote(FileData vote)
+        public void AddVote(FileVersion vote)
         {
             if (vote != null)
             {
@@ -27,11 +27,11 @@ namespace Client
             totalVotes++;
         }
 
-        public bool CheckQuorum(FileData vote, FileData original)
+        public bool CheckQuorum(FileVersion vote, FileVersion original)
         {
             if ((vote != null) && (quorum[vote] >= this.quorumSize))
             {
-                if ((semantics == Helper.Semantics.MONOTONIC) && (FileData.MostRecent(vote, original) < 0))
+                if ((semantics == Helper.Semantics.MONOTONIC) && (FileVersion.MostRecent(vote, original) < 0))
                 {
                     return false;
                 }

@@ -39,6 +39,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Entities\FileVersion.cs" />
     <Compile Include="Entities\MetadataState.cs" />
     <Compile Include="Exceptions\ProcessFreezedException.cs" />
     <Compile Include="Exceptions\ProcessFailedException.cs" />

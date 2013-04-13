@@ -192,6 +192,23 @@ namespace DataServer
          * IDataServerToClient Methods
          */
 
+        public FileVersion Version(string localFilename)
+        {
+            if (fail) throw new ProcessFailedException(id);
+            if (freeze)
+            {
+                freezed.Enqueue(() => Version(localFilename));
+                throw new ProcessFreezedException(id);
+            }
+
+            Console.WriteLine("VERSION " + localFilename);
+
+            if (!files.ContainsKey(localFilename))
+                throw new FileDoesNotExistException(localFilename);
+
+            return files[localFilename].Version;
+        }
+
         public FileData Read(string localFilename)
         {
             if (fail) throw new ProcessFailedException(id);
@@ -224,7 +241,7 @@ namespace DataServer
                 throw new FileDoesNotExistException(localFilename);
 
             FileData currentFile = files[localFilename];
-            files[localFilename] = FileData.LatestVersion(currentFile, newFile);
+            files[localFilename] = FileData.Latest(currentFile, newFile);
         }
     }
 }

@@ -22,6 +22,18 @@ namespace Client
             public IMetadataToClient Metadata;
         };
 
+        class LatestVersion
+        {
+            public FileVersion Version;
+            public string DataServerId;
+
+            public LatestVersion(FileVersion version, string dataServerId)
+            {
+                this.Version = version;
+                this.DataServerId = dataServerId;
+            }
+        };
+
         // metadataId / Proxy to metadata
         private static Dictionary<string, IMetadataToClient> metadatas
             = new Dictionary<string, IMetadataToClient>();
@@ -148,23 +160,52 @@ namespace Client
             }
         }
 
+        private FileData ReadFileData(int fileRegisterIndex, Helper.Semantics semantics)
+        {
+            // gets latest version
+            LatestVersion latestVersion = ReadVersion(fileRegisterIndex, semantics);
+
+            // requests file data to dataServer with latest version
+            string id = latestVersion.DataServerId;
+            string location = fileRegister.FileMetadataAt(fileRegisterIndex).Locations[id];
+            string localFilename = fileRegister.FileMetadataAt(fileRegisterIndex).LocalFilenames[id];
+            FileData fileData = null;
+
+            Thread request = new Thread(() =>
+            {
+                IDataServerToClient dataServer = (IDataServerToClient)Activator.GetObject(
+                    typeof(IDataServerToClient),
+                    location);
+                fileData = dataServer.Read(localFilename);
+            });
+            request.Start();
+
+            // waits for answer
+            while (fileData == null) ;
+
+            // update file registers
+            fileRegister.SetFileDataAt(fileRegisterIndex, fileData);
+            return fileData;
+        }
+
         public void Read(int fileRegisterIndex, Helper.Semantics semantics, int byteRegisterIndex)
         {
             Console.WriteLine("READ FILE = " + fileRegisterIndex);
 
             FileData fileData = ReadFileData(fileRegisterIndex, semantics);
-            byteRegister.Add(byteRegisterIndex, fileData.Contents);
+            byteRegister[byteRegisterIndex] = fileData.Contents;
         }
 
-        private FileData ReadFileData(int fileRegisterIndex, Helper.Semantics semantics)
+        private LatestVersion ReadVersion(int fileRegisterIndex, Helper.Semantics semantics)
         {
             string filename = fileRegister.FilenameAt(fileRegisterIndex);
-            FileData original = fileRegister.FileDataAt(fileRegisterIndex);
+            FileVersion original = fileRegister.FileDataAt(fileRegisterIndex).Version;
             FileMetadata fileMetadata = fileRegister.FileMetadataAt(fileRegisterIndex);
             // data server id / file data
-            ConcurrentDictionary<string, FileData> reads = new ConcurrentDictionary<string, FileData>();
+            ConcurrentDictionary<string, FileVersion> reads = new ConcurrentDictionary<string, FileVersion>();
             int requests = 0;
-            FileData quorumFile = null;
+            LatestVersion quorumVersion = null;
+
 
             //QUORUM
             while (true)
@@ -173,18 +214,19 @@ namespace Client
                 ReadQuorum quorum = new ReadQuorum(fileMetadata.ReadQuorum, semantics);
                 foreach (var entry in reads)
                 {
-                    FileData vote = entry.Value;
+                    FileVersion vote = entry.Value;
+                    string dataServerId = entry.Key;
 
                     quorum.AddVote(vote);
                     if (quorum.CheckQuorum(vote, original))
                     {
-                        quorumFile = vote;
+                        quorumVersion = new LatestVersion(vote, dataServerId);
                         break;
                     }
                 }
 
                 // found the quorum file
-                if (quorumFile != null) break;
+                if (quorumVersion != null) break;
 
                 // if all the votes arrived at the quorum
                 // stops when all requests are counted (requests = 0)
@@ -208,10 +250,10 @@ namespace Client
                             IDataServerToClient dataServer = (IDataServerToClient)Activator.GetObject(
                                 typeof(IDataServerToClient),
                                 location);
-                            FileData fileData = null;
+                            FileVersion fileVersion = null;
                             try
                             {
-                                fileData = dataServer.Read(localFilename);
+                                fileVersion = dataServer.Version(localFilename);
 
                             }
                             catch (ProcessFailedException) { }
@@ -219,7 +261,7 @@ namespace Client
                             catch (FileDoesNotExistException) { }
                             finally
                             {
-                                reads[id] = fileData;
+                                reads[id] = fileVersion;
                                 Interlocked.Decrement(ref requests);
                             }
                         });
@@ -228,9 +270,7 @@ namespace Client
                 }
             }
 
-            // update file registers
-            fileRegister.SetFileDataAt(fileRegisterIndex, quorumFile);
-            return quorumFile;
+            return quorumVersion;
         }
 
         public void Write(int fileRegisterIndex, byte[] contents)
@@ -238,9 +278,9 @@ namespace Client
             Console.WriteLine("WRITE FILE = " + fileRegisterIndex);
 
             // forces to get always the most recent file
-            FileData fileData = ReadFileData(fileRegisterIndex, Helper.Semantics.MONOTONIC);
-            fileData.Contents = contents;
-            fileData.IncrementVersion(Client.id);
+            FileVersion latest = ReadVersion(fileRegisterIndex, Helper.Semantics.MONOTONIC).Version;
+            latest.Increment(Client.id);
+            FileData fileData = new FileData(latest, contents);
 
             string filename = fileRegister.FilenameAt(fileRegisterIndex);
             FileMetadata fileMetadata = fileRegister.FileMetadataAt(fileRegisterIndex);
