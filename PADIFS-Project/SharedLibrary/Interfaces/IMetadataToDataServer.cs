@@ -9,7 +9,7 @@ namespace SharedLibrary.Interfaces
 {
     public interface IMetadataToDataServer
     {
-        Heartbeat Heartbeat(string id);
+        void Heartbeat(string id, Heartbeat heartbeat);
         void RegisterDataServer(string id, string location);
     }
 }

@@ -37,8 +37,8 @@ namespace Metadata
         private static ConcurrentDictionary<string, IMetadataToMetadata> metadatas
             = new ConcurrentDictionary<string, IMetadataToMetadata>();
         // filename / queue for each file 
-        private static ConcurrentDictionary<string, Queue<Action<string>>> pendingRequests
-            = new ConcurrentDictionary<string, Queue<Action<string>>>();
+        private static ConcurrentDictionary<string, ConcurrentQueue<Action<string>>> pendingRequests
+            = new ConcurrentDictionary<string, ConcurrentQueue<Action<string>>>();
 
         // statics are all thread safe
         private volatile static string primary;
@@ -112,7 +112,7 @@ namespace Metadata
         }
 
         /**
-         * Open File related methods
+         * File related methods
          */
 
         // returns localFilename for dataServer
@@ -188,37 +188,45 @@ namespace Metadata
         /**
          * Functions to deal with other metadatas
          */
-        // Missing threading & FAILURES
+
         private void CreateOrUpdateOnMetadatas(FileMetadata fileMetadata)
         {
             foreach (var entry in metadatas)
             {
-                try
+                IMetadataToMetadata metadata = entry.Value;
+                Thread request = new Thread(() =>
                 {
-                    IMetadataToMetadata metadata = entry.Value;
-                    metadata.CreateOrUpdate(fileMetadata);
-                }
-                catch (ProcessFailedException)
-                {
-                    fileMetadataTable.AddMark(id);
-                }
-
+                    try
+                    {
+                        metadata.CreateOrUpdate(fileMetadata);
+                    }
+                    catch (ProcessFailedException)
+                    {
+                        fileMetadataTable.AddMark(id);
+                    }
+                });
+                request.Start();
             }
         }
-        // Missing threading & FAILURES
+
         private void DeleteOnMetadatas(FileMetadata fileMetadata)
         {
             foreach (var entry in metadatas)
             {
-                try
+                IMetadataToMetadata metadata = entry.Value;
+                Thread request = new Thread(() =>
                 {
-                    IMetadataToMetadata metadata = entry.Value;
-                    metadata.Delete(fileMetadata);
-                }
-                catch (ProcessFailedException)
-                {
-                    fileMetadataTable.AddMark(id);
-                }
+                    try
+                    {
+
+                        metadata.Delete(fileMetadata);
+                    }
+                    catch (ProcessFailedException)
+                    {
+                        fileMetadataTable.AddMark(id);
+                    }
+                });
+                request.Start();
             }
         }
 
@@ -268,7 +276,7 @@ namespace Metadata
         {
             if (fail) throw new ProcessFailedException(id);
 
-            // Console.WriteLine("PING");
+            // Console.WriteLine("PONG");
         }
 
         public void Update(MetadataState snapshot)
@@ -280,7 +288,7 @@ namespace Metadata
         {
             if (!fileMetadataTable.Contains(fileMetadata.Filename))
             {
-                pendingRequests[fileMetadata.Filename] = new Queue<Action<string>>();
+                pendingRequests[fileMetadata.Filename] = new ConcurrentQueue<Action<string>>();
             }
             fileMetadataTable[fileMetadata.Filename] = fileMetadata;
         }
@@ -290,7 +298,7 @@ namespace Metadata
             if (fileMetadataTable.Contains(fileMetadata.Filename))
             {
                 fileMetadataTable.Remove(fileMetadata.Filename);
-                Queue<Action<string>> queueRemove; pendingRequests.TryRemove(fileMetadata.Filename, out queueRemove);
+                ConcurrentQueue<Action<string>> queueRemove; pendingRequests.TryRemove(fileMetadata.Filename, out queueRemove);
             }
         }
 
@@ -309,9 +317,11 @@ namespace Metadata
 
             //Select Data Servers and creates files within them
             FileMetadata fileMetadata = new FileMetadata(filename, nbDataServers, readQuorum, writeQuorum);
-            pendingRequests[filename] = new Queue<Action<string>>();
+            pendingRequests[filename] = new ConcurrentQueue<Action<string>>();
+            
             CreateOnDataServers(fileMetadata);
             CreateOrUpdateOnMetadatas(fileMetadata);
+
             fileMetadataTable[filename] = fileMetadata;
             return fileMetadata;
         }
@@ -349,7 +359,7 @@ namespace Metadata
 
             FileMetadata fileMetadata = fileMetadataTable[filename];
             fileMetadataTable.Remove(filename);
-            Queue<Action<string>> queueRemove; pendingRequests.TryRemove(filename, out queueRemove);
+            ConcurrentQueue<Action<string>> queueRemove; pendingRequests.TryRemove(filename, out queueRemove);
 
             DeleteOnDataServers(fileMetadata);
             DeleteOnMetadatas(fileMetadata);
@@ -359,13 +369,12 @@ namespace Metadata
          * IMetadataToDataServer Methods
          */
 
-        public Heartbeat Heartbeat(string id)
+        public void Heartbeat(string id, Heartbeat heartbeat)
         {
             if (fail) throw new ProcessFailedException(id);
 
             // what should the system do if a data-server fails?
             Console.WriteLine("HEARTBEAT");
-            return null;
         }
 
         public void RegisterDataServer(string id, string location)
@@ -381,13 +390,20 @@ namespace Metadata
                     location);
                 dataServers[id] = new DataServerInfo(location, dataServer);
 
-                // missing threading
                 foreach (var entry in pendingRequests)
                 {
-                    Queue<Action<string>> pending = entry.Value;
+                    string futureId = id;
+                    ConcurrentQueue<Action<string>> pending = entry.Value;
+
                     if (pending.Any())
                     {
-                        pending.Dequeue()(id);
+                        Thread pendingRequest = new Thread(() =>
+                        {
+                            Action<string> action;
+                            pending.TryDequeue(out action);
+                            action(futureId);
+                        });
+                        pendingRequest.Start();
                     }
                 }
             }

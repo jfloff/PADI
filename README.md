@@ -17,12 +17,14 @@ Plataformas para Aplicações Distribuídas na Internet
 *   Uma classe/interface por ficheiro
 *   Todos Metodos letra grande (Pascal Case)
 *   Abtributos começam com letra pequena (Came Case)
+*   Para estruturas de dados auxiliares: structs para estruturas de dados que são inicializadas e nunca mais mudam (imutable) e classes para estruturas de dados que precisam de ser updated.
 
 ### TODO
 *   Verificações de null objects nos activator get object.
 *   DUMP NO PM + IMPROVED LOG
 *   OPTIMIZACAO DE UPDATE DE DATASERVERS
 *   HEARTBEATS DE DSs --> SE "FAILED" DS RETIRAR DA DECISAO E ATRIBUIR EXISTENTES A OUTROS
+*   LEADERR CHOOSING ALGORITHM FOR MASTER CHOICE
 
 ### DUVIDAS
 ### Esclarecidas

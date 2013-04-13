@@ -9,6 +9,7 @@ using System.Linq;
 using System.Runtime.Remoting;
 using System.Runtime.Remoting.Channels;
 using System.Runtime.Remoting.Channels.Tcp;
+using System.Threading;
 
 // @TODO Fix primary decision
 
@@ -16,7 +17,7 @@ namespace DataServer
 {
     public class DataServer : MarshalByRefObject, IDataServerToPM, IDataServerToMetadata, IDataServerToClient
     {
-        struct Primary
+        class Primary
         {
             public string Id;
             public IMetadataToDataServer Metadata;
@@ -57,6 +58,12 @@ namespace DataServer
 
             Console.WriteLine("Data Server " + id + " has started.");
             Console.ReadLine();
+        }
+
+        public void SendHeartbeat()
+        {
+            Heartbeat heartbeat = new Heartbeat();
+            primary.Metadata.Heartbeat(id, heartbeat);
         }
 
         /**
@@ -130,12 +137,16 @@ namespace DataServer
             if (fail) throw new ProcessFailedException(id);
 
             Console.WriteLine("UNFREEZE");
+
             freeze = false;
-            // missing threading
             while (freezed.Any())
             {
-                Action action;
-                if (freezed.TryDequeue(out action)) action();
+                Thread pending = new Thread(() =>
+                {
+                    Action action;
+                    if (freezed.TryDequeue(out action)) action();
+                });
+                pending.Start();
             }
         }
 
@@ -151,6 +162,7 @@ namespace DataServer
                 freezed.Enqueue(() => Create(localFilename));
                 throw new ProcessFreezedException(id);
             }
+
             Console.WriteLine("CREATE FILE " + localFilename);
 
             if (!files.ContainsKey(localFilename))

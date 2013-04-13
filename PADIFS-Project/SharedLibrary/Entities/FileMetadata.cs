@@ -86,7 +86,7 @@ namespace SharedLibrary.Entities
             dataServers += " ]";
 
             // missing dataServersLocalFiles
-            return "(" + this.filename + ":" + this.nbDataServers + ":" + this.readQuorum + ":" + this.writeQuorum + ":" + dataServers;
+            return "<" + this.filename + ":" + this.nbDataServers + ":" + this.readQuorum + ":" + this.writeQuorum + ":" + dataServers;
         }
     }
 }

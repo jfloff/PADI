@@ -21,8 +21,9 @@ namespace Metadata
 
         // filename / FileMetadata
         private ConcurrentDictionary<string, FileMetadata> table;
-        // medata id / clock
+        // marked medata id / snapshots
         private ConcurrentDictionary<string, Snapshot> marks = new ConcurrentDictionary<string, Snapshot>();
+        // logical clock for each add/remove operation
         private int clock = 0;
 
         public FileMetadataTable(ConcurrentDictionary<string, FileMetadata> table)
@@ -63,7 +64,6 @@ namespace Metadata
             string ret = "[\n";
             foreach (var entry in table)
             {
-                string filename = entry.Key;
                 FileMetadata fileMetadata = entry.Value;
 
                 ret += "  <" + fileMetadata + "> \n";
@@ -72,7 +72,7 @@ namespace Metadata
         }
 
         /**
-         * Mark Management
+         * Log Management
          */
 
         // adds mark to start keeping states

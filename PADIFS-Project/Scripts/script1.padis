@@ -12,4 +12,5 @@ OPEN c-1, f3
 READ c-1, 2, default, 1
 WRITE c-1, 2, "Text from the EXESCRIPT."
 CLOSE c-1, f3
+DUMP d-2
 DUMP c-1

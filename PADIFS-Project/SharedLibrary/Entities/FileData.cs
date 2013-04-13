@@ -9,18 +9,18 @@ namespace SharedLibrary.Entities
         [Serializable]
         class Version
         {
-            public string ClientId { get; set; }
-            public int Clock { get; set; }
+            public string clientId { get; set; }
+            public int clock { get; set; }
 
             public Version()
             {
-                this.ClientId = string.Empty;
-                this.Clock = 0;
+                this.clientId = string.Empty;
+                this.clock = 0;
             }
         }
 
-        Version version;
-        byte[] contents;
+        private Version version;
+        private byte[] contents;
 
         public FileData()
         {
@@ -41,8 +41,8 @@ namespace SharedLibrary.Entities
 
         public void IncrementVersion(string clientId)
         {
-            this.version.ClientId = clientId;
-            this.version.Clock++;
+            this.version.clientId = clientId;
+            this.version.clock++;
         }
 
         // Returns:
@@ -51,8 +51,8 @@ namespace SharedLibrary.Entities
         // <0 - if f2 is more recent than f1
         public static int MostRecent(FileData f1, FileData f2)
         {
-            int clockDiff = f1.version.Clock - f2.version.Clock;
-            if (clockDiff == 0) return string.Compare(f2.version.ClientId, f1.version.ClientId);
+            int clockDiff = f1.version.clock - f2.version.clock;
+            if (clockDiff == 0) return string.Compare(f2.version.clientId, f1.version.clientId);
             return clockDiff;
         }
 
@@ -73,15 +73,14 @@ namespace SharedLibrary.Entities
 
         public override string ToString()
         {
-            // missing dataServersLocalFiles
-            return "(" + this.version.ClientId + ":" + this.version.Clock + ") => \"" + Helper.BytesToString(this.contents) + "\"";
+            return "(" + this.version.clientId + ";" + this.version.clock + "):\"" + Helper.BytesToString(this.contents) + "\"";
         }
 
         // Operation overrides needed for Dictionaries
 
         public override int GetHashCode()
         {
-            return this.version.ClientId.GetHashCode() ^ this.version.Clock.GetHashCode();
+            return this.version.clientId.GetHashCode() ^ this.version.clock.GetHashCode();
         }
 
         public override bool Equals(object obj)
@@ -99,7 +98,7 @@ namespace SharedLibrary.Entities
                 return false;
             }
 
-            return (this.version.ClientId.Equals(fileData.version.ClientId) && (this.version.Clock == fileData.version.Clock));
+            return ((this.version.clientId == fileData.version.clientId) && (this.version.clock == fileData.version.clock));
         }
 
         public bool Equals(FileData fileData)
@@ -110,7 +109,7 @@ namespace SharedLibrary.Entities
                 return false;
             }
 
-            return (this.version.ClientId.Equals(fileData.version.ClientId) && (this.version.Clock == fileData.version.Clock));
+            return ((this.version.clientId == fileData.version.clientId) && (this.version.clock == fileData.version.clock));
         }
     }
 }

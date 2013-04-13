@@ -6,6 +6,7 @@ using System.Collections.Generic;
 namespace SharedLibrary.Entities
 {
     [Serializable]
+    // implements IEnumerable so we can foreach this class
     public class MetadataState : IEnumerable<KeyValuePair<string, FileMetadata>>
     {
         private Dictionary<string, FileMetadata> state;
