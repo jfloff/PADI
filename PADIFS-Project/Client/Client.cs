@@ -75,15 +75,8 @@ namespace Client
                 location);
             metadatas[id] = metadata;
 
-            // in case client is booting up
-            if (master == string.Empty)
-            {
-                master = metadata.Master();
-                return;
-            }
-
-            string masterId = metadatas[master].Master();
-            if (masterId != master)
+            // is master is empty client is bootstraping
+            if ((master == string.Empty) || (string.Compare(master, id) >= 0))
             {
                 master = id;
             }

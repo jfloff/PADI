@@ -77,13 +77,14 @@ namespace DataServer
             // in case data server is booting up
             if (master == string.Empty)
             {
+                // needs to ask for master since its doing a register
                 master = metadata.Master();
                 metadatas[master].RegisterDataServer(DataServer.id, Helper.GetUrl(DataServer.id, DataServer.port));
                 return;
             }
 
-            string masterId = metadatas[master].Master();
-            if (masterId != master)
+            // check for new master arrival
+            if (string.Compare(master, id) >= 0)
             {
                 master = id;
             }
