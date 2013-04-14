@@ -68,13 +68,9 @@ namespace Metadata
             Console.ReadLine();
         }
 
-        /**
-         * Fault Detection functions
-         */
-
-        private bool ImMaster()
+        private bool ImMaster
         {
-            return (id == master);
+            get { return (id == master); }
         }
 
         /**
@@ -206,7 +202,7 @@ namespace Metadata
             metadatas[id] = metadata;
 
             //sends the current metadata state
-            if (ImMaster()) metadata.UpdateState(fileMetadataTable.State(id));
+            if (ImMaster) metadata.UpdateState(fileMetadataTable.State(id));
 
             //Force invocation of primary decision
             master = (string.Compare(id,master) > 0) ? master : id;
@@ -385,28 +381,33 @@ namespace Metadata
             // loops untill new master is found
             while (true)
             {
-                if (!ImMaster())
+                if (!ImMaster)
                 {
-                    IMetadataToMetadata masterI = metadatas[master];
+                    IMetadataToMetadata masterI = metadatas[newMaster];
                     try
                     {
                         masterI.Ping();
                         Console.WriteLine("MASTER IS " + newMaster);
-                        master = newMaster;
-                        return newMaster;
                     }
                     catch (ProcessFailedException)
                     {
-                        ICollection<string> metadatasIds = metadatas.Keys;
+                        List<string> metadatasIds = new List<string>(metadatas.Keys);
+                        metadatasIds.Add(id);
                         metadatasIds.Remove(master);
                         newMaster = metadatasIds.Min();
+                    }
+                    finally
+                    {
+                        master = newMaster;
                     }
                 }
                 else
                 {
-                    return master;
+                    break;
                 }
             }
+
+            return newMaster;
         }
     }
 }

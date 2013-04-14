@@ -1,0 +1,11 @@
+# This script is suppose to test if new primary is doing well
+RECOVER m-0
+RECOVER m-1
+UNFREEZE d-1
+CREATE c-1, f1, 2, 1, 1
+FAIL m-0
+CREATE c-1, f2, 2, 1, 1
+RECOVER m-0
+DUMP m-0
+CREATE c-1, f3, 2, 1, 1
+DUMP m-0

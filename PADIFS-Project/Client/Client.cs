@@ -29,8 +29,8 @@ namespace Client
         };
 
         // metadataId / Proxy to metadata
-        private static Dictionary<string, IMetadataToClient> metadatas
-            = new Dictionary<string, IMetadataToClient>();
+        private static ConcurrentDictionary<string, IMetadataToClient> metadatas
+            = new ConcurrentDictionary<string, IMetadataToClient>();
 
         // index / fileregister struct
         FileRegister fileRegister = new FileRegister();
@@ -62,6 +62,28 @@ namespace Client
             Console.ReadLine();
         }
 
+        public void FindMaster()
+        {
+            // keeps looping in the metadatas
+            while (true)
+            {
+                foreach (var entry in metadatas)
+                {
+                    string tryMaster = entry.Key;
+
+                    if (tryMaster != master)
+                    {
+                        try
+                        {
+                            master = metadatas[tryMaster].Master();
+                            return;
+                        }
+                        catch (ProcessFailedException) { }
+                    }
+                }
+            }
+        }
+
         /**
          * IClientToPM Methods
          */
@@ -86,15 +108,24 @@ namespace Client
         {
             Console.WriteLine("CREATE CLIENT FILE " + filename);
 
-            try
+            FileMetadata fileMetadata = null;
+
+            // keeps looping untill a master answers
+            while (fileMetadata == null)
             {
-                // missing testing if metadata is down
-                FileMetadata fileMetadata = metadatas[master].Create(filename, nbDataServers, readQuorum, writeQuorum);
-                fileRegister.AddOrUpdate(filename, fileMetadata);
-            }
-            catch (FileAlreadyExistsException e)
-            {
-                Console.WriteLine(e.Message);
+                try
+                {
+                    fileMetadata = metadatas[master].Create(filename, nbDataServers, readQuorum, writeQuorum);
+                    fileRegister.AddOrUpdate(filename, fileMetadata);
+                }
+                catch (ProcessFailedException)
+                {
+                    FindMaster();
+                }
+                catch (FileAlreadyExistsException e)
+                {
+                    Console.WriteLine(e.Message);
+                }
             }
         }
 
