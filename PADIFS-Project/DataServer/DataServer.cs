@@ -54,10 +54,44 @@ namespace DataServer
             Console.ReadLine();
         }
 
+        public void FindMaster()
+        {
+            // keeps looping in the metadatas
+            while (true)
+            {
+                foreach (var entry in metadatas)
+                {
+                    string tryMaster = entry.Key;
+
+                    if (tryMaster != master)
+                    {
+                        try
+                        {
+                            master = metadatas[tryMaster].Master();
+                            return;
+                        }
+                        catch (ProcessFailedException) { }
+                    }
+                }
+            }
+        }
+
         public void SendHeartbeat()
         {
             Heartbeat heartbeat = new Heartbeat();
-            metadatas[master].Heartbeat(id, heartbeat);
+            // keeps looping untill a master answers
+            while (true)
+            {
+                try
+                {
+                    metadatas[master].Heartbeat(id, heartbeat);
+                    return;
+                }
+                catch (ProcessFailedException)
+                {
+                    FindMaster();
+                }
+            }
         }
 
         /**
@@ -79,6 +113,7 @@ namespace DataServer
             {
                 // needs to ask for master since its doing a register
                 master = metadata.Master();
+                // does it need to check for server down? I don't think so
                 metadatas[master].RegisterDataServer(DataServer.id, Helper.GetUrl(DataServer.id, DataServer.port));
                 return;
             }

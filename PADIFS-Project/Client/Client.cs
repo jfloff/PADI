@@ -108,15 +108,14 @@ namespace Client
         {
             Console.WriteLine("CREATE CLIENT FILE " + filename);
 
-            FileMetadata fileMetadata = null;
-
             // keeps looping untill a master answers
-            while (fileMetadata == null)
+            while (true)
             {
                 try
                 {
-                    fileMetadata = metadatas[master].Create(filename, nbDataServers, readQuorum, writeQuorum);
+                    FileMetadata fileMetadata = metadatas[master].Create(filename, nbDataServers, readQuorum, writeQuorum);
                     fileRegister.AddOrUpdate(filename, fileMetadata);
+                    return;
                 }
                 catch (ProcessFailedException)
                 {
@@ -125,6 +124,7 @@ namespace Client
                 catch (FileAlreadyExistsException e)
                 {
                     Console.WriteLine(e.Message);
+                    return;
                 }
             }
         }
@@ -132,55 +132,99 @@ namespace Client
         public void Open(string filename)
         {
             Console.WriteLine("OPEN CLIENT FILE " + filename);
-            try
+            
+            // keeps looping untill a master answers
+            while (true)
             {
-                FileMetadata fileMetadata = OpenFileMetadata(filename);
-                Console.WriteLine("FILE METADATA => " + fileMetadata.ToString());
-            }
-            catch (FileDoesNotExistException e)
-            {
-                Console.WriteLine(e.Message);
+                try
+                {
+                    FileMetadata fileMetadata = OpenFileMetadata(filename);
+                    Console.WriteLine("FILE METADATA => " + fileMetadata.ToString());
+                    return;
+                }
+                catch (ProcessFailedException)
+                {
+                    FindMaster();
+                }
+                catch (FileDoesNotExistException e)
+                {
+                    Console.WriteLine(e.Message);
+                    return;
+                }
             }
         }
 
         private FileMetadata OpenFileMetadata(string filename)
         {
-            FileMetadata fileMetadata = metadatas[master].Open(filename);
-            fileRegister.AddOrUpdate(filename, fileMetadata);
-            return fileMetadata;
+            // keeps looping untill a master answers
+            while (true)
+            {
+                try
+                {
+                    FileMetadata fileMetadata = metadatas[master].Open(filename);
+                    fileRegister.AddOrUpdate(filename, fileMetadata);
+                    return fileMetadata;
+                }
+                catch (ProcessFailedException)
+                {
+                    FindMaster();
+                }
+            }
         }
 
         public void Close(string filename)
         {
             Console.WriteLine("CLOSED FILE " + filename);
-            try
+
+            // keeps looping untill a master answers
+            while (true)
             {
-                fileRegister.Remove(filename);
-                metadatas[master].Close(filename);
-            }
-            catch (FileDoesNotExistException e)
-            {
-                Console.WriteLine(e.Message);
+                try
+                {
+                    fileRegister.Remove(filename);
+                    metadatas[master].Close(filename);
+                    return;
+                }
+                catch (ProcessFailedException)
+                {
+                    FindMaster();
+                }
+                catch (FileDoesNotExistException e)
+                {
+                    Console.WriteLine(e.Message);
+                    return;
+                }
             }
         }
 
         public void Delete(string filename)
         {
             Console.WriteLine("DELETE CLIENT FILE " + filename);
-            try
+
+            // keeps looping untill a master answers
+            while (true)
             {
-                if (!fileRegister.Contains(filename))
+                try
                 {
-                    metadatas[master].Delete(filename);
+                    if (!fileRegister.Contains(filename))
+                    {
+                        metadatas[master].Delete(filename);
+                    }
+                    else
+                    {
+                        Console.WriteLine("File " + filename + " is opened. Please close the file first.");
+                    }
+                    return;
                 }
-                else
+                catch (ProcessFailedException)
                 {
-                    Console.WriteLine("File " + filename + " is opened. Please close the file first.");
+                    FindMaster();
                 }
-            }
-            catch (FileDoesNotExistException e)
-            {
-                Console.WriteLine(e.Message);
+                catch (FileDoesNotExistException e)
+                {
+                    Console.WriteLine(e.Message);
+                    return;
+                }
             }
         }
 
