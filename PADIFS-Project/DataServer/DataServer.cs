@@ -17,25 +17,19 @@ namespace DataServer
 {
     public class DataServer : MarshalByRefObject, IDataServerToPM, IDataServerToMetadata, IDataServerToClient
     {
-        class Primary
-        {
-            public string Id;
-            public IMetadataToDataServer Metadata;
-        };
-
         // localFilename / FileData
         private static ConcurrentDictionary<string, FileData> files = new ConcurrentDictionary<string, FileData>();
 
         // id / interface
         private static ConcurrentDictionary<string, IMetadataToDataServer> metadatas
             = new ConcurrentDictionary<string, IMetadataToDataServer>();
-        private static Primary primary = new Primary() { Id = null, Metadata = null };
+        private static string master = string.Empty;
 
-        private volatile static string id;
-        private volatile static int port;
+        private static string id;
+        private static int port;
 
-        private volatile static bool fail = false;
-        private volatile static bool freeze = false;
+        private static bool fail = false;
+        private static bool freeze = false;
         private static ConcurrentQueue<Action> freezed = new ConcurrentQueue<Action>();
 
         public static void Main(string[] args)
@@ -63,7 +57,7 @@ namespace DataServer
         public void SendHeartbeat()
         {
             Heartbeat heartbeat = new Heartbeat();
-            primary.Metadata.Heartbeat(id, heartbeat);
+            metadatas[master].Heartbeat(id, heartbeat);
         }
 
         /**
@@ -80,11 +74,18 @@ namespace DataServer
                 location);
             metadatas[id] = metadata;
 
-            if (primary.Id == null)
+            // in case data server is booting up
+            if (master == string.Empty)
             {
-                primary.Id = id;
-                primary.Metadata = metadata;
-                primary.Metadata.RegisterDataServer(DataServer.id, Helper.GetUrl(DataServer.id, DataServer.port));
+                master = metadata.Master();
+                metadatas[master].RegisterDataServer(DataServer.id, Helper.GetUrl(DataServer.id, DataServer.port));
+                return;
+            }
+
+            string masterId = metadatas[master].Master();
+            if (masterId != master)
+            {
+                master = id;
             }
         }
 

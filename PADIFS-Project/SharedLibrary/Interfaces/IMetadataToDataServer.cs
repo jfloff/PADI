@@ -1,13 +1,8 @@
-﻿using System;
-using SharedLibrary.Entities;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using SharedLibrary.Entities;
 
 namespace SharedLibrary.Interfaces
 {
-    public interface IMetadataToDataServer
+    public interface IMetadataToDataServer : IMetadataToProcess
     {
         void Heartbeat(string id, Heartbeat heartbeat);
         void RegisterDataServer(string id, string location);

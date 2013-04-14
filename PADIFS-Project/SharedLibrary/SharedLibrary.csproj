@@ -49,6 +49,7 @@
     <Compile Include="Exceptions\FileDoesNotExistException.cs" />
     <Compile Include="Entities\FileMetadata.cs" />
     <Compile Include="Entities\Heartbeat.cs" />
+    <Compile Include="Interfaces\IMetadataToProcess.cs" />
     <Compile Include="Interfaces\IClientToPM.cs" />
     <Compile Include="Interfaces\IProcessToPM.cs" />
     <Compile Include="Interfaces\IDataServerToClient.cs" />

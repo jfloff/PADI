@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Threading;
 
 namespace PuppetMaster
 {
@@ -37,10 +38,30 @@ namespace PuppetMaster
 
         private static void NewMetadataLocationToProcesses(string id, string location)
         {
+            List<Thread> requests = new List<Thread>();
+
             foreach (var entry in processes)
             {
                 IProcessToPM process = entry.Value;
-                process.MetadataLocation(id, location);
+                if (id.First() == 'm')
+                {
+                    process.MetadataLocation(id, location);
+                }
+                else
+                {
+                    Thread request = new Thread(() => process.MetadataLocation(id, location));
+                    requests.Add(request);
+                }
+            }
+
+            // sends to all non-metadata the new metadata in broadcast
+            foreach (Thread request in requests)
+            {
+                request.Start();
+            }
+            foreach (Thread request in requests)
+            {
+                request.Join();
             }
         }
 
@@ -68,7 +89,7 @@ namespace PuppetMaster
             processes[id] = dataServer;
             SendMetadataLocations(dataServer);
         }
-        
+
         public static void StartClient(string id, int port)
         {
             consoles.Add(Process.Start("Client.exe", id + " " + port));

@@ -41,9 +41,9 @@ namespace Metadata
             = new ConcurrentDictionary<string, ConcurrentQueue<Action<string>>>();
 
         // statics are all thread safe
-        private volatile static string primary;
-        private volatile static string id;
-        private volatile static bool fail = false;
+        private static string master;
+        private static string id;
+        private static bool fail = false;
 
 
         public static void Main(string[] args)
@@ -51,7 +51,7 @@ namespace Metadata
             if (args.Length != 2)
                 throw new Exception("Wrong Arguments");
 
-            id = primary = args[0];
+            id = master = args[0];
             int port = Convert.ToInt32(args[1]);
 
             Console.SetWindowSize(Helper.WINDOW_WIDTH, Helper.WINDOW_HEIGHT);
@@ -64,51 +64,17 @@ namespace Metadata
                 id,
                 WellKnownObjectMode.Singleton);
 
-            // Start pinging the metatadas in a set interval
-            Thread t = new Thread(() =>
-            {
-                while (true)
-                {
-                    // if in fail doesn't ping anyone either
-                    while (fail) Thread.Sleep(Helper.PING_INTERVAL);
-                    FindPrimary();
-                    Thread.Sleep(Helper.PING_INTERVAL);
-                }
-            });
-            t.Start();
-
             Console.WriteLine("Metadata Server " + id + " has started.");
             Console.ReadLine();
         }
 
         /**
-         * PING / Fault Detection functions
+         * Fault Detection functions
          */
 
-        private bool ImPrimary()
+        private bool ImMaster()
         {
-            return (id == primary);
-        }
-
-        // Function to run perodically to detect metadatas faults.
-        // Pings all the known metadatas and chooses the lowest id.
-        private static void FindPrimary()
-        {
-            List<string> pings = new List<string>();
-            foreach (var entry in metadatas)
-            {
-                string id = entry.Key;
-                IMetadataToMetadata metadata = entry.Value;
-                try
-                {
-                    metadata.Ping();
-                    pings.Add(id);
-                }
-                catch (ProcessFailedException) { }
-            }
-            pings.Add(Metadata.id);
-            primary = pings.Min();
-            //Console.WriteLine("PRIMARY = " + primary);
+            return (id == master);
         }
 
         /**
@@ -185,10 +151,6 @@ namespace Metadata
             }
         }
 
-        /**
-         * Functions to deal with other metadatas
-         */
-
         private void CreateOrUpdateOnMetadatas(FileMetadata fileMetadata)
         {
             foreach (var entry in metadatas)
@@ -243,10 +205,11 @@ namespace Metadata
                 location);
             metadatas[id] = metadata;
 
-            //Force invocation of primary decision
-            FindPrimary();
             //sends the current metadata state
-            if (ImPrimary()) metadata.Update(fileMetadataTable.State(id));
+            if (ImMaster()) metadata.UpdateState(fileMetadataTable.State(id));
+
+            //Force invocation of primary decision
+            master = (string.Compare(id,master) > 0) ? master : id;
         }
 
         public void Dump()
@@ -279,7 +242,7 @@ namespace Metadata
             // Console.WriteLine("PONG");
         }
 
-        public void Update(MetadataState snapshot)
+        public void UpdateState(MetadataState snapshot)
         {
             fileMetadataTable.MergeState(snapshot);
         }
@@ -318,7 +281,7 @@ namespace Metadata
             //Select Data Servers and creates files within them
             FileMetadata fileMetadata = new FileMetadata(filename, nbDataServers, readQuorum, writeQuorum);
             pendingRequests[filename] = new ConcurrentQueue<Action<string>>();
-            
+
             CreateOnDataServers(fileMetadata);
             CreateOrUpdateOnMetadatas(fileMetadata);
 
@@ -405,6 +368,43 @@ namespace Metadata
                         });
                         pendingRequest.Start();
                     }
+                }
+            }
+        }
+
+        /**
+         * IMetadataToProcess Methods
+         */
+
+        public string Master()
+        {
+            if (fail) throw new ProcessFailedException(id);
+
+            string newMaster = master;
+
+            // loops untill new master is found
+            while (true)
+            {
+                if (!ImMaster())
+                {
+                    IMetadataToMetadata masterI = metadatas[master];
+                    try
+                    {
+                        masterI.Ping();
+                        Console.WriteLine("MASTER IS " + newMaster);
+                        master = newMaster;
+                        return newMaster;
+                    }
+                    catch (ProcessFailedException)
+                    {
+                        ICollection<string> metadatasIds = metadatas.Keys;
+                        metadatasIds.Remove(master);
+                        newMaster = metadatasIds.Min();
+                    }
+                }
+                else
+                {
+                    return master;
                 }
             }
         }

@@ -16,12 +16,6 @@ namespace Client
 {
     public class Client : MarshalByRefObject, IClientToPM
     {
-        class Primary
-        {
-            public string Id;
-            public IMetadataToClient Metadata;
-        };
-
         class LatestVersion
         {
             public FileVersion Version;
@@ -43,7 +37,7 @@ namespace Client
         // index / byte contents
         private static Dictionary<int, byte[]> byteRegister = new Dictionary<int, byte[]>();
 
-        private static Primary primary = new Primary() { Id = null, Metadata = null };
+        private static string master = string.Empty;
         private static string id;
 
         public static void Main(string[] args)
@@ -81,11 +75,17 @@ namespace Client
                 location);
             metadatas[id] = metadata;
 
-            // missing recheck of metadata
-            if (primary.Id == null)
+            // in case client is booting up
+            if (master == string.Empty)
             {
-                primary.Id = id;
-                primary.Metadata = metadata;
+                master = metadata.Master();
+                return;
+            }
+
+            string masterId = metadatas[master].Master();
+            if (masterId != master)
+            {
+                master = id;
             }
         }
 
@@ -96,7 +96,7 @@ namespace Client
             try
             {
                 // missing testing if metadata is down
-                FileMetadata fileMetadata = primary.Metadata.Create(filename, nbDataServers, readQuorum, writeQuorum);
+                FileMetadata fileMetadata = metadatas[master].Create(filename, nbDataServers, readQuorum, writeQuorum);
                 fileRegister.AddOrUpdate(filename, fileMetadata);
             }
             catch (FileAlreadyExistsException e)
@@ -121,7 +121,7 @@ namespace Client
 
         private FileMetadata OpenFileMetadata(string filename)
         {
-            FileMetadata fileMetadata = primary.Metadata.Open(filename);
+            FileMetadata fileMetadata = metadatas[master].Open(filename);
             fileRegister.AddOrUpdate(filename, fileMetadata);
             return fileMetadata;
         }
@@ -132,7 +132,7 @@ namespace Client
             try
             {
                 fileRegister.Remove(filename);
-                primary.Metadata.Close(filename);
+                metadatas[master].Close(filename);
             }
             catch (FileDoesNotExistException e)
             {
@@ -147,7 +147,7 @@ namespace Client
             {
                 if (!fileRegister.Contains(filename))
                 {
-                    primary.Metadata.Delete(filename);
+                    metadatas[master].Delete(filename);
                 }
                 else
                 {
@@ -176,6 +176,7 @@ namespace Client
                 IDataServerToClient dataServer = (IDataServerToClient)Activator.GetObject(
                     typeof(IDataServerToClient),
                     location);
+                // working under the assumptions there is no FAILs between the process
                 fileData = dataServer.Read(localFilename);
             });
             request.Start();
@@ -234,6 +235,7 @@ namespace Client
                 {
                     // get possible new fileMetadata locations
                     // possible optimization
+                    // check if there are no dataa servers
                     fileMetadata = OpenFileMetadata(filename);
 
                     // broadcast to all dataServers that have that file
@@ -315,6 +317,7 @@ namespace Client
                 {
                     // get possible new fileMetadata locations
                     // possible optimization
+                    // check if there are no dataa servers
                     fileMetadata = OpenFileMetadata(filename);
 
                     // broadcast to all dataServers that have that file

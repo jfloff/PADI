@@ -1,13 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using SharedLibrary.Entities;
+﻿using SharedLibrary.Entities;
 
 namespace SharedLibrary.Interfaces
 {
-    public interface IMetadataToClient
+    public interface IMetadataToClient : IMetadataToProcess
     {
         FileMetadata Open(string filename);
         void Close(string filename);
