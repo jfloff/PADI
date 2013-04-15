@@ -1,22 +1,15 @@
 RECOVER m-0
 UNFREEZE d-1
-OPEN c-1, f1
-#!
 CREATE c-1, f1, 2, 1, 1
-CLOSE c-1, f1
-CREATE c-1, f2, 3, 2, 2
-CLOSE c-1, f2
-DUMP m-0
 RECOVER m-1
-DUMP m-1
-RECOVER m-2
-DUMP m-2
-CREATE c-1, f3, 3, 2, 2
-CLOSE c-1, f3
+FAIL m-0
 DUMP m-0
 DUMP m-1
-DUMP m-2
-DELETE c-1, f1
+UNFREEZE d-2
+UNFREEZE d-3
+CREATE c-1, f2, 3, 2, 2
+RECOVER m-0
+#!
 DUMP m-0
-DUMP m-1
-DUMP m-2
+CREATE c-1, f3, 3, 3, 3
+DUMP m-0

@@ -111,10 +111,16 @@ namespace DataServer
             // in case data server is booting up
             if (master == string.Empty)
             {
-                // needs to ask for master since its doing a register
-                master = metadata.Master();
-                // does it need to check for server down? I don't think so
-                metadatas[master].RegisterDataServer(DataServer.id, Helper.GetUrl(DataServer.id, DataServer.port));
+                // since we are sure one of the metadatas is up
+                // we can just wait for the next metada register to ask for master
+                try
+                {
+                    // needs to ask for master since its doing a register
+                    master = metadata.Master();
+                    metadatas[master].RegisterDataServer(DataServer.id, Helper.GetUrl(DataServer.id, DataServer.port));
+                }
+                catch (ProcessFailedException) { }
+
                 return;
             }
 

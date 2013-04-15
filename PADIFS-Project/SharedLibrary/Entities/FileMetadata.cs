@@ -88,5 +88,42 @@ namespace SharedLibrary.Entities
             // missing dataServersLocalFiles
             return "<" + this.filename + ":" + this.nbDataServers + ":" + this.readQuorum + ":" + this.writeQuorum + ":" + dataServers;
         }
+
+        public override bool Equals(object obj)
+        {
+            // If parameter is null return false.
+            if (obj == null)
+            {
+                return false;
+            }
+
+            // If parameter cannot be cast to Point return false.
+            FileMetadata fileMetadata = obj as FileMetadata;
+            if ((System.Object)fileMetadata == null)
+            {
+                return false;
+            }
+
+            return (this.filename == fileMetadata.filename)
+                && (this.nbDataServers == fileMetadata.nbDataServers)
+                && (this.readQuorum == fileMetadata.readQuorum)
+                && (this.writeQuorum == fileMetadata.writeQuorum)
+                && (this.localFilenames == fileMetadata.localFilenames);
+        }
+
+        public bool Equals(FileMetadata fileMetadata)
+        {
+            // If parameter is null return false:
+            if ((object)fileMetadata == null)
+            {
+                return false;
+            }
+
+            return (this.filename == fileMetadata.filename)
+                && (this.nbDataServers == fileMetadata.nbDataServers)
+                && (this.readQuorum == fileMetadata.readQuorum)
+                && (this.writeQuorum == fileMetadata.writeQuorum)
+                && (this.localFilenames == fileMetadata.localFilenames);
+        }
     }
 }
