@@ -117,7 +117,7 @@ namespace DataServer
                 {
                     // needs to ask for master since its doing a register
                     master = metadata.Master();
-                    metadatas[master].RegisterDataServer(DataServer.id, Helper.GetUrl(DataServer.id, DataServer.port));
+                    metadatas[master].DataServer(DataServer.id, Helper.GetUrl(DataServer.id, DataServer.port));
                 }
                 catch (ProcessFailedException) { }
 

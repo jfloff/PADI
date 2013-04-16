@@ -3,6 +3,7 @@ using SharedLibrary.Interfaces;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Threading;
 
 namespace Metadata
 {
@@ -37,13 +38,11 @@ namespace Metadata
     {
         private struct Snapshot
         {
-            public int clock;
             public Dictionary<string, FileMetadata> table;
             public Dictionary<string, string> dataServers;
 
-            public Snapshot(int clock, ConcurrentDictionary<string, FileMetadata> table, ConcurrentDictionary<string, DataServerInfo> dataServers)
+            public Snapshot(ConcurrentDictionary<string, FileMetadata> table, ConcurrentDictionary<string, DataServerInfo> dataServers)
             {
-                this.clock = clock;
                 this.table = new Dictionary<string, FileMetadata>(table);
                 this.dataServers = new Dictionary<string, string>();
                 foreach (var entry in dataServers)
@@ -66,8 +65,6 @@ namespace Metadata
 
         // marked medata id / snapshots
         private ConcurrentDictionary<string, Snapshot> marks = new ConcurrentDictionary<string, Snapshot>();
-        // logical clock for each add/remove operation
-        private int clock = 0;
 
         public ConcurrentDictionary<string, FileMetadata> FileMetadataTable
         {
@@ -104,16 +101,19 @@ namespace Metadata
          * Log Management
          */
 
-        // singals a change in data
-        public void Signal()
+        public bool HasMark(string mark)
         {
-            this.clock++;
+            return marks.ContainsKey(mark);
         }
 
         // adds mark to start keeping states
         public void AddMark(string mark)
         {
-            marks[mark] = new Snapshot(clock, table, dataServers);
+            // keeps older marks
+            if (!marks.ContainsKey(mark))
+            {
+                marks[mark] = new Snapshot(table, dataServers);
+            }
         }
 
         // removes mark
@@ -124,7 +124,7 @@ namespace Metadata
 
         public MetadataDiff GetDiff(string mark)
         {
-            Snapshot current = new Snapshot(clock, table, dataServers); ;
+            Snapshot current = new Snapshot(table, dataServers);
             DictionaryDiff<string, FileMetadata> tableDiff;
             DictionaryDiff<string, string> dataServersDiff;
 

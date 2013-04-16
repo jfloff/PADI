@@ -74,7 +74,6 @@ namespace Metadata
             string localFilename = LocalFilename(fileMetadata.Filename);
 
             fileMetadata.AddDataServer(id, location, localFilename);
-            state.Signal();
 
             Thread request = new Thread(() =>
             {
@@ -86,6 +85,7 @@ namespace Metadata
                 catch (ProcessFreezedException) { }
             });
             request.Start();
+
             CreateOrUpdateOnMetadatas(fileMetadata);
         }
 
@@ -132,16 +132,30 @@ namespace Metadata
             }
         }
 
+        /**
+         * Functions to deal with other metadatas
+         */
         private void CreateOrUpdateOnMetadatas(FileMetadata fileMetadata)
         {
             foreach (var entry in metadatas)
             {
+                string id = entry.Key;
                 IMetadataToMetadata metadata = entry.Value;
+
                 Thread request = new Thread(() =>
                 {
                     try
                     {
-                        metadata.CreateOrUpdate(fileMetadata);
+                        metadata.CreateOrUpdateOnMetadata(fileMetadata);
+
+                        // if it didnt launch exception until now
+                        // we check if there is a mark so we can update
+                        // we only do after create to avoid unecessary diff operations
+                        if(state.HasMark(id))
+                        {
+                            metadata.UpdateState(state.GetDiff(id));
+                            state.RemoveMark(id);
+                        }
                     }
                     catch (ProcessFailedException)
                     {
@@ -156,33 +170,22 @@ namespace Metadata
         {
             foreach (var entry in metadatas)
             {
+                string id = entry.Key;
                 IMetadataToMetadata metadata = entry.Value;
                 Thread request = new Thread(() =>
                 {
                     try
                     {
+                        metadata.DeleteOnMetadata(fileMetadata);
 
-                        metadata.Delete(fileMetadata);
-                    }
-                    catch (ProcessFailedException)
-                    {
-                        state.AddMark(id);
-                    }
-                });
-                request.Start();
-            }
-        }
-
-        private void RegisterDataServerOnMetadatas(string id, string location)
-        {
-            foreach (var entry in metadatas)
-            {
-                IMetadataToMetadata metadata = entry.Value;
-                Thread request = new Thread(() =>
-                {
-                    try
-                    {
-                        metadata.RegisterDataServer(id, location);
+                        // if it didnt launch exception until now
+                        // we check if there is a mark so we can update
+                        // we only do after create to avoid unecessary diff operations
+                        if (state.HasMark(id))
+                        {
+                            metadata.UpdateState(state.GetDiff(id));
+                            state.RemoveMark(id);
+                        }
                     }
                     catch (ProcessFailedException)
                     {
@@ -210,7 +213,11 @@ namespace Metadata
             master = (string.Compare(id, master) > 0) ? master : id;
 
             //sends the current metadata state
-            if (ImMaster) metadata.UpdateState(state.GetDiff(id));
+            if (ImMaster)
+            {
+                metadata.UpdateState(state.GetDiff(id));
+                state.RemoveMark(id);
+            }
         }
 
         public void Dump()
@@ -248,7 +255,7 @@ namespace Metadata
             state.MergeDiff(snapshot);
         }
 
-        public void CreateOrUpdate(FileMetadata fileMetadata)
+        public void CreateOrUpdateOnMetadata(FileMetadata fileMetadata)
         {
             if (fail) throw new ProcessFailedException(id);
 
@@ -257,30 +264,16 @@ namespace Metadata
                 pendingRequests[fileMetadata.Filename] = new ConcurrentQueue<Action<string>>();
             }
             state.FileMetadataTable[fileMetadata.Filename] = fileMetadata;
-            state.Signal();
         }
 
-        public void Delete(FileMetadata fileMetadata)
+        public void DeleteOnMetadata(FileMetadata fileMetadata)
         {
             if (fail) throw new ProcessFailedException(id);
 
             if (state.FileMetadataTable.ContainsKey(fileMetadata.Filename))
             {
                 FileMetadata fileMetadataIgnored; state.FileMetadataTable.TryRemove(fileMetadata.Filename, out fileMetadataIgnored);
-                state.Signal();
                 ConcurrentQueue<Action<string>> queueIgnored; pendingRequests.TryRemove(fileMetadata.Filename, out queueIgnored);
-            }
-        }
-
-        public void RegisterDataServerOnMetadata(string id, string location)
-        {
-            if (fail) throw new ProcessFailedException(id);
-
-            Console.WriteLine("RECEIVE DATA SERVER " + id + " FROM METADATA");
-
-            if (!state.DataServers.ContainsKey(id))
-            {
-                state.DataServers[id] = new DataServerInfo(location);
             }
         }
 
@@ -302,10 +295,8 @@ namespace Metadata
             pendingRequests[filename] = new ConcurrentQueue<Action<string>>();
 
             CreateOnDataServers(fileMetadata);
-            CreateOrUpdateOnMetadatas(fileMetadata);
 
-            state.FileMetadataTable[filename] = fileMetadata; 
-            state.Signal();
+            state.FileMetadataTable[filename] = fileMetadata;
 
             return fileMetadata;
         }
@@ -361,7 +352,47 @@ namespace Metadata
             Console.WriteLine("HEARTBEAT");
         }
 
-        public void RegisterDataServer(string id, string location)
+        private void DataServerOnMetadatas(string id, string location)
+        {
+            List<Thread> requests = new List<Thread>();
+
+            foreach (var entry in metadatas)
+            {
+                string metadataId = entry.Key;
+                IMetadataToMetadata metadata = entry.Value;
+                // clock conflict!
+                Thread request = new Thread(() =>
+                {
+                    try
+                    {
+                        metadata.DataServerOnMetadata(id, location);
+
+                        // if it didnt launch exception until now
+                        // we check if there is a mark so we can update
+                        // we only do after create to avoid unecessary diff operations
+                        if (state.HasMark(metadataId))
+                        {
+                            metadata.UpdateState(state.GetDiff(metadataId));
+                            state.RemoveMark(metadataId);
+                        }
+                    }
+                    catch (ProcessFailedException)
+                    {
+                        state.AddMark(metadataId);
+                    }
+                });
+                request.Start();
+                requests.Add(request);
+            }
+
+            // joins due to state clock
+            foreach(Thread request in requests)
+            {
+                request.Join();
+            }
+        }
+
+        public void DataServer(string id, string location)
         {
             if (fail) throw new ProcessFailedException(id);
 
@@ -369,6 +400,8 @@ namespace Metadata
 
             if (!state.DataServers.ContainsKey(id))
             {
+                DataServerOnMetadatas(id, location);
+
                 state.DataServers[id] = new DataServerInfo(location);
 
                 foreach (var entry in pendingRequests)
@@ -430,6 +463,18 @@ namespace Metadata
             }
 
             return newMaster;
+        }
+
+        public void DataServerOnMetadata(string id, string location)
+        {
+            if (fail) throw new ProcessFailedException(id);
+
+            Console.WriteLine("RECEIVE DATA SERVER " + id + " FROM METADATA");
+
+            if (!state.DataServers.ContainsKey(id))
+            {
+                state.DataServers[id] = new DataServerInfo(location);
+            }
         }
     }
 }

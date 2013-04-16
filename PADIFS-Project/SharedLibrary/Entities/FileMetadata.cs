@@ -125,5 +125,14 @@ namespace SharedLibrary.Entities
                 && (this.writeQuorum == fileMetadata.writeQuorum)
                 && (this.localFilenames == fileMetadata.localFilenames);
         }
+
+        public override int GetHashCode()
+        {
+            return this.filename.GetHashCode() 
+                ^ this.nbDataServers.GetHashCode() 
+                ^ this.readQuorum.GetHashCode() 
+                ^ this.writeQuorum.GetHashCode() 
+                ^ this.localFilenames.GetHashCode();
+        }
     }
 }
