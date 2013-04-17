@@ -649,15 +649,15 @@ namespace PuppetMaster
 
                         string path = Application.StartupPath.Remove(Application.StartupPath.Length - 22) + "Scripts\\";
 
-                        //Thread script = new Thread(() =>
-                        //{
+                        Thread script = new Thread(() =>
+                        {
                             int linenumber = 0;
                             foreach (string line in File.ReadLines(path + filename))
                             {
                                 ReadCommand(line, linenumber++);
                             }
-                        //});
-                        //script.Start();
+                        });
+                        script.Start();
 
                         break;
                     }
