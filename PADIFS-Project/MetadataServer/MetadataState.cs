@@ -7,33 +7,6 @@ using System.Threading;
 
 namespace Metadata
 {
-    // Store on each entry of the data servers dictionary
-    public class DataServerInfo
-    {
-        private string location;
-        private IDataServerToMetadata dataServer;
-
-        public DataServerInfo(string location)
-        {
-            this.location = location;
-            this.dataServer = (IDataServerToMetadata)Activator.GetObject(
-                        typeof(IDataServerToMetadata),
-                        location);
-        }
-
-        public string Location
-        {
-            get { return this.location; }
-            private set { this.location = value; }
-        }
-
-        public IDataServerToMetadata DataServer
-        {
-            get { return this.dataServer; }
-            private set { this.dataServer = value; }
-        }
-    }
-
     public class MetadataState
     {
         private struct Snapshot
@@ -41,14 +14,14 @@ namespace Metadata
             public Dictionary<string, FileMetadata> table;
             public Dictionary<string, string> dataServers;
 
-            public Snapshot(ConcurrentDictionary<string, FileMetadata> table, ConcurrentDictionary<string, DataServerInfo> dataServers)
+            public Snapshot(ConcurrentDictionary<string, FileMetadata> table, ConcurrentDictionary<string, string> dataServers)
             {
                 this.table = new Dictionary<string, FileMetadata>(table);
                 this.dataServers = new Dictionary<string, string>();
                 foreach (var entry in dataServers)
                 {
                     string id = entry.Key;
-                    string location = entry.Value.Location;
+                    string location = entry.Value;
 
                     this.dataServers[id] = location;
                 }
@@ -56,11 +29,9 @@ namespace Metadata
         }
 
         // filename / FileMetadata
-        private ConcurrentDictionary<string, FileMetadata> table
-            = new ConcurrentDictionary<string, FileMetadata>();
-        // id / Interface
-        private ConcurrentDictionary<string, DataServerInfo> dataServers
-            = new ConcurrentDictionary<string, DataServerInfo>();
+        private ConcurrentDictionary<string, FileMetadata> table = new ConcurrentDictionary<string, FileMetadata>();
+        // id / location
+        private ConcurrentDictionary<string, string> dataServers = new ConcurrentDictionary<string, string>();
         // CREATE DICTIONARY FOR FAILED METADATAS
 
         // marked medata id / snapshots
@@ -71,7 +42,7 @@ namespace Metadata
             get { return this.table; }
         }
 
-        public ConcurrentDictionary<string, DataServerInfo> DataServers
+        public ConcurrentDictionary<string, string> DataServers
         {
             get { return this.dataServers; }
         }
@@ -158,7 +129,7 @@ namespace Metadata
             // data servers
             foreach (var entry in diff.DataServersDiff.Plus)
             {
-                dataServers[entry.Key] = new DataServerInfo(entry.Value);
+                dataServers[entry.Key] = entry.Value;
             }
         }
     }

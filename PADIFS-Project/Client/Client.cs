@@ -40,6 +40,13 @@ namespace Client
         private static string master = string.Empty;
         private static string id;
 
+
+        // infinite lease
+        public override object InitializeLifetimeService()
+        {
+            return null;
+        }
+
         public static void Main(string[] args)
         {
             if (args.Length != 2)

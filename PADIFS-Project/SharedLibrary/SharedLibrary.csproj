@@ -54,7 +54,6 @@
     <Compile Include="Interfaces\IClientToPM.cs" />
     <Compile Include="Interfaces\IProcessToPM.cs" />
     <Compile Include="Interfaces\IDataServerToClient.cs" />
-    <Compile Include="Interfaces\IDataServerToMetadata.cs" />
     <Compile Include="Interfaces\IDataServerToPM.cs" />
     <Compile Include="Interfaces\IMetadataToClient.cs" />
     <Compile Include="Interfaces\IMetadataToDataServer.cs" />

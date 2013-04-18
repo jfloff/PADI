@@ -15,7 +15,7 @@ using System.Threading;
 
 namespace DataServer
 {
-    public class DataServer : MarshalByRefObject, IDataServerToPM, IDataServerToMetadata, IDataServerToClient
+    public class DataServer : MarshalByRefObject, IDataServerToPM, IDataServerToClient
     {
         // localFilename / FileData
         private static ConcurrentDictionary<string, FileData> files = new ConcurrentDictionary<string, FileData>();
@@ -31,6 +31,13 @@ namespace DataServer
         private static bool fail = false;
         private static bool freeze = false;
         private static ConcurrentQueue<Action> freezed = new ConcurrentQueue<Action>();
+
+
+        // infinite lease
+        public override object InitializeLifetimeService()
+        {
+            return null;
+        }
 
         public static void Main(string[] args)
         {
@@ -194,44 +201,6 @@ namespace DataServer
         }
 
         /**
-         * IDataServerToMetadata Methods
-         */
-
-        public void Create(string localFilename)
-        {
-            if (fail) throw new ProcessFailedException(id);
-            if (freeze)
-            {
-                freezed.Enqueue(() => Create(localFilename));
-                throw new ProcessFreezedException(id);
-            }
-
-            Console.WriteLine("CREATE FILE " + localFilename);
-
-            if (!files.ContainsKey(localFilename))
-            {
-                files[localFilename] = new FileData();
-            }
-        }
-
-        public void Delete(string localFilename)
-        {
-            if (fail) throw new ProcessFailedException(id);
-            if (freeze)
-            {
-                freezed.Enqueue(() => Delete(localFilename));
-                throw new ProcessFreezedException(id);
-            }
-
-            Console.WriteLine("DELETE FILE " + localFilename);
-
-            if (files.ContainsKey(localFilename))
-            {
-                FileData ignored; files.TryRemove(localFilename, out ignored);
-            }
-        }
-
-        /**
          * IDataServerToClient Methods
          */
 
@@ -247,7 +216,10 @@ namespace DataServer
             Console.WriteLine("VERSION " + localFilename);
 
             if (!files.ContainsKey(localFilename))
-                throw new FileDoesNotExistException(localFilename);
+            {
+                Console.WriteLine("CREATE FILE " + localFilename);
+                files[localFilename] = new FileData();
+            }
 
             return files[localFilename].Version;
         }
@@ -264,7 +236,10 @@ namespace DataServer
             Console.WriteLine("READ " + localFilename);
 
             if (!files.ContainsKey(localFilename))
-                throw new FileDoesNotExistException(localFilename);
+            {
+                Console.WriteLine("CREATE FILE " + localFilename);
+                files[localFilename] = new FileData();
+            }
 
             return files[localFilename];
         }
@@ -281,7 +256,11 @@ namespace DataServer
             Console.WriteLine("WRITE " + localFilename);
 
             if (!files.ContainsKey(localFilename))
-                throw new FileDoesNotExistException(localFilename);
+            {
+                Console.WriteLine("CREATE FILE " + localFilename);
+                files[localFilename] = newFile;
+                return;
+            }
 
             FileData currentFile = files[localFilename];
             files[localFilename] = FileData.Latest(currentFile, newFile);

@@ -29,6 +29,12 @@ namespace Metadata
         private static bool fail = false;
 
 
+        // infinite lease
+        public override object InitializeLifetimeService()
+        {
+            return null;
+        }
+
         public static void Main(string[] args)
         {
             if (args.Length != 2)
@@ -65,71 +71,6 @@ namespace Metadata
         {
             // GUID better probably?
             return filename + "$" + filename.GetHashCode();
-        }
-
-        // create file on a single data server. refactored for future creates
-        private void CreateOnDataServer(string id, FileMetadata fileMetadata)
-        {
-            string location = state.DataServers[id].Location;
-            string localFilename = LocalFilename(fileMetadata.Filename);
-
-            fileMetadata.AddDataServer(id, location, localFilename);
-
-            Thread request = new Thread(() =>
-            {
-                try
-                {
-                    state.DataServers[id].DataServer.Create(localFilename);
-                }
-                catch (ProcessFailedException) { }
-                catch (ProcessFreezedException) { }
-            });
-            request.Start();
-
-            CreateOrUpdateOnMetadatas(fileMetadata);
-        }
-
-        // Places files in dataServers. Doesn't care if they were created or not.
-        public void CreateOnDataServers(FileMetadata fileMetadata)
-        {
-            int nbDataServersSelected = 0;
-
-            // create possible ones
-            foreach (var entry in state.DataServers)
-            {
-                if (++nbDataServersSelected > fileMetadata.NbDataServers) break;
-
-                string id = entry.Key;
-                CreateOnDataServer(id, fileMetadata);
-            }
-
-            // create requests for future creates
-            for (int i = nbDataServersSelected; i < fileMetadata.NbDataServers; i++)
-            {
-                pendingRequests[fileMetadata.Filename].Enqueue(
-                    (futureId) => CreateOnDataServer(futureId, fileMetadata));
-            }
-        }
-
-        // Not dealing with files that are already deleted
-        public void DeleteOnDataServers(FileMetadata fileMetadata)
-        {
-            foreach (var entry in fileMetadata.LocalFilenames)
-            {
-                string id = entry.Key;
-                string localFilename = entry.Value;
-
-                Thread request = new Thread(() =>
-                {
-                    try
-                    {
-                        state.DataServers[id].DataServer.Delete(localFilename);
-                    }
-                    catch (ProcessFailedException) { }
-                    catch (ProcessFreezedException) { }
-                });
-                request.Start();
-            }
         }
 
         /**
@@ -280,6 +221,17 @@ namespace Metadata
         /**
          * IMetadataToClient Methods
          */
+        
+        // select single data server. refactored for future selects
+        private void SelectDataServer(string id, FileMetadata fileMetadata)
+        {
+            string location = state.DataServers[id];
+            string localFilename = LocalFilename(fileMetadata.Filename);
+
+            fileMetadata.AddDataServer(id, location, localFilename);
+            CreateOrUpdateOnMetadatas(fileMetadata);
+        }
+
         public FileMetadata Create(string filename, int nbDataServers, int readQuorum, int writeQuorum)
         {
             if (fail) throw new ProcessFailedException(id);
@@ -294,10 +246,24 @@ namespace Metadata
             FileMetadata fileMetadata = new FileMetadata(filename, nbDataServers, readQuorum, writeQuorum);
             pendingRequests[filename] = new ConcurrentQueue<Action<string>>();
 
-            CreateOnDataServers(fileMetadata);
+            // select possible data servers
+            int nbDataServersSelected = 0;
+            foreach (var entry in state.DataServers)
+            {
+                if (++nbDataServersSelected > fileMetadata.NbDataServers) break;
+
+                string dataServerId = entry.Key;
+                SelectDataServer(dataServerId, fileMetadata);
+            }
+
+            // create requests for future selectes
+            for (int i = nbDataServersSelected; i < fileMetadata.NbDataServers; i++)
+            {
+                pendingRequests[fileMetadata.Filename].Enqueue(
+                    (futureId) => SelectDataServer(futureId, fileMetadata));
+            }
 
             state.FileMetadataTable[filename] = fileMetadata;
-
             return fileMetadata;
         }
 
@@ -336,7 +302,6 @@ namespace Metadata
             FileMetadata fileMetadataIgnored; state.FileMetadataTable.TryRemove(fileMetadata.Filename, out fileMetadataIgnored);
             ConcurrentQueue<Action<string>> queueRemove; pendingRequests.TryRemove(filename, out queueRemove);
 
-            DeleteOnDataServers(fileMetadata);
             DeleteOnMetadatas(fileMetadata);
         }
 
@@ -402,7 +367,7 @@ namespace Metadata
             {
                 DataServerOnMetadatas(id, location);
 
-                state.DataServers[id] = new DataServerInfo(location);
+                state.DataServers[id] = location;
 
                 foreach (var entry in pendingRequests)
                 {
@@ -473,7 +438,7 @@ namespace Metadata
 
             if (!state.DataServers.ContainsKey(id))
             {
-                state.DataServers[id] = new DataServerInfo(location);
+                state.DataServers[id] = location;
             }
         }
     }

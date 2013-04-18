@@ -11,8 +11,6 @@ namespace PuppetMaster
 {
     public partial class PuppetMasterMain : Form
     {
-        private bool flagMetadata = false;
-
         private int currentScriptLine = -1;
 
         private const int METADATA = 0;
@@ -89,7 +87,6 @@ namespace PuppetMaster
             this.freezeButton.Visible = toggle;
             this.unfreezeButton.Visible = toggle;
             this.processBox.Mask = "d-0";
-            this.startButton.Enabled = flagMetadata;
         }
 
         private void ToggleClientElements(bool toggle)
@@ -123,7 +120,6 @@ namespace PuppetMaster
             this.copyButton.Visible = toggle;
             this.executeClientScriptButton.Visible = toggle;
             this.processBox.Mask = "c-0";
-            this.startButton.Enabled = flagMetadata;
         }
 
         private void DumpButtonClick(object sender, EventArgs e)
@@ -244,7 +240,6 @@ namespace PuppetMaster
                     case METADATA:
                         {
                             PuppetMaster.StartMetadata(id, port);
-                            flagMetadata = true;
                             SetStatus("Created Metadata with id " + id + " at port " + port);
                             break;
                         }
