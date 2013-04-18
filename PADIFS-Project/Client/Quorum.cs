@@ -8,7 +8,8 @@ namespace Client
     {
         private int quorumSize;
         private Helper.Semantics semantics;
-        private Dictionary<FileVersion, int> quorum = new Dictionary<FileVersion, int>();
+        // version / list of data servers ids
+        private Dictionary<FileVersion, List<string>> quorum = new Dictionary<FileVersion, List<string>>();
         private int totalVotes = 0;
 
         public ReadQuorum(int quorumSize, Helper.Semantics semantics)
@@ -17,19 +18,23 @@ namespace Client
             this.semantics = semantics;
         }
 
-        public void AddVote(FileVersion vote)
+        public void AddVote(FileVersion vote, string id)
         {
             if (vote != null)
             {
-                if (quorum.ContainsKey(vote)) quorum[vote]++;
-                else quorum[vote] = 1;
+                if (!quorum.ContainsKey(vote))
+                {
+                    quorum[vote] = new List<string>();
+                }
+
+                quorum[vote].Add(id);
             }
             totalVotes++;
         }
 
         public bool CheckQuorum(FileVersion vote, FileVersion original)
         {
-            if ((vote != null) && (quorum[vote] >= this.quorumSize))
+            if ((vote != null) && (quorum[vote].Count >= this.quorumSize))
             {
                 if ((semantics == Helper.Semantics.MONOTONIC) && (FileVersion.MostRecent(vote, original) < 0))
                 {
@@ -43,6 +48,11 @@ namespace Client
         public int Count
         {
             get { return this.totalVotes; }
+        }
+
+        public List<string> DataServersIds(FileVersion vote)
+        {
+            return quorum[vote];
         }
     }
 

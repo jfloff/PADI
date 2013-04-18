@@ -19,12 +19,12 @@ namespace Client
         class LatestVersion
         {
             public FileVersion Version;
-            public string DataServerId;
+            public List<string> DataServerIds;
 
-            public LatestVersion(FileVersion version, string dataServerId)
+            public LatestVersion(FileVersion version, List<string> dataServerIds)
             {
                 this.Version = version;
-                this.DataServerId = dataServerId;
+                this.DataServerIds = dataServerIds;
             }
         };
 
@@ -241,27 +241,32 @@ namespace Client
             LatestVersion latestVersion = ReadVersion(fileRegisterIndex, semantics);
 
             // requests file data to dataServer with latest version
-            string id = latestVersion.DataServerId;
-            string location = fileRegister.FileMetadataAt(fileRegisterIndex).Locations[id];
-            string localFilename = fileRegister.FileMetadataAt(fileRegisterIndex).LocalFilenames[id];
-            FileData fileData = null;
+            List<string> dataServersIds = latestVersion.DataServerIds;
 
-            Thread request = new Thread(() =>
+            // loops until  we get something from a read from any dataServer
+            while (true)
             {
-                IDataServerToClient dataServer = (IDataServerToClient)Activator.GetObject(
-                    typeof(IDataServerToClient),
-                    location);
-                // working under the assumptions there is no FAILs between the process
-                fileData = dataServer.Read(localFilename);
-            });
-            request.Start();
+                foreach (string id in dataServersIds)
+                {
+                    string location = fileRegister.FileMetadataAt(fileRegisterIndex).Locations[id];
+                    string localFilename = fileRegister.FileMetadataAt(fileRegisterIndex).LocalFilenames[id];
 
-            // waits for answer
-            while (fileData == null) ;
+                    IDataServerToClient dataServer = (IDataServerToClient)Activator.GetObject(
+                        typeof(IDataServerToClient),
+                        location);
 
-            // update file registers
-            fileRegister.SetFileDataAt(fileRegisterIndex, fileData);
-            return fileData;
+                    try
+                    {
+                        FileData fileData = dataServer.Read(localFilename);
+
+                        // update file registers
+                        fileRegister.SetFileDataAt(fileRegisterIndex, fileData);
+                        return fileData;
+                    }
+                    catch (ProcessFailedException) { }
+                    catch (ProcessFreezedException) { }
+                }
+            }
         }
 
         public void Read(int fileRegisterIndex, Helper.Semantics semantics, int byteRegisterIndex)
@@ -293,10 +298,10 @@ namespace Client
                     FileVersion vote = entry.Value;
                     string dataServerId = entry.Key;
 
-                    quorum.AddVote(vote);
+                    quorum.AddVote(vote, dataServerId);
                     if (quorum.CheckQuorum(vote, original))
                     {
-                        quorumVersion = new LatestVersion(vote, dataServerId);
+                        quorumVersion = new LatestVersion(vote, quorum.DataServersIds(vote));
                         break;
                     }
                 }
@@ -310,7 +315,7 @@ namespace Client
                 {
                     // get possible new fileMetadata locations
                     // possible optimization
-                    // check if there are no dataa servers
+                    // check if there are no data servers
                     fileMetadata = OpenFileMetadata(filename);
 
                     // broadcast to all dataServers that have that file
@@ -331,11 +336,9 @@ namespace Client
                             try
                             {
                                 fileVersion = dataServer.Version(localFilename);
-
                             }
                             catch (ProcessFailedException) { }
                             catch (ProcessFreezedException) { }
-                            catch (FileDoesNotExistException) { }
                             finally
                             {
                                 reads[id] = fileVersion;
@@ -417,7 +420,6 @@ namespace Client
                             }
                             catch (ProcessFailedException) { }
                             catch (ProcessFreezedException) { }
-                            catch (FileDoesNotExistException) { }
                             finally
                             {
                                 writes[id] = vote;

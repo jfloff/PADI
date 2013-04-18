@@ -1,0 +1,12 @@
+# This script is suppose to test if file is created
+# on "zero" data servers
+RECOVER m-1
+# id filename nb rq wq
+CREATE c-1, f1, 4, 3, 3
+UNFREEZE d-1
+UNFREEZE d-2
+UNFREEZE d-3
+UNFREEZE d-4
+UNFREEZE d-5
+WRITE c-1, 0, "Text contents of the file. Contents are a string delimited by double quotes as this one"
+DUMP c-1
