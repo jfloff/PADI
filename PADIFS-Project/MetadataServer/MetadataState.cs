@@ -14,24 +14,17 @@ namespace Metadata
             public Dictionary<string, FileMetadata> table;
             public Dictionary<string, string> dataServers;
 
-            public Snapshot(ConcurrentDictionary<string, FileMetadata> table, ConcurrentDictionary<string, string> dataServers)
+            public Snapshot(ConcurrentDictionary<string, FileMetadata> table, RoundRobinConcurrentDictionary<string, string> dataServers)
             {
                 this.table = new Dictionary<string, FileMetadata>(table);
-                this.dataServers = new Dictionary<string, string>();
-                foreach (var entry in dataServers)
-                {
-                    string id = entry.Key;
-                    string location = entry.Value;
-
-                    this.dataServers[id] = location;
-                }
+                this.dataServers = new Dictionary<string, string>(dataServers);
             }
         }
 
         // filename / FileMetadata
         private ConcurrentDictionary<string, FileMetadata> table = new ConcurrentDictionary<string, FileMetadata>();
         // id / location
-        private ConcurrentDictionary<string, string> dataServers = new ConcurrentDictionary<string, string>();
+        private RoundRobinConcurrentDictionary<string, string> dataServers = new RoundRobinConcurrentDictionary<string, string>();
         // CREATE DICTIONARY FOR FAILED METADATAS
 
         // marked medata id / snapshots
@@ -42,14 +35,13 @@ namespace Metadata
             get { return this.table; }
         }
 
-        public ConcurrentDictionary<string, string> DataServers
+        public RoundRobinConcurrentDictionary<string, string> DataServers
         {
             get { return this.dataServers; }
         }
 
         public override string ToString()
         {
-
             string ret = "Files = [\n";
             foreach (var entry in table)
             {
@@ -58,14 +50,8 @@ namespace Metadata
                 ret += "  <" + fileMetadata + "> \n";
             }
             ret += "]\n";
-            ret += "Data Server = [\n";
-            foreach (var entry in dataServers)
-            {
-                string id = entry.Key;
-
-                ret += "  <" + id + "> \n";
-            }
-            return ret + "]";
+            ret += "Data Server = " + dataServers;
+            return ret;
         }
 
         /**

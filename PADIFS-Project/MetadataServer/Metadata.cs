@@ -92,7 +92,7 @@ namespace Metadata
                         // if it didnt launch exception until now
                         // we check if there is a mark so we can update
                         // we only do after create to avoid unecessary diff operations
-                        if(state.HasMark(id))
+                        if (state.HasMark(id))
                         {
                             metadata.UpdateState(state.GetDiff(id));
                             state.RemoveMark(id);
@@ -221,7 +221,7 @@ namespace Metadata
         /**
          * IMetadataToClient Methods
          */
-        
+
         // select single data server. refactored for future selects
         private void SelectDataServer(string id, FileMetadata fileMetadata)
         {
@@ -247,17 +247,22 @@ namespace Metadata
             pendingRequests[filename] = new ConcurrentQueue<Action<string>>();
 
             // select possible data servers
-            int nbDataServersSelected = 0;
+            HashSet<string> selected = new HashSet<string>();
             foreach (var entry in state.DataServers)
             {
-                if (++nbDataServersSelected > fileMetadata.NbDataServers) break;
+                if (selected.Count >= fileMetadata.NbDataServers) break;
 
                 string dataServerId = entry.Key;
+
+                // breaks round-robin if foreach returns already selected dataserver
+                if (selected.Contains(dataServerId)) break;
+
+                selected.Add(dataServerId);
                 SelectDataServer(dataServerId, fileMetadata);
             }
 
             // create requests for future selectes
-            for (int i = nbDataServersSelected; i < fileMetadata.NbDataServers; i++)
+            for (int i = selected.Count; i < fileMetadata.NbDataServers; i++)
             {
                 pendingRequests[fileMetadata.Filename].Enqueue(
                     (futureId) => SelectDataServer(futureId, fileMetadata));
@@ -351,7 +356,7 @@ namespace Metadata
             }
 
             // joins due to state clock
-            foreach(Thread request in requests)
+            foreach (Thread request in requests)
             {
                 request.Join();
             }

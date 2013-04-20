@@ -1,0 +1,23 @@
+# This script is suppose to test the round robin load balancer
+RECOVER m-1
+UNFREEZE d-1
+UNFREEZE d-2
+UNFREEZE d-3
+OPEN c-1, create
+#!
+# should create 6 files on round robin
+# 5 on each, and then 1 repeated
+CREATE c-1, f1, 1, 1, 1
+CREATE c-1, f2, 1, 1, 1
+CREATE c-1, f3, 1, 1, 1
+CREATE c-1, f4, 1, 1, 1
+DUMP m-1
+# now it should create 3 files on 2 data servers each time
+CREATE c-1, f5, 2, 1, 1
+CREATE c-1, f6, 2, 1, 1
+CREATE c-1, f7, 2, 1, 1
+DUMP m-1
+# now it should create 2 files on 4 data servers each time
+CREATE c-1, f8, 4, 1, 1
+CREATE c-1, f9, 4, 1, 1
+DUMP m-1
