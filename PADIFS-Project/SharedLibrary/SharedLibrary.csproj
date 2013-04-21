@@ -40,8 +40,9 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Entities\DictionaryDiff.cs" />
+    <Compile Include="Entities\FileMetadataTableEntry.cs" />
     <Compile Include="Entities\FileVersion.cs" />
-    <Compile Include="Entities\MetadataDiff.cs" />
+    <Compile Include="Entities\MetadataLogDiff.cs" />
     <Compile Include="Exceptions\ProcessFreezedException.cs" />
     <Compile Include="Exceptions\ProcessFailedException.cs" />
     <Compile Include="Helper.cs" />

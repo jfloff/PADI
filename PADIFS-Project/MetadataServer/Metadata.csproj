@@ -45,7 +45,9 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="MetadataState.cs" />
+    <Compile Include="DataServerRegister.cs" />
+    <Compile Include="FileMetadataTable.cs" />
+    <Compile Include="Log.cs" />
     <Compile Include="Metadata.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

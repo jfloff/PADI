@@ -8,14 +8,14 @@ namespace SharedLibrary.Entities
 {
     [Serializable]
     // implements IEnumerable so we can foreach this class
-    public class MetadataDiff
+    public class MetadataLogDiff
     {
         // filename / metadata
         private DictionaryDiff<string, FileMetadata> tableDiff;
         // id location
         private DictionaryDiff<string, string> dataServersDiff;
 
-        public MetadataDiff(DictionaryDiff<string, FileMetadata> tableDiff, DictionaryDiff<string, string> dataServersDiff)
+        public MetadataLogDiff(DictionaryDiff<string, FileMetadata> tableDiff,  DictionaryDiff<string, string> dataServersDiff)
         {
             this.tableDiff = tableDiff;
             this.dataServersDiff = dataServersDiff;
