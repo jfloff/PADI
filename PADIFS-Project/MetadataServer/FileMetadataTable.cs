@@ -48,9 +48,21 @@ namespace Metadata
 
         public void EnqueueSelectDataServer(string filename, Action<string> enqueueAction, int number = 1)
         {
-            for (int i = 0; i < number; i++)
+            if (number <= 0) return;
+
+            for (; number > 0; number--)
             {
                 table[filename].PendingRequests.Enqueue(enqueueAction);
+            }
+        }
+
+        public void DequeueSelectDataServer(string filename, int number = -1)
+        {
+            if (number >= 0) return;
+
+            for (; number < 0; number++)
+            {
+                Action<string> ignored; table[filename].PendingRequests.TryDequeue(out ignored);
             }
         }
 
@@ -58,8 +70,10 @@ namespace Metadata
         {
             if (this.Contains(filename))
             {
+                int number = fileMetadata.NbDataServers - fileMetadata.CurrentNbDataServers - table[filename].PendingRequests.Count;
+                EnqueueSelectDataServer(filename, enqueueAction, number);
+                DequeueSelectDataServer(filename, number);
                 this.table[filename].FileMetadata = fileMetadata;
-                // missing requests
             }
             else
             {
