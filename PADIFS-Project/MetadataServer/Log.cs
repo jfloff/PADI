@@ -82,13 +82,13 @@ namespace Metadata
             return new MetadataLogDiff(tableDiff, dataServersDiff);
         }
 
-        public void MergeDiff(MetadataLogDiff diff, Func<FileMetadata, Action<string>> enqueueFunc)
+        public void MergeDiff(MetadataLogDiff diff, Func<FileMetadata,Action<string>> funcFactory)
         {
             // files
             // missing pending requests
             foreach (var entry in diff.TableDiff.Plus)
             {
-                this.table.SetFileMetadata(entry.Key, entry.Value);
+                this.table.SetFileMetadata(entry.Key, entry.Value, funcFactory(entry.Value));
             }
             foreach (var entry in diff.TableDiff.Minus)
             {

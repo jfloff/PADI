@@ -46,19 +46,15 @@ namespace Metadata
             return table[filename].FileMetadata;
         }
 
-        public void EnqueuePendingRequest(string filename, Action<string> action)
+        public void EnqueueSelectDataServer(string filename, Action<string> enqueueAction, int number = 1)
         {
-            table[filename].PendingRequests.Enqueue(action);
+            for (int i = 0; i < number; i++)
+            {
+                table[filename].PendingRequests.Enqueue(enqueueAction);
+            }
         }
 
-        public Action<string> DequeuePendingRequest(string filename)
-        {
-            Action<string> ret;
-            table[filename].PendingRequests.TryDequeue(out ret);
-            return ret;
-        }
-
-        public void SetFileMetadata(string filename, FileMetadata fileMetadata)
+        public void SetFileMetadata(string filename, FileMetadata fileMetadata, Action<string> enqueueAction)
         {
             if (this.Contains(filename))
             {
@@ -68,6 +64,8 @@ namespace Metadata
             else
             {
                 this.table[filename] = new FileMetadataTableEntry(fileMetadata);
+                int number = fileMetadata.NbDataServers - fileMetadata.CurrentNbDataServers;
+                this.EnqueueSelectDataServer(filename, enqueueAction, number);
             }
         }
 

@@ -193,16 +193,21 @@ namespace Metadata
             // Console.WriteLine("PONG");
         }
 
+        public Action<string> FutureSelectDataServer(FileMetadata fileMetadata)
+        {
+            return (futureId) => SelectDataServer(futureId, fileMetadata);
+        }
+
         public void UpdateState(MetadataLogDiff diff)
         {
-            log.MergeDiff(diff, this.FutureSelect);
+            log.MergeDiff(diff, FutureSelectDataServer);
         }
 
         public void CreateOrUpdateOnMetadata(FileMetadata fileMetadata)
         {
             if (fail) throw new ProcessFailedException(id);
 
-            fileMetadataTable.SetFileMetadata(fileMetadata.Filename, fileMetadata);
+            fileMetadataTable.SetFileMetadata(fileMetadata.Filename, fileMetadata, FutureSelectDataServer(fileMetadata));
         }
 
         public void DeleteOnMetadata(FileMetadata fileMetadata)
@@ -241,8 +246,7 @@ namespace Metadata
 
             //Select Data Servers and creates files within them
             FileMetadata fileMetadata = new FileMetadata(filename, nbDataServers, readQuorum, writeQuorum);
-            fileMetadataTable.SetFileMetadata(filename, fileMetadata);
-
+            
             // select possible data servers
             int selected = 0;
             foreach(var entry in dataServers.UniqueDataServers)
@@ -253,18 +257,8 @@ namespace Metadata
                 SelectDataServer(dataServerId, fileMetadata);
             }
 
-            // create requests for future selectes
-            for (int i = selected; i < fileMetadata.NbDataServers; i++)
-            {
-                fileMetadataTable.EnqueuePendingRequest(fileMetadata.Filename, (futureId) => SelectDataServer(futureId, fileMetadata));
-            }
-
+            fileMetadataTable.SetFileMetadata(filename, fileMetadata, FutureSelectDataServer(fileMetadata));
             return fileMetadata;
-        }
-
-        public Action<string> FutureSelect(FileMetadata fileMetadata)
-        {
-            return (futureId) => SelectDataServer(futureId, fileMetadata);
         }
 
         public FileMetadata Open(string filename)

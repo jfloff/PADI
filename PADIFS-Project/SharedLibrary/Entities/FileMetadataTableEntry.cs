@@ -18,14 +18,7 @@ namespace SharedLibrary.Entities
 
         public override string ToString()
         {
-            string pendingString = "[ ";
-            foreach (var entry in pending)
-            {
-                pendingString += "<" + entry.ToString() + "> ";
-            }
-            pendingString += "]";
-
-            return this.fileMetadata.ToString() + ":" + pendingString;
+            return this.fileMetadata.ToString() + ":" + pending.Count;
         }
 
         public FileMetadata FileMetadata
