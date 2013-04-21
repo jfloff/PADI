@@ -3,7 +3,7 @@ RECOVER m-1
 UNFREEZE d-1
 UNFREEZE d-2
 UNFREEZE d-3
-OPEN c-1, create
+DUMP c-1
 #!
 # should create 6 files on round robin
 # 5 on each, and then 1 repeated

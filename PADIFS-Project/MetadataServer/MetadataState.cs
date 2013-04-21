@@ -1,6 +1,7 @@
 ﻿using SharedLibrary.Entities;
 using SharedLibrary.Interfaces;
 using System;
+using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading;
@@ -14,7 +15,7 @@ namespace Metadata
             public Dictionary<string, FileMetadata> table;
             public Dictionary<string, string> dataServers;
 
-            public Snapshot(ConcurrentDictionary<string, FileMetadata> table, RoundRobinConcurrentDictionary<string, string> dataServers)
+            public Snapshot(ConcurrentDictionary<string, FileMetadata> table, ConcurrentDictionary<string, string> dataServers)
             {
                 this.table = new Dictionary<string, FileMetadata>(table);
                 this.dataServers = new Dictionary<string, string>(dataServers);
@@ -24,20 +25,17 @@ namespace Metadata
         // filename / FileMetadata
         private ConcurrentDictionary<string, FileMetadata> table = new ConcurrentDictionary<string, FileMetadata>();
         // id / location
-        private RoundRobinConcurrentDictionary<string, string> dataServers = new RoundRobinConcurrentDictionary<string, string>();
+        private ConcurrentDictionary<string, string> dataServers = new ConcurrentDictionary<string, string>();
+        // id / weight
+        private ConcurrentDictionary<string, int> dataServersWeight = new ConcurrentDictionary<string, int>();
         // CREATE DICTIONARY FOR FAILED METADATAS
 
         // marked medata id / snapshots
         private ConcurrentDictionary<string, Snapshot> marks = new ConcurrentDictionary<string, Snapshot>();
 
-        public ConcurrentDictionary<string, FileMetadata> FileMetadataTable
+        public MetadataState()
         {
-            get { return this.table; }
-        }
-
-        public RoundRobinConcurrentDictionary<string, string> DataServers
-        {
-            get { return this.dataServers; }
+            this.dataServersEnumerator = dataServers.GetEnumerator();
         }
 
         public override string ToString()
@@ -50,8 +48,13 @@ namespace Metadata
                 ret += "  <" + fileMetadata + "> \n";
             }
             ret += "]\n";
-            ret += "Data Server = " + dataServers;
-            return ret;
+            ret += "Data Servers = ";
+            ret += "[\n";
+            foreach (var entry in dataServers)
+            {
+                ret += "  <" + entry.Key + ";" + entry.Value + "> \n";
+            }
+            return ret + "]";
         }
 
         /**
@@ -105,18 +108,90 @@ namespace Metadata
             // files
             foreach (var entry in diff.TableDiff.Plus)
             {
-                table[entry.Key] = entry.Value;
+                this.AddOrUpdateFile(entry.Key, entry.Value);
             }
             foreach (var entry in diff.TableDiff.Minus)
             {
-                FileMetadata ingored; table.TryRemove(entry.Key, out ingored);
+                this.RemoveFile(entry.Key);
             }
 
             // data servers
             foreach (var entry in diff.DataServersDiff.Plus)
             {
-                dataServers[entry.Key] = entry.Value;
+                this.AddOrUpdateDataServer(entry.Key, entry.Value);
             }
+        }
+
+        /**
+         * Data Servers Methods
+         */
+
+        public bool ContainsDataServer(string id)
+        {
+            return this.dataServers.ContainsKey(id);
+        }
+
+        public void AddOrUpdateDataServer(string id, string location)
+        {
+            if (!this.dataServers.ContainsKey(id))
+            {
+                dataServersWeight[id] = 1;
+            }
+
+            this.dataServers[id] = location;
+            this.dataServersEnumerator.MoveNext();
+        }
+
+        public string DataServerLocation(string id)
+        {
+            return this.dataServers[id];
+        }
+
+        private IEnumerator<KeyValuePair<string, string>> dataServersEnumerator;
+
+        public IEnumerable<KeyValuePair<string, string>> UniqueDataServers
+        {
+            get
+            {
+                string firstId = this.dataServersEnumerator.Current.Key;
+                while (true)
+                {
+                    yield return this.dataServersEnumerator.Current;
+                    if (!this.dataServersEnumerator.MoveNext())
+                    {
+                        this.dataServersEnumerator = this.dataServers.GetEnumerator();
+                        this.dataServersEnumerator.MoveNext();
+                    }
+
+                    if (this.dataServersEnumerator.Current.Key == firstId) break;
+
+                }
+            }
+        }
+
+
+        /**
+         * Table Methods
+         */
+
+        public bool ContainsFile(string filename)
+        {
+            return this.table.ContainsKey(filename);
+        }
+
+        public void AddOrUpdateFile(string filename, FileMetadata fileMetadata)
+        {
+            this.table[filename] = fileMetadata;
+        }
+
+        public void RemoveFile(string filename)
+        {
+            FileMetadata ignored; this.table.TryRemove(filename, out ignored);
+        }
+
+        public FileMetadata FileMetadata(string filename)
+        {
+            return this.table[filename];
         }
     }
 }

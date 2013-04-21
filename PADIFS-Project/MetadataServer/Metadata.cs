@@ -164,7 +164,6 @@ namespace Metadata
         public void Dump()
         {
             Console.WriteLine("DUMP");
-            Console.WriteLine("File Metadatas");
             Console.WriteLine(state);
         }
 
@@ -200,20 +199,20 @@ namespace Metadata
         {
             if (fail) throw new ProcessFailedException(id);
 
-            if (!state.FileMetadataTable.ContainsKey(fileMetadata.Filename))
+            if (!state.ContainsFile(fileMetadata.Filename))
             {
                 pendingRequests[fileMetadata.Filename] = new ConcurrentQueue<Action<string>>();
             }
-            state.FileMetadataTable[fileMetadata.Filename] = fileMetadata;
+            state.AddOrUpdateFile(fileMetadata.Filename, fileMetadata);
         }
 
         public void DeleteOnMetadata(FileMetadata fileMetadata)
         {
             if (fail) throw new ProcessFailedException(id);
 
-            if (state.FileMetadataTable.ContainsKey(fileMetadata.Filename))
+            if (state.ContainsFile(fileMetadata.Filename))
             {
-                FileMetadata fileMetadataIgnored; state.FileMetadataTable.TryRemove(fileMetadata.Filename, out fileMetadataIgnored);
+                state.RemoveFile(fileMetadata.Filename);
                 ConcurrentQueue<Action<string>> queueIgnored; pendingRequests.TryRemove(fileMetadata.Filename, out queueIgnored);
             }
         }
@@ -225,7 +224,7 @@ namespace Metadata
         // select single data server. refactored for future selects
         private void SelectDataServer(string id, FileMetadata fileMetadata)
         {
-            string location = state.DataServers[id];
+            string location = state.DataServerLocation(id);
             string localFilename = LocalFilename(fileMetadata.Filename);
 
             fileMetadata.AddDataServer(id, location, localFilename);
@@ -236,7 +235,7 @@ namespace Metadata
         {
             if (fail) throw new ProcessFailedException(id);
 
-            if (state.FileMetadataTable.ContainsKey(filename))
+            if (state.ContainsFile(filename))
                 throw new FileAlreadyExistsException(filename);
 
             Console.WriteLine("CREATE METADATA FILENAME: " + filename + " NBDATASERVERS: " + nbDataServers
@@ -247,28 +246,23 @@ namespace Metadata
             pendingRequests[filename] = new ConcurrentQueue<Action<string>>();
 
             // select possible data servers
-            HashSet<string> selected = new HashSet<string>();
-            foreach (var entry in state.DataServers)
+            int selected = 0;
+            foreach(var entry in state.UniqueDataServers)
             {
-                if (selected.Count >= fileMetadata.NbDataServers) break;
+                if (selected++ >= fileMetadata.NbDataServers) break;
 
                 string dataServerId = entry.Key;
-
-                // breaks round-robin if foreach returns already selected dataserver
-                if (selected.Contains(dataServerId)) break;
-
-                selected.Add(dataServerId);
                 SelectDataServer(dataServerId, fileMetadata);
             }
 
             // create requests for future selectes
-            for (int i = selected.Count; i < fileMetadata.NbDataServers; i++)
+            for (int i = selected; i < fileMetadata.NbDataServers; i++)
             {
                 pendingRequests[fileMetadata.Filename].Enqueue(
                     (futureId) => SelectDataServer(futureId, fileMetadata));
             }
 
-            state.FileMetadataTable[filename] = fileMetadata;
+            state.AddOrUpdateFile(filename, fileMetadata);
             return fileMetadata;
         }
 
@@ -278,10 +272,10 @@ namespace Metadata
 
             Console.WriteLine("OPEN METADATA FILE " + filename);
 
-            if (!state.FileMetadataTable.ContainsKey(filename))
+            if (!state.ContainsFile(filename))
                 throw new FileDoesNotExistException(filename);
 
-            return state.FileMetadataTable[filename];
+            return state.FileMetadata(filename);
         }
 
         public void Close(string filename)
@@ -290,7 +284,7 @@ namespace Metadata
 
             Console.WriteLine("CLOSE METADATA FILE " + filename);
 
-            if (!state.FileMetadataTable.ContainsKey(filename))
+            if (!state.ContainsFile(filename))
                 throw new FileDoesNotExistException(filename);
         }
 
@@ -300,11 +294,11 @@ namespace Metadata
 
             Console.WriteLine("DELETE METADATA FILE " + filename);
 
-            if (!state.FileMetadataTable.ContainsKey(filename))
+            if (!state.ContainsFile(filename))
                 throw new FileDoesNotExistException(filename);
 
-            FileMetadata fileMetadata = state.FileMetadataTable[filename];
-            FileMetadata fileMetadataIgnored; state.FileMetadataTable.TryRemove(fileMetadata.Filename, out fileMetadataIgnored);
+            FileMetadata fileMetadata = state.FileMetadata(filename);
+            state.RemoveFile(fileMetadata.Filename);
             ConcurrentQueue<Action<string>> queueRemove; pendingRequests.TryRemove(filename, out queueRemove);
 
             DeleteOnMetadatas(fileMetadata);
@@ -368,11 +362,11 @@ namespace Metadata
 
             Console.WriteLine("REGISTER DATA SERVER " + id);
 
-            if (!state.DataServers.ContainsKey(id))
+            if (!state.ContainsDataServer(id))
             {
                 DataServerOnMetadatas(id, location);
 
-                state.DataServers[id] = location;
+                state.AddOrUpdateDataServer(id, location);
 
                 foreach (var entry in pendingRequests)
                 {
@@ -441,9 +435,9 @@ namespace Metadata
 
             Console.WriteLine("RECEIVE DATA SERVER " + id + " FROM METADATA");
 
-            if (!state.DataServers.ContainsKey(id))
+            if (!state.ContainsDataServer(id))
             {
-                state.DataServers[id] = location;
+                state.AddOrUpdateDataServer(id, location);
             }
         }
     }
