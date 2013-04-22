@@ -6,44 +6,47 @@ using System.Collections.Generic;
 
 namespace Metadata
 {
-    public class FileMetadataTable : IEnumerable<KeyValuePair<string, FileMetadataTableEntry>>
+    public class FileMetadataTable
     {
         // filename / FileMetadata+queue of pending requests for each file 
-        private ConcurrentDictionary<string, FileMetadataTableEntry> table = new ConcurrentDictionary<string, FileMetadataTableEntry>();
+        private ConcurrentDictionary<string, FileMetadata> files = new ConcurrentDictionary<string, FileMetadata>();
+        private ConcurrentDictionary<string, ConcurrentQueue<Action<string>>> pending
+            = new ConcurrentDictionary<string, ConcurrentQueue<Action<string>>>();
 
         public override string ToString()
         {
             string ret = "[\n";
-            foreach (var entry in table)
+            foreach (var entry in files)
             {
-                ret += "  <" + entry.Value + "> \n";
+                ret += "  <" + entry.Value + ":" + pending[entry.Key].Count + "> \n";
             }
             return ret + "]";
         }
 
-        public IEnumerator<KeyValuePair<string, FileMetadataTableEntry>> GetEnumerator()
+        public Dictionary<string, FileMetadata> ToDictionary()
         {
-            return this.table.GetEnumerator();
-        }
-
-        IEnumerator IEnumerable.GetEnumerator()
-        {
-            return this.table.GetEnumerator();
+            Dictionary<string, FileMetadata> clone = new Dictionary<string, FileMetadata>();
+            foreach (var entry in files)
+            {
+                clone[entry.Key] = entry.Value.Clone();
+            }
+            return clone;
         }
 
         public bool Contains(string filename)
         {
-            return this.table.ContainsKey(filename);
+            return this.files.ContainsKey(filename);
         }
 
         public void Remove(string filename)
         {
-            FileMetadataTableEntry ignored; this.table.TryRemove(filename, out ignored);
+            FileMetadata ignoredFile; this.files.TryRemove(filename, out ignoredFile);
+            ConcurrentQueue<Action<string>> ignoredPending; this.pending.TryRemove(filename, out ignoredPending);
         }
 
         public FileMetadata FileMetadata(string filename)
         {
-            return table[filename].FileMetadata;
+            return files[filename];
         }
 
         public void EnqueueSelectDataServer(string filename, Action<string> enqueueAction, int number = 1)
@@ -52,7 +55,7 @@ namespace Metadata
 
             for (; number > 0; number--)
             {
-                table[filename].PendingRequests.Enqueue(enqueueAction);
+                pending[filename].Enqueue(enqueueAction);
             }
         }
 
@@ -62,7 +65,7 @@ namespace Metadata
 
             for (; number < 0; number++)
             {
-                Action<string> ignored; table[filename].PendingRequests.TryDequeue(out ignored);
+                Action<string> ignored; pending[filename].TryDequeue(out ignored);
             }
         }
 
@@ -70,29 +73,43 @@ namespace Metadata
         {
             if (this.Contains(filename))
             {
-                int number = fileMetadata.NbDataServers - fileMetadata.CurrentNbDataServers - table[filename].PendingRequests.Count;
+                int number = fileMetadata.NbDataServers - fileMetadata.CurrentNbDataServers - pending[filename].Count;
                 EnqueueSelectDataServer(filename, enqueueAction, number);
                 DequeueSelectDataServer(filename, number);
-                this.table[filename].FileMetadata = fileMetadata;
+                this.files[filename] = fileMetadata;
             }
             else
             {
-                this.table[filename] = new FileMetadataTableEntry(fileMetadata);
+                this.files[filename] = fileMetadata;
+                this.pending[filename] = new ConcurrentQueue<Action<string>>();
                 int number = fileMetadata.NbDataServers - fileMetadata.CurrentNbDataServers;
                 this.EnqueueSelectDataServer(filename, enqueueAction, number);
             }
         }
 
-        public IEnumerable<ConcurrentQueue<Action<string>>> PendingRequests { 
-            get {
-                foreach (var entry in table)
+        public IEnumerable<KeyValuePair<string, FileMetadata>> Files
+        {
+            get
+            {
+                foreach (var entry in files)
                 {
-                    if (entry.Value.PendingRequests.Count != 0)
+                    yield return entry;
+                }
+            }
+        }
+
+        public IEnumerable<ConcurrentQueue<Action<string>>> Pending
+        {
+            get
+            {
+                foreach (var entry in pending)
+                {
+                    if (entry.Value.Count != 0)
                     {
-                        yield return entry.Value.PendingRequests;
+                        yield return entry.Value;
                     }
                 }
-            } 
+            }
         }
     }
 }

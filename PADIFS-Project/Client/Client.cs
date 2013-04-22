@@ -104,11 +104,7 @@ namespace Client
                 location);
             metadatas[id] = metadata;
 
-            // is master is empty client is bootstraping
-            if ((master == string.Empty) || (string.Compare(master, id) >= 0))
-            {
-                master = id;
-            }
+            master = metadata.Master();
         }
 
         public void Create(string filename, int nbDataServers, int readQuorum, int writeQuorum)

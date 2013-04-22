@@ -27,6 +27,7 @@ namespace Metadata
 
         // statics are all thread safe
         private static string master;
+        private static int clock = 0;
         private static string id;
         private static bool fail = false;
 
@@ -97,7 +98,6 @@ namespace Metadata
                         if (log.HasMark(id))
                         {
                             metadata.UpdateState(log.BuildDiff(id));
-                            log.RemoveMark(id);
                         }
                     }
                     catch (ProcessFailedException)
@@ -127,7 +127,6 @@ namespace Metadata
                         if (log.HasMark(id))
                         {
                             metadata.UpdateState(log.BuildDiff(id));
-                            log.RemoveMark(id);
                         }
                     }
                     catch (ProcessFailedException)
@@ -152,20 +151,17 @@ namespace Metadata
                 location);
             metadatas[id] = metadata;
 
-            //Force invocation of primary decision
-            master = (string.Compare(id, master) > 0) ? master : id;
-
             //sends the current metadata state
             if (ImMaster)
             {
                 metadata.UpdateState(log.BuildDiff(id));
-                log.RemoveMark(id);
             }
         }
 
         public void Dump()
         {
             Console.WriteLine("DUMP");
+            Console.WriteLine("Master = " + master + ":" + clock);
             Console.WriteLine("Files = " + fileMetadataTable);
             Console.WriteLine("Data Servers = " + dataServers);
         }
@@ -179,6 +175,9 @@ namespace Metadata
         public void Recover()
         {
             Console.WriteLine("RECOVER");
+
+            // needs to know who is the new master
+
             fail = false;
         }
 
@@ -186,11 +185,15 @@ namespace Metadata
          * IMetadataToMetadata Methods
          */
 
-        public void Ping()
+        public MasterVote MasterVoting(MasterVote vote)
         {
             if (fail) throw new ProcessFailedException(id);
 
-            // Console.WriteLine("PONG");
+            MasterVote myVote = new MasterVote(id, clock);
+            MasterVote newMaster = MasterVote.Choose(myVote, vote);
+
+            master = newMaster.Id;
+            return newMaster;
         }
 
         public Action<string> FutureSelectDataServer(FileMetadata fileMetadata)
@@ -208,6 +211,7 @@ namespace Metadata
             if (fail) throw new ProcessFailedException(id);
 
             fileMetadataTable.SetFileMetadata(fileMetadata.Filename, fileMetadata, FutureSelectDataServer(fileMetadata));
+            clock++;
         }
 
         public void DeleteOnMetadata(FileMetadata fileMetadata)
@@ -217,6 +221,7 @@ namespace Metadata
             if (fileMetadataTable.Contains(fileMetadata.Filename))
             {
                 fileMetadataTable.Remove(fileMetadata.Filename);
+                clock++;
             }
         }
 
@@ -232,6 +237,7 @@ namespace Metadata
 
             fileMetadata.AddDataServer(id, location, localFilename);
             CreateOrUpdateOnMetadatas(fileMetadata);
+            clock++;
         }
 
         public FileMetadata Create(string filename, int nbDataServers, int readQuorum, int writeQuorum)
@@ -296,6 +302,7 @@ namespace Metadata
             fileMetadataTable.Remove(fileMetadata.Filename);
 
             DeleteOnMetadatas(fileMetadata);
+            clock++;
         }
 
         /**
@@ -331,7 +338,6 @@ namespace Metadata
                         if (log.HasMark(metadataId))
                         {
                             metadata.UpdateState(log.BuildDiff(metadataId));
-                            log.RemoveMark(metadataId);
                         }
                     }
                     catch (ProcessFailedException)
@@ -359,10 +365,11 @@ namespace Metadata
             if (!dataServers.Contains(id))
             {
                 DataServerOnMetadatas(id, location);
+                clock++;
 
                 dataServers[id] = location;
 
-                foreach (var entry in fileMetadataTable.PendingRequests)
+                foreach (var entry in fileMetadataTable.Pending)
                 {
                     string futureId = id;
                     ConcurrentQueue<Action<string>> pending = entry;
@@ -382,44 +389,6 @@ namespace Metadata
          * IMetadataToProcess Methods
          */
 
-        public string Master()
-        {
-            if (fail) throw new ProcessFailedException(id);
-
-            string newMaster = master;
-
-            // loops untill new master is found
-            while (true)
-            {
-                if (!ImMaster)
-                {
-                    IMetadataToMetadata masterI = metadatas[newMaster];
-                    try
-                    {
-                        masterI.Ping();
-                        Console.WriteLine("MASTER IS " + newMaster);
-                    }
-                    catch (ProcessFailedException)
-                    {
-                        List<string> metadatasIds = new List<string>(metadatas.Keys);
-                        metadatasIds.Add(id);
-                        metadatasIds.Remove(master);
-                        newMaster = metadatasIds.Min();
-                    }
-                    finally
-                    {
-                        master = newMaster;
-                    }
-                }
-                else
-                {
-                    break;
-                }
-            }
-
-            return newMaster;
-        }
-
         public void DataServerOnMetadata(string id, string location)
         {
             if (fail) throw new ProcessFailedException(id);
@@ -429,7 +398,28 @@ namespace Metadata
             if (!dataServers.Contains(id))
             {
                 dataServers[id] = location;
+                clock++;
             }
+        }
+
+        public string Master()
+        {
+            if (fail) throw new ProcessFailedException(id);
+
+            MasterVote myVote = new MasterVote(id, clock);
+            master = id;
+
+            foreach (var entry in metadatas)
+            {
+                IMetadataToMetadata metadata = entry.Value;
+                try
+                {
+                    master = metadata.MasterVoting(myVote).Id;
+                }
+                catch (ProcessFailedException) { }
+            }
+
+            return master;
         }
     }
 }

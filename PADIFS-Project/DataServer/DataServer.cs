@@ -130,12 +130,6 @@ namespace DataServer
 
                 return;
             }
-
-            // check for new master arrival
-            if (string.Compare(master, id) >= 0)
-            {
-                master = id;
-            }
         }
 
         // skips failed and freeze

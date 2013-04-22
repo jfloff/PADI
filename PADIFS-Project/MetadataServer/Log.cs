@@ -16,14 +16,7 @@ namespace Metadata
 
             public Snapshot(FileMetadataTable table, DataServerRegister dataServers)
             {
-                this.table = new Dictionary<string, FileMetadata>();
-                foreach (var entry in table)
-                {
-                    string filename = entry.Key;
-                    FileMetadata fileMetadata = entry.Value.FileMetadata;
-
-                    this.table[filename] = fileMetadata;
-                }
+                this.table = table.ToDictionary();
                 this.dataServers = dataServers.ToDictionary();
             }
         }
@@ -55,12 +48,6 @@ namespace Metadata
             }
         }
 
-        // removes mark
-        public void RemoveMark(string mark)
-        {
-            Snapshot ignored; marks.TryRemove(mark, out ignored);
-        }
-
         public MetadataLogDiff BuildDiff(string mark)
         {
             Snapshot current = new Snapshot(table, dataServers);
@@ -75,6 +62,7 @@ namespace Metadata
             else
             {
                 Snapshot past = marks[mark];
+                Snapshot ignored; marks.TryRemove(mark, out ignored);
                 tableDiff = new DictionaryDiff<string, FileMetadata>(past.table, current.table);
                 dataServersDiff = new DictionaryDiff<string, string>(past.dataServers, current.dataServers);
             }

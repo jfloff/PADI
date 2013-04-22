@@ -106,6 +106,7 @@ namespace SharedLibrary.Entities
 
             return (this.filename == fileMetadata.filename)
                 && (this.nbDataServers == fileMetadata.nbDataServers)
+                && (this.currentNbDataServers == fileMetadata.currentNbDataServers)
                 && (this.readQuorum == fileMetadata.readQuorum)
                 && (this.writeQuorum == fileMetadata.writeQuorum)
                 && (this.localFilenames == fileMetadata.localFilenames);
@@ -121,6 +122,7 @@ namespace SharedLibrary.Entities
 
             return (this.filename == fileMetadata.filename)
                 && (this.nbDataServers == fileMetadata.nbDataServers)
+                && (this.currentNbDataServers == fileMetadata.currentNbDataServers)
                 && (this.readQuorum == fileMetadata.readQuorum)
                 && (this.writeQuorum == fileMetadata.writeQuorum)
                 && (this.localFilenames == fileMetadata.localFilenames);
@@ -130,9 +132,20 @@ namespace SharedLibrary.Entities
         {
             return this.filename.GetHashCode() 
                 ^ this.nbDataServers.GetHashCode() 
+                ^ this.currentNbDataServers.GetHashCode()
                 ^ this.readQuorum.GetHashCode() 
                 ^ this.writeQuorum.GetHashCode() 
                 ^ this.localFilenames.GetHashCode();
+        }
+
+        public FileMetadata Clone()
+        {
+            FileMetadata copy = new FileMetadata(this.filename, this.nbDataServers, this.readQuorum, this.writeQuorum);
+            copy.currentNbDataServers = this.currentNbDataServers;
+            copy.localFilenames = new Dictionary<string, string>(this.localFilenames);
+            copy.locations = new Dictionary<string, string>(this.locations);
+
+            return copy;
         }
     }
 }

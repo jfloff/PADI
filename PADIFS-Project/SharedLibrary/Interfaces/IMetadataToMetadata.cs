@@ -4,7 +4,7 @@ namespace SharedLibrary.Interfaces
 {
     public interface IMetadataToMetadata
     {
-        void Ping();
+        MasterVote MasterVoting(MasterVote vote);
         void UpdateState(MetadataLogDiff metadataDiff);
         void CreateOrUpdateOnMetadata(FileMetadata fileMetadata);
         void DeleteOnMetadata(FileMetadata fileMetadata);
