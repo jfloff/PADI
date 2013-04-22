@@ -127,6 +127,7 @@ namespace DataServer
                     metadatas[master].DataServer(DataServer.id, Helper.GetUrl(DataServer.id, DataServer.port));
                 }
                 catch (ProcessFailedException) { }
+                catch (NotTheMasterException) { }
 
                 return;
             }

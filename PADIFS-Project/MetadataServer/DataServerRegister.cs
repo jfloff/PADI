@@ -59,6 +59,8 @@ namespace Metadata
                 string firstId = this.enumerator.Current.Key;
                 while (true)
                 {
+                    if (firstId == null) break;
+
                     yield return this.enumerator.Current;
                     if (!this.enumerator.MoveNext())
                     {

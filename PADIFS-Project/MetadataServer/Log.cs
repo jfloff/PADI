@@ -53,6 +53,7 @@ namespace Metadata
             Snapshot current = new Snapshot(table, dataServers);
             DictionaryDiff<string, FileMetadata> tableDiff;
             DictionaryDiff<string, string> dataServersDiff;
+            int clockDiff;
 
             if (!marks.ContainsKey(mark))
             {
@@ -72,22 +73,42 @@ namespace Metadata
 
         public void MergeDiff(MetadataLogDiff diff, Func<FileMetadata,Action<string>> funcFactory)
         {
+            int clockDiff = 0;
+
             // files
-            // missing pending requests
             foreach (var entry in diff.TableDiff.Plus)
             {
-                this.table.SetFileMetadata(entry.Key, entry.Value, funcFactory(entry.Value));
+                string filename = entry.Key;
+                FileMetadata fileMetadata = entry.Value;
+
+                // create file found
+                if (!this.table.Contains(filename))
+                {
+                    // clocks data servers and create file
+                    clockDiff += fileMetadata.CurrentNbDataServers + 1;
+                }
+                else
+                {
+                    // clocks new data servers
+                    clockDiff += fileMetadata.CurrentNbDataServers - this.table.FileMetadata(filename).CurrentNbDataServers;
+                }
+
+                this.table.SetFileMetadata(filename, fileMetadata, funcFactory(fileMetadata));
             }
             foreach (var entry in diff.TableDiff.Minus)
             {
+                clockDiff++;
                 this.table.Remove(entry.Key);
             }
 
             // data servers
             foreach (var entry in diff.DataServersDiff.Plus)
             {
+                clockDiff++;
                 this.dataServers[entry.Key] = entry.Value;
             }
+
+            Metadata.clock += clockDiff;
         }
     }
 }

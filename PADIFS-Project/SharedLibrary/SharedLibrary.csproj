@@ -43,6 +43,7 @@
     <Compile Include="Entities\FileVersion.cs" />
     <Compile Include="Entities\MasterVote.cs" />
     <Compile Include="Entities\MetadataLogDiff.cs" />
+    <Compile Include="Exceptions\Copy of ProcessFailedException.cs" />
     <Compile Include="Exceptions\ProcessFreezedException.cs" />
     <Compile Include="Exceptions\ProcessFailedException.cs" />
     <Compile Include="Helper.cs" />

@@ -27,7 +27,7 @@ namespace Metadata
 
         // statics are all thread safe
         private static string master;
-        private static int clock = 0;
+        public static int clock = 0;
         private static string id;
         private static bool fail = false;
 
@@ -151,6 +151,8 @@ namespace Metadata
                 location);
             metadatas[id] = metadata;
 
+            master = metadata.Master();
+
             //sends the current metadata state
             if (ImMaster)
             {
@@ -161,7 +163,8 @@ namespace Metadata
         public void Dump()
         {
             Console.WriteLine("DUMP");
-            Console.WriteLine("Master = " + master + ":" + clock);
+            Console.WriteLine("Master = " + master);
+            Console.WriteLine("Clock = " + clock);
             Console.WriteLine("Files = " + fileMetadataTable);
             Console.WriteLine("Data Servers = " + dataServers);
         }
@@ -176,8 +179,20 @@ namespace Metadata
         {
             Console.WriteLine("RECOVER");
 
-            // needs to know who is the new master
+            foreach (var entry in metadatas)
+            {
+                IMetadataToMetadata metadata = entry.Value;
 
+                try
+                {
+                    master = metadata.Master();
+                    fail = false;
+                    return;
+                }
+                catch (ProcessFailedException) { }
+            }
+
+            master = id;
             fail = false;
         }
 
@@ -203,12 +218,16 @@ namespace Metadata
 
         public void UpdateState(MetadataLogDiff diff)
         {
+            Console.WriteLine("RECEIVING STATE UPDATE");
             log.MergeDiff(diff, FutureSelectDataServer);
         }
 
         public void CreateOrUpdateOnMetadata(FileMetadata fileMetadata)
         {
             if (fail) throw new ProcessFailedException(id);
+
+            // if it doesn't contain its a create we need to move clock
+            if (!fileMetadataTable.Contains(fileMetadata.Filename)) clock++;
 
             fileMetadataTable.SetFileMetadata(fileMetadata.Filename, fileMetadata, FutureSelectDataServer(fileMetadata));
             clock++;
@@ -235,6 +254,12 @@ namespace Metadata
             string location = dataServers[id];
             string localFilename = LocalFilename(fileMetadata.Filename);
 
+            // it it has already a version in the table, works with that one
+            if (fileMetadataTable.Contains(fileMetadata.Filename))
+            {
+                fileMetadata = fileMetadataTable.FileMetadata(fileMetadata.Filename);
+            }
+
             fileMetadata.AddDataServer(id, location, localFilename);
             CreateOrUpdateOnMetadatas(fileMetadata);
             clock++;
@@ -243,6 +268,7 @@ namespace Metadata
         public FileMetadata Create(string filename, int nbDataServers, int readQuorum, int writeQuorum)
         {
             if (fail) throw new ProcessFailedException(id);
+            if (!ImMaster) throw new NotTheMasterException(id);
 
             if (fileMetadataTable.Contains(filename))
                 throw new FileAlreadyExistsException(filename);
@@ -264,12 +290,14 @@ namespace Metadata
             }
 
             fileMetadataTable.SetFileMetadata(filename, fileMetadata, FutureSelectDataServer(fileMetadata));
+            clock++;
             return fileMetadata;
         }
 
         public FileMetadata Open(string filename)
         {
             if (fail) throw new ProcessFailedException(id);
+            if (!ImMaster) throw new NotTheMasterException(id);
 
             Console.WriteLine("OPEN METADATA FILE " + filename);
 
@@ -282,6 +310,7 @@ namespace Metadata
         public void Close(string filename)
         {
             if (fail) throw new ProcessFailedException(id);
+            if (!ImMaster) throw new NotTheMasterException(id);
 
             Console.WriteLine("CLOSE METADATA FILE " + filename);
 
@@ -292,6 +321,7 @@ namespace Metadata
         public void Delete(string filename)
         {
             if (fail) throw new ProcessFailedException(id);
+            if (!ImMaster) throw new NotTheMasterException(id);
 
             Console.WriteLine("DELETE METADATA FILE " + filename);
 
@@ -359,6 +389,7 @@ namespace Metadata
         public void DataServer(string id, string location)
         {
             if (fail) throw new ProcessFailedException(id);
+            if (!ImMaster) throw new NotTheMasterException(id);
 
             Console.WriteLine("REGISTER DATA SERVER " + id);
 

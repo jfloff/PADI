@@ -2,7 +2,7 @@
 
 namespace SharedLibrary.Interfaces
 {
-    public interface IMetadataToMetadata
+    public interface IMetadataToMetadata : IMetadataToProcess
     {
         MasterVote MasterVoting(MasterVote vote);
         void UpdateState(MetadataLogDiff metadataDiff);

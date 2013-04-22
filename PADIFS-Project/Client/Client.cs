@@ -104,7 +104,10 @@ namespace Client
                 location);
             metadatas[id] = metadata;
 
-            master = metadata.Master();
+            if (master == string.Empty)
+            {
+                master = metadata.Master();
+            }
         }
 
         public void Create(string filename, int nbDataServers, int readQuorum, int writeQuorum)
@@ -121,6 +124,10 @@ namespace Client
                     return;
                 }
                 catch (ProcessFailedException)
+                {
+                    FindMaster();
+                }
+                catch (NotTheMasterException)
                 {
                     FindMaster();
                 }
@@ -149,6 +156,10 @@ namespace Client
                 {
                     FindMaster();
                 }
+                catch (NotTheMasterException)
+                {
+                    FindMaster();
+                }
                 catch (FileDoesNotExistException e)
                 {
                     Console.WriteLine(e.Message);
@@ -172,6 +183,10 @@ namespace Client
                 {
                     FindMaster();
                 }
+                catch (NotTheMasterException)
+                {
+                    FindMaster();
+                }
             }
         }
 
@@ -189,6 +204,10 @@ namespace Client
                     return;
                 }
                 catch (ProcessFailedException)
+                {
+                    FindMaster();
+                }
+                catch (NotTheMasterException)
                 {
                     FindMaster();
                 }
@@ -220,6 +239,10 @@ namespace Client
                     return;
                 }
                 catch (ProcessFailedException)
+                {
+                    FindMaster();
+                }
+                catch (NotTheMasterException)
                 {
                     FindMaster();
                 }
