@@ -116,12 +116,12 @@ namespace Metadata
                         // we only do after create to avoid unecessary diff operations
                         if (log.HasMark(id))
                         {
-                            metadata.UpdateState(log.BuildDiff(id), sequence);
+                            metadata.UpdateState(log.BuildDiff(id, sequence));
                         }
                     }
                     catch (ProcessFailedException)
                     {
-                        log.AddMark(id);
+                        log.AddMark(id, sequence);
                     }
                 });
                 request.Start();
@@ -145,12 +145,12 @@ namespace Metadata
                         // we only do after create to avoid unecessary diff operations
                         if (log.HasMark(id))
                         {
-                            metadata.UpdateState(log.BuildDiff(id), sequence);
+                            metadata.UpdateState(log.BuildDiff(id, sequence));
                         }
                     }
                     catch (ProcessFailedException)
                     {
-                        log.AddMark(id);
+                        log.AddMark(id, sequence);
                     }
                 });
                 request.Start();
@@ -175,7 +175,7 @@ namespace Metadata
             //sends the current metadata state
             if (ImMaster)
             {
-                metadata.UpdateState(log.BuildDiff(id), clock);
+                metadata.UpdateState(log.BuildDiff(id, 0));
             }
         }
 
@@ -235,13 +235,13 @@ namespace Metadata
             return (futureId) => SelectDataServer(futureId, fileMetadata);
         }
 
-        public void UpdateState(MetadataLogDiff diff, int sequence)
+        public void UpdateState(MetadataLogDiff diff)
         {
             Console.WriteLine("RECEIVING STATE UPDATE");
 
-            if (sequence != clock)
+            if (diff.Sequence != clock)
             {
-                pendingSequence[clock] = () => UpdateState(diff, sequence);
+                pendingSequence[clock] = () => UpdateState(diff);
                 return;
             }
 
@@ -413,12 +413,12 @@ namespace Metadata
                         // we only do after create to avoid unecessary diff operations
                         if (log.HasMark(metadataId))
                         {
-                            metadata.UpdateState(log.BuildDiff(metadataId), sequence);
+                            metadata.UpdateState(log.BuildDiff(metadataId, sequence));
                         }
                     }
                     catch (ProcessFailedException)
                     {
-                        log.AddMark(metadataId);
+                        log.AddMark(metadataId, sequence);
                     }
                 });
                 request.Start();

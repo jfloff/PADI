@@ -11,7 +11,7 @@ namespace SharedLibrary.Exceptions
         public NotTheMasterException() { }
 
         public NotTheMasterException(string id)
-            : base("Metadata " + id + " is not the master.")
+            : base("Process " + id + " is not the master.")
         {
             this.id = id;
         }

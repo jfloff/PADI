@@ -13,11 +13,13 @@ namespace Metadata
         private struct Snapshot {
             public Dictionary<string, FileMetadata> table; 
             public Dictionary<string, string> dataServers;
+            public int sequence;
 
-            public Snapshot(FileMetadataTable table, DataServerRegister dataServers)
+            public Snapshot(FileMetadataTable table, DataServerRegister dataServers, int sequence)
             {
                 this.table = table.ToDictionary();
                 this.dataServers = dataServers.ToDictionary();
+                this.sequence = sequence;
             }
         }
 
@@ -39,20 +41,25 @@ namespace Metadata
         }
 
         // adds mark to start keeping states
-        public void AddMark(string mark)
+        public void AddMark(string mark, int sequence)
         {
             // keeps older marks
             if (!marks.ContainsKey(mark))
             {
-                marks[mark] = new Snapshot(table, dataServers);
+                marks[mark] = new Snapshot(table, dataServers, sequence);
+            }
+            else if (marks[mark].sequence > sequence)
+            {
+                marks[mark] = new Snapshot(table, dataServers, sequence);
             }
         }
 
-        public MetadataLogDiff BuildDiff(string mark)
+        public MetadataLogDiff BuildDiff(string mark, int sequence)
         {
-            Snapshot current = new Snapshot(table, dataServers);
+            Snapshot current = new Snapshot(table, dataServers, sequence);
             DictionaryDiff<string, FileMetadata> tableDiff;
             DictionaryDiff<string, string> dataServersDiff;
+            int sequenceToDiff = sequence;
 
             if (!marks.ContainsKey(mark))
             {
@@ -61,13 +68,14 @@ namespace Metadata
             }
             else
             {
-                Snapshot past = marks[mark];
-                Snapshot ignored; marks.TryRemove(mark, out ignored);
+                Snapshot past;
+                marks.TryRemove(mark, out past);
                 tableDiff = new DictionaryDiff<string, FileMetadata>(past.table, current.table);
                 dataServersDiff = new DictionaryDiff<string, string>(past.dataServers, current.dataServers);
+                sequenceToDiff = past.sequence;
             }
 
-            return new MetadataLogDiff(tableDiff, dataServersDiff);
+            return new MetadataLogDiff(tableDiff, dataServersDiff, sequenceToDiff);
         }
 
         public int MergeDiff(MetadataLogDiff diff, Func<FileMetadata,Action<string>> funcFactory)

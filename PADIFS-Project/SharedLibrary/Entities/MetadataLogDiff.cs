@@ -14,11 +14,13 @@ namespace SharedLibrary.Entities
         private DictionaryDiff<string, FileMetadata> tableDiff;
         // id location
         private DictionaryDiff<string, string> dataServersDiff;
+        private int sequence;
 
-        public MetadataLogDiff(DictionaryDiff<string, FileMetadata> tableDiff,  DictionaryDiff<string, string> dataServersDiff)
+        public MetadataLogDiff(DictionaryDiff<string, FileMetadata> tableDiff,  DictionaryDiff<string, string> dataServersDiff, int sequence)
         {
             this.tableDiff = tableDiff;
             this.dataServersDiff = dataServersDiff;
+            this.sequence = sequence;
         }
 
         public DictionaryDiff<string, FileMetadata> TableDiff
@@ -30,6 +32,12 @@ namespace SharedLibrary.Entities
         {
             get { return this.dataServersDiff; }
         }
+
+        public int Sequence 
+        {
+            get { return this.sequence; }
+        }
+         
     }
 }
 
