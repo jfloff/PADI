@@ -53,7 +53,6 @@ namespace Metadata
             Snapshot current = new Snapshot(table, dataServers);
             DictionaryDiff<string, FileMetadata> tableDiff;
             DictionaryDiff<string, string> dataServersDiff;
-            int clockDiff;
 
             if (!marks.ContainsKey(mark))
             {
@@ -71,7 +70,7 @@ namespace Metadata
             return new MetadataLogDiff(tableDiff, dataServersDiff);
         }
 
-        public void MergeDiff(MetadataLogDiff diff, Func<FileMetadata,Action<string>> funcFactory)
+        public int MergeDiff(MetadataLogDiff diff, Func<FileMetadata,Action<string>> funcFactory)
         {
             int clockDiff = 0;
 
@@ -108,7 +107,7 @@ namespace Metadata
                 this.dataServers[entry.Key] = entry.Value;
             }
 
-            Metadata.clock += clockDiff;
+            return clockDiff;
         }
     }
 }

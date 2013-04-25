@@ -24,10 +24,11 @@ namespace Metadata
         private static FileMetadataTable fileMetadataTable = new FileMetadataTable();
         // log
         private static Log log = new Log(fileMetadataTable, dataServers);
+        // clock / action
+        private static ConcurrentDictionary<int, Action> pendingSequence = new ConcurrentDictionary<int, Action>();
 
-        // statics are all thread safe
         private static string master;
-        public static int clock = 0;
+        private static int clock = 0;
         private static string id;
         private static bool fail = false;
 
@@ -57,6 +58,24 @@ namespace Metadata
                 WellKnownObjectMode.Singleton);
 
             Console.WriteLine("Metadata Server " + id + " has started.");
+
+            Thread pending = new Thread(() =>
+            {
+                while (true)
+                {
+                    if (pendingSequence.Count == 0) continue;
+
+                    if (pendingSequence.ContainsKey(clock))
+                    {
+                        Console.WriteLine("OUT OF ORDER FIX");
+                        Action action;
+                        pendingSequence.TryRemove(clock, out action);
+                        action();
+                    }
+                }
+            });
+            pending.Start();
+
             Console.ReadLine();
         }
 
@@ -79,7 +98,7 @@ namespace Metadata
         /**
          * Functions to deal with other metadatas
          */
-        private void CreateOrUpdateOnMetadatas(FileMetadata fileMetadata)
+        private void CreateOrUpdateOnMetadatas(FileMetadata fileMetadata, int sequence)
         {
             foreach (var entry in metadatas)
             {
@@ -90,14 +109,14 @@ namespace Metadata
                 {
                     try
                     {
-                        metadata.CreateOrUpdateOnMetadata(fileMetadata);
+                        metadata.CreateOrUpdateOnMetadata(fileMetadata, sequence);
 
                         // if it didnt launch exception until now
                         // we check if there is a mark so we can update
                         // we only do after create to avoid unecessary diff operations
                         if (log.HasMark(id))
                         {
-                            metadata.UpdateState(log.BuildDiff(id));
+                            metadata.UpdateState(log.BuildDiff(id), sequence);
                         }
                     }
                     catch (ProcessFailedException)
@@ -109,7 +128,7 @@ namespace Metadata
             }
         }
 
-        private void DeleteOnMetadatas(FileMetadata fileMetadata)
+        private void DeleteOnMetadatas(FileMetadata fileMetadata, int sequence)
         {
             foreach (var entry in metadatas)
             {
@@ -119,14 +138,14 @@ namespace Metadata
                 {
                     try
                     {
-                        metadata.DeleteOnMetadata(fileMetadata);
+                        metadata.DeleteOnMetadata(fileMetadata, sequence);
 
                         // if it didnt launch exception until now
                         // we check if there is a mark so we can update
                         // we only do after create to avoid unecessary diff operations
                         if (log.HasMark(id))
                         {
-                            metadata.UpdateState(log.BuildDiff(id));
+                            metadata.UpdateState(log.BuildDiff(id), sequence);
                         }
                     }
                     catch (ProcessFailedException)
@@ -156,7 +175,7 @@ namespace Metadata
             //sends the current metadata state
             if (ImMaster)
             {
-                metadata.UpdateState(log.BuildDiff(id));
+                metadata.UpdateState(log.BuildDiff(id), clock);
             }
         }
 
@@ -216,26 +235,50 @@ namespace Metadata
             return (futureId) => SelectDataServer(futureId, fileMetadata);
         }
 
-        public void UpdateState(MetadataLogDiff diff)
+        public void UpdateState(MetadataLogDiff diff, int sequence)
         {
             Console.WriteLine("RECEIVING STATE UPDATE");
-            log.MergeDiff(diff, FutureSelectDataServer);
+
+            if (sequence != clock)
+            {
+                pendingSequence[clock] = () => UpdateState(diff, sequence);
+                return;
+            }
+
+            clock += log.MergeDiff(diff, FutureSelectDataServer);
         }
 
-        public void CreateOrUpdateOnMetadata(FileMetadata fileMetadata)
+        public void CreateOrUpdateOnMetadata(FileMetadata fileMetadata, int sequence)
         {
             if (fail) throw new ProcessFailedException(id);
+
+            // message out of sequence, adds to queue
+            if (sequence != clock)
+            {
+                pendingSequence[sequence] = () => CreateOrUpdateOnMetadata(fileMetadata, sequence);
+                return;
+            }
+
+            int clockSkip = 0;
 
             // if it doesn't contain its a create we need to move clock
-            if (!fileMetadataTable.Contains(fileMetadata.Filename)) clock++;
+            if (!fileMetadataTable.Contains(fileMetadata.Filename)) clockSkip++;
+            // if it didn't carry any data servers, doesnt increment
+            if (fileMetadata.CurrentNbDataServers != 0) clockSkip++;
 
             fileMetadataTable.SetFileMetadata(fileMetadata.Filename, fileMetadata, FutureSelectDataServer(fileMetadata));
-            clock++;
+            clock += clockSkip;
         }
 
-        public void DeleteOnMetadata(FileMetadata fileMetadata)
+        public void DeleteOnMetadata(FileMetadata fileMetadata, int sequence)
         {
             if (fail) throw new ProcessFailedException(id);
+
+            if (sequence != clock)
+            {
+                pendingSequence[sequence] = () => DeleteOnMetadata(fileMetadata, sequence);
+                return;
+            }
 
             if (fileMetadataTable.Contains(fileMetadata.Filename))
             {
@@ -260,8 +303,9 @@ namespace Metadata
                 fileMetadata = fileMetadataTable.FileMetadata(fileMetadata.Filename);
             }
 
+            int sequence = clock;
             fileMetadata.AddDataServer(id, location, localFilename);
-            CreateOrUpdateOnMetadatas(fileMetadata);
+            CreateOrUpdateOnMetadatas(fileMetadata, sequence);
             clock++;
         }
 
@@ -278,6 +322,10 @@ namespace Metadata
 
             //Select Data Servers and creates files within them
             FileMetadata fileMetadata = new FileMetadata(filename, nbDataServers, readQuorum, writeQuorum);
+
+            // create file on metadatas
+            CreateOrUpdateOnMetadatas(fileMetadata, clock);
+            clock++;
             
             // select possible data servers
             int selected = 0;
@@ -290,7 +338,6 @@ namespace Metadata
             }
 
             fileMetadataTable.SetFileMetadata(filename, fileMetadata, FutureSelectDataServer(fileMetadata));
-            clock++;
             return fileMetadata;
         }
 
@@ -331,7 +378,7 @@ namespace Metadata
             FileMetadata fileMetadata = fileMetadataTable.FileMetadata(filename);
             fileMetadataTable.Remove(fileMetadata.Filename);
 
-            DeleteOnMetadatas(fileMetadata);
+            DeleteOnMetadatas(fileMetadata, clock);
             clock++;
         }
 
@@ -347,7 +394,7 @@ namespace Metadata
             Console.WriteLine("HEARTBEAT");
         }
 
-        private void DataServerOnMetadatas(string id, string location)
+        private void DataServerOnMetadatas(string id, string location, int sequence)
         {
             List<Thread> requests = new List<Thread>();
 
@@ -355,19 +402,18 @@ namespace Metadata
             {
                 string metadataId = entry.Key;
                 IMetadataToMetadata metadata = entry.Value;
-                // clock conflict!
                 Thread request = new Thread(() =>
                 {
                     try
                     {
-                        metadata.DataServerOnMetadata(id, location);
+                        metadata.DataServerOnMetadata(id, location, sequence);
 
                         // if it didnt launch exception until now
                         // we check if there is a mark so we can update
                         // we only do after create to avoid unecessary diff operations
                         if (log.HasMark(metadataId))
                         {
-                            metadata.UpdateState(log.BuildDiff(metadataId));
+                            metadata.UpdateState(log.BuildDiff(metadataId), sequence);
                         }
                     }
                     catch (ProcessFailedException)
@@ -395,7 +441,7 @@ namespace Metadata
 
             if (!dataServers.Contains(id))
             {
-                DataServerOnMetadatas(id, location);
+                DataServerOnMetadatas(id, location, clock);
                 clock++;
 
                 dataServers[id] = location;
@@ -420,9 +466,15 @@ namespace Metadata
          * IMetadataToProcess Methods
          */
 
-        public void DataServerOnMetadata(string id, string location)
+        public void DataServerOnMetadata(string id, string location, int sequence)
         {
             if (fail) throw new ProcessFailedException(id);
+
+            if (sequence != clock)
+            {
+                pendingSequence[sequence] = () => DataServerOnMetadata(id, location, sequence);
+                return;
+            }
 
             Console.WriteLine("RECEIVE DATA SERVER " + id + " FROM METADATA");
 
