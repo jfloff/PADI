@@ -7,19 +7,6 @@ namespace Metadata
 {
     public class Log
     {
-        private struct Snapshot {
-            public Dictionary<string, FileMetadata> table; 
-            public Dictionary<string, string> dataServers;
-            public int sequence;
-
-            public Snapshot(FileMetadataTable table, DataServerRegister dataServers, int sequence)
-            {
-                this.table = table.ToDictionary();
-                this.dataServers = dataServers.ToDictionary();
-                this.sequence = sequence;
-            }
-        }
-
         private DataServerRegister dataServers;
         private FileMetadataTable table;
 
@@ -38,18 +25,18 @@ namespace Metadata
             // keeps older marks
             if (!marks.ContainsKey(mark))
             {
-                marks[mark] = new Snapshot(table, dataServers, sequence);
+                marks[mark] = new Snapshot(table.ToDictionary(), dataServers.ToDictionary(), sequence);
             }
             else if (marks[mark].sequence > sequence)
             {
-                marks[mark] = new Snapshot(table, dataServers, sequence);
+                marks[mark] = new Snapshot(table.ToDictionary(), dataServers.ToDictionary(), sequence);
             }
         }
 
         public MetadataLogDiff BuildDiff(string mark)
         {
             // ignores sequence parameter
-            Snapshot current = new Snapshot(table, dataServers, -1);
+            Snapshot current = new Snapshot(table.ToDictionary(), dataServers.ToDictionary(), -1);
             DictionaryDiff<string, FileMetadata> tableDiff;
             DictionaryDiff<string, string> dataServersDiff;
             int sequenceToDiff;

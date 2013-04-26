@@ -12,8 +12,10 @@ namespace SharedLibrary.Entities
     {
         // filename / metadata
         private DictionaryDiff<string, FileMetadata> tableDiff;
-        // id location
+        // id / location
         private DictionaryDiff<string, string> dataServersDiff;
+        // mark / snapshot
+        //
         private int sequence;
 
         public MetadataLogDiff(DictionaryDiff<string, FileMetadata> tableDiff,  DictionaryDiff<string, string> dataServersDiff, int sequence)
