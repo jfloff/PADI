@@ -21,8 +21,22 @@ namespace PuppetMaster
         {
             foreach (Process console in consoles)
             {
-                console.Kill();
+                try
+                {
+                    console.Kill();
+                }
+                catch (Exception) { }
             }
+        }
+
+        public static void Reset()
+        {
+            KillConsoles();
+            consoles.Clear();
+            processes.Clear();
+            metadataLocations.Clear();
+            portsUsed.Clear();
+            port = 1;
         }
 
         private static void SendMetadataLocations(IProcessToPM process)

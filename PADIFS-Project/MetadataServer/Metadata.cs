@@ -67,7 +67,7 @@ namespace Metadata
 
                     if (pendingSequence.ContainsKey(clock))
                     {
-                        Console.WriteLine("OUT OF ORDER FIX");
+                        Console.WriteLine("OUT OF ORDER FIX : " + clock);
                         Action action;
                         pendingSequence.TryRemove(clock, out action);
                         action();
@@ -110,14 +110,6 @@ namespace Metadata
                     try
                     {
                         metadata.CreateOrUpdateOnMetadata(fileMetadata, sequence);
-
-                        // if it didnt launch exception until now
-                        // we check if there is a mark so we can update
-                        // we only do after create to avoid unecessary diff operations
-                        if (log.HasMark(id))
-                        {
-                            metadata.UpdateState(log.BuildDiff(id, sequence));
-                        }
                     }
                     catch (ProcessFailedException)
                     {
@@ -139,14 +131,6 @@ namespace Metadata
                     try
                     {
                         metadata.DeleteOnMetadata(fileMetadata, sequence);
-
-                        // if it didnt launch exception until now
-                        // we check if there is a mark so we can update
-                        // we only do after create to avoid unecessary diff operations
-                        if (log.HasMark(id))
-                        {
-                            metadata.UpdateState(log.BuildDiff(id, sequence));
-                        }
                     }
                     catch (ProcessFailedException)
                     {
@@ -170,20 +154,20 @@ namespace Metadata
                 location);
             metadatas[id] = metadata;
 
-            master = metadata.Master();
-
-            //sends the current metadata state
-            if (ImMaster)
+            // since we are sure one of the metadatas is up
+            // we can just wait for the next metada register to ask for master
+            try
             {
-                metadata.UpdateState(log.BuildDiff(id, 0));
+                // needs to ask for master since its doing a register
+                master = metadata.Master();
             }
+            catch (ProcessFailedException) { }
         }
 
         public void Dump()
         {
             Console.WriteLine("DUMP");
-            Console.WriteLine("Master = " + master);
-            Console.WriteLine("Clock = " + clock);
+            Console.WriteLine("Master = " + master + ":" + clock);
             Console.WriteLine("Files = " + fileMetadataTable);
             Console.WriteLine("Data Servers = " + dataServers);
         }
@@ -192,6 +176,19 @@ namespace Metadata
         {
             Console.WriteLine("FAIL");
             fail = true;
+        }
+
+        private void UpdateState(MetadataLogDiff diff)
+        {
+            Console.WriteLine("RECEIVING STATE UPDATE");
+
+            if (diff.Sequence != clock)
+            {
+                Console.WriteLine(diff.Sequence + ":" + clock);
+                pendingSequence[clock] = () => UpdateState(diff);
+                return;
+            }
+            clock += log.MergeDiff(diff, FutureSelectDataServer);
         }
 
         public void Recover()
@@ -205,6 +202,10 @@ namespace Metadata
                 try
                 {
                     master = metadata.Master();
+                    if (!ImMaster)
+                    {
+                        UpdateState(metadatas[master].UpdateMetadata(id));
+                    }
                     fail = false;
                     return;
                 }
@@ -218,6 +219,11 @@ namespace Metadata
         /**
          * IMetadataToMetadata Methods
          */
+
+        public MetadataLogDiff UpdateMetadata(string id)
+        {
+            return log.BuildDiff(id);
+        }
 
         public MasterVote MasterVoting(MasterVote vote)
         {
@@ -233,19 +239,6 @@ namespace Metadata
         public Action<string> FutureSelectDataServer(FileMetadata fileMetadata)
         {
             return (futureId) => SelectDataServer(futureId, fileMetadata);
-        }
-
-        public void UpdateState(MetadataLogDiff diff)
-        {
-            Console.WriteLine("RECEIVING STATE UPDATE");
-
-            if (diff.Sequence != clock)
-            {
-                pendingSequence[clock] = () => UpdateState(diff);
-                return;
-            }
-
-            clock += log.MergeDiff(diff, FutureSelectDataServer);
         }
 
         public void CreateOrUpdateOnMetadata(FileMetadata fileMetadata, int sequence)
@@ -407,14 +400,6 @@ namespace Metadata
                     try
                     {
                         metadata.DataServerOnMetadata(id, location, sequence);
-
-                        // if it didnt launch exception until now
-                        // we check if there is a mark so we can update
-                        // we only do after create to avoid unecessary diff operations
-                        if (log.HasMark(metadataId))
-                        {
-                            metadata.UpdateState(log.BuildDiff(metadataId, sequence));
-                        }
                     }
                     catch (ProcessFailedException)
                     {
@@ -489,20 +474,29 @@ namespace Metadata
         {
             if (fail) throw new ProcessFailedException(id);
 
-            MasterVote myVote = new MasterVote(id, clock);
-            master = id;
+            MasterVote masterVote = new MasterVote(id, clock);
+            int requests = metadatas.Count;
 
             foreach (var entry in metadatas)
             {
-                IMetadataToMetadata metadata = entry.Value;
-                try
+                Thread vote = new Thread(() =>
                 {
-                    master = metadata.MasterVoting(myVote).Id;
-                }
-                catch (ProcessFailedException) { }
+                    IMetadataToMetadata metadata = entry.Value;
+                    try
+                    {
+                        masterVote = MasterVote.Choose(metadata.MasterVoting(masterVote), masterVote);
+                    }
+                    catch (ProcessFailedException) { }
+                    finally
+                    {
+                        Interlocked.Decrement(ref requests);
+                    }
+                });
+                vote.Start();
             }
+            while (requests > 0) ;
 
-            return master;
+            return master = masterVote.Id;
         }
     }
 }

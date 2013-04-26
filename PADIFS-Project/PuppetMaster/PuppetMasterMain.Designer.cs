@@ -75,6 +75,7 @@ namespace PuppetMaster
             this.statusStrip = new System.Windows.Forms.StatusStrip();
             this.statusStripLabel = new System.Windows.Forms.ToolStripStatusLabel();
             this.processBox = new System.Windows.Forms.MaskedTextBox();
+            this.resetButton = new System.Windows.Forms.Button();
             ((System.ComponentModel.ISupportInitialize)(this.stringRegisterNumber)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.fileRegister1Number)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.fileRegister2Number)).BeginInit();
@@ -552,7 +553,7 @@ namespace PuppetMaster
             // 
             this.statusStrip.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.statusStripLabel});
-            this.statusStrip.Location = new System.Drawing.Point(0, 698);
+            this.statusStrip.Location = new System.Drawing.Point(0, 720);
             this.statusStrip.Name = "statusStrip";
             this.statusStrip.Size = new System.Drawing.Size(185, 22);
             this.statusStrip.TabIndex = 61;
@@ -573,11 +574,22 @@ namespace PuppetMaster
             this.processBox.TabIndex = 62;
             this.processBox.MaskInputRejected += new System.Windows.Forms.MaskInputRejectedEventHandler(this.ProcessBoxMaskInputRejected);
             // 
-            // PuppetMasterForm
+            // resetButton
+            // 
+            this.resetButton.Location = new System.Drawing.Point(12, 693);
+            this.resetButton.Name = "resetButton";
+            this.resetButton.Size = new System.Drawing.Size(162, 23);
+            this.resetButton.TabIndex = 63;
+            this.resetButton.Text = "Reset";
+            this.resetButton.UseVisualStyleBackColor = true;
+            this.resetButton.Click += new System.EventHandler(this.resetButtonClick);
+            // 
+            // PuppetMasterMain
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(185, 720);
+            this.ClientSize = new System.Drawing.Size(185, 742);
+            this.Controls.Add(this.resetButton);
             this.Controls.Add(this.processBox);
             this.Controls.Add(this.statusStrip);
             this.Controls.Add(this.scriptBox);
@@ -623,7 +635,7 @@ namespace PuppetMaster
             this.Controls.Add(this.recoverButton);
             this.Controls.Add(this.failButton);
             this.Controls.Add(this.groupBox1);
-            this.Name = "PuppetMasterForm";
+            this.Name = "PuppetMasterMain";
             this.StartPosition = System.Windows.Forms.FormStartPosition.Manual;
             this.Text = "PuppetMaster";
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.PuppetMasterFormClosing);
@@ -686,6 +698,7 @@ namespace PuppetMaster
         private System.Windows.Forms.StatusStrip statusStrip;
         private System.Windows.Forms.ToolStripStatusLabel statusStripLabel;
         private System.Windows.Forms.MaskedTextBox processBox;
+        private System.Windows.Forms.Button resetButton;
 
     }
 }﻿

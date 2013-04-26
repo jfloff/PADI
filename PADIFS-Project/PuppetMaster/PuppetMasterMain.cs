@@ -682,5 +682,13 @@ namespace PuppetMaster
         {
             PuppetMaster.KillConsoles();
         }
+
+        private void resetButtonClick(object sender, EventArgs e)
+        {
+            this.SetStatus("Reset Puppet Master");
+            PuppetMaster.Reset();
+            currentScriptLine = -1;
+            this.scriptBox.Clear();
+        }
     }
 }

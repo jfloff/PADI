@@ -8,6 +8,5 @@ CREATE c-1, f2, 2, 1, 1
 RECOVER m-1
 DUMP m-1
 DUMP m-0
-#!
 CREATE c-1, f3, 2, 1, 1
 DUMP m-1

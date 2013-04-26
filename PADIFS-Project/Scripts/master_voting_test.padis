@@ -1,0 +1,24 @@
+# This script is suppose to test if new primary is doing well
+RECOVER m-0
+RECOVER m-1
+RECOVER m-2
+
+# cria em todos
+CREATE c-0, f0, 2, 1, 1
+FAIL m-0
+
+# cria em m-1, m-2
+CREATE c-1, f1, 2, 1, 1
+FAIL m-1
+
+# cria em m-2
+CREATE c-2, f2, 2, 1, 1
+
+# master é m-2
+DUMP m-2
+
+# c-0 vai criar, m-2 continua o master, m-1, m-0 recuperam estado
+#!
+RECOVER m-0
+RECOVER m-1
+CREATE c-0, f4, 2, 1, 1

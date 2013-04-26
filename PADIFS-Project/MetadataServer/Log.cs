@@ -1,10 +1,7 @@
 ﻿using SharedLibrary.Entities;
-using SharedLibrary.Interfaces;
 using System;
-using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Threading;
 
 namespace Metadata
 {
@@ -35,11 +32,6 @@ namespace Metadata
             this.dataServers = dataServers;
         }
 
-        public bool HasMark(string mark)
-        {
-            return marks.ContainsKey(mark);
-        }
-
         // adds mark to start keeping states
         public void AddMark(string mark, int sequence)
         {
@@ -54,18 +46,22 @@ namespace Metadata
             }
         }
 
-        public MetadataLogDiff BuildDiff(string mark, int sequence)
+        public MetadataLogDiff BuildDiff(string mark)
         {
-            Snapshot current = new Snapshot(table, dataServers, sequence);
+            // ignores sequence parameter
+            Snapshot current = new Snapshot(table, dataServers, -1);
             DictionaryDiff<string, FileMetadata> tableDiff;
             DictionaryDiff<string, string> dataServersDiff;
-            int sequenceToDiff = sequence;
+            int sequenceToDiff;
 
+            // if BuildDiff was called on a non-existant mark, give whole state
             if (!marks.ContainsKey(mark))
             {
                 tableDiff = new DictionaryDiff<string, FileMetadata>(current.table);
                 dataServersDiff = new DictionaryDiff<string, string>(current.dataServers);
+                sequenceToDiff = 0;
             }
+            // otherwise we give the state since last mark, and the sequence the snapshot was taken
             else
             {
                 Snapshot past;
