@@ -96,52 +96,6 @@ namespace Metadata
         }
 
         /**
-         * Functions to deal with other metadatas
-         */
-        private void CreateOrUpdateOnMetadatas(FileMetadata fileMetadata, int sequence)
-        {
-            foreach (var entry in metadatas)
-            {
-                string id = entry.Key;
-                IMetadataToMetadata metadata = entry.Value;
-
-                Thread request = new Thread(() =>
-                {
-                    try
-                    {
-                        metadata.CreateOrUpdateOnMetadata(fileMetadata, sequence);
-                    }
-                    catch (ProcessFailedException)
-                    {
-                        log.AddMark(id, sequence);
-                    }
-                });
-                request.Start();
-            }
-        }
-
-        private void DeleteOnMetadatas(FileMetadata fileMetadata, int sequence)
-        {
-            foreach (var entry in metadatas)
-            {
-                string id = entry.Key;
-                IMetadataToMetadata metadata = entry.Value;
-                Thread request = new Thread(() =>
-                {
-                    try
-                    {
-                        metadata.DeleteOnMetadata(fileMetadata, sequence);
-                    }
-                    catch (ProcessFailedException)
-                    {
-                        log.AddMark(id, sequence);
-                    }
-                });
-                request.Start();
-            }
-        }
-
-        /**
          * IMetadataToPM Methods
          */
 
@@ -220,6 +174,11 @@ namespace Metadata
          * IMetadataToMetadata Methods
          */
 
+        public void LogMarkOnMetadata(string mark, int sequence)
+        {
+            log.AddMark(mark, sequence);
+        }
+
         public MetadataLogDiff UpdateMetadata(string id)
         {
             return log.BuildDiff(id);
@@ -229,8 +188,7 @@ namespace Metadata
         {
             if (fail) throw new ProcessFailedException(id);
 
-            MasterVote myVote = new MasterVote(id, clock);
-            MasterVote newMaster = MasterVote.Choose(myVote, vote);
+            MasterVote newMaster = MasterVote.Choose(new MasterVote(id, clock), vote);
 
             master = newMaster.Id;
             return newMaster;
@@ -283,6 +241,48 @@ namespace Metadata
         /**
          * IMetadataToClient Methods
          */
+
+        private void LogMarksOnMetadatas(string mark, int sequence)
+        {
+            foreach (var entry in metadatas)
+            {
+                string id = entry.Key;
+                IMetadataToMetadata metadata = entry.Value;
+
+                Thread request = new Thread(() =>
+                {
+                    try
+                    {
+                        metadata.LogMarkOnMetadata(mark, sequence);
+                    }
+                    catch (ProcessFailedException) { }
+                });
+                request.Start();
+            }
+        }
+
+        private void CreateOrUpdateOnMetadatas(FileMetadata fileMetadata, int sequence)
+        {
+            foreach (var entry in metadatas)
+            {
+                string id = entry.Key;
+                IMetadataToMetadata metadata = entry.Value;
+
+                Thread request = new Thread(() =>
+                {
+                    try
+                    {
+                        metadata.CreateOrUpdateOnMetadata(fileMetadata, sequence);
+                    }
+                    catch (ProcessFailedException)
+                    {
+                        log.AddMark(id, sequence);
+                        LogMarksOnMetadatas(id, sequence);
+                    }
+                });
+                request.Start();
+            }
+        }
 
         // select single data server. refactored for future selects
         private void SelectDataServer(string id, FileMetadata fileMetadata)
@@ -358,6 +358,28 @@ namespace Metadata
                 throw new FileDoesNotExistException(filename);
         }
 
+        private void DeleteOnMetadatas(FileMetadata fileMetadata, int sequence)
+        {
+            foreach (var entry in metadatas)
+            {
+                string id = entry.Key;
+                IMetadataToMetadata metadata = entry.Value;
+                Thread request = new Thread(() =>
+                {
+                    try
+                    {
+                        metadata.DeleteOnMetadata(fileMetadata, sequence);
+                    }
+                    catch (ProcessFailedException)
+                    {
+                        log.AddMark(id, sequence);
+                        LogMarksOnMetadatas(id, sequence);
+                    }
+                });
+                request.Start();
+            }
+        }
+
         public void Delete(string filename)
         {
             if (fail) throw new ProcessFailedException(id);
@@ -404,6 +426,7 @@ namespace Metadata
                     catch (ProcessFailedException)
                     {
                         log.AddMark(metadataId, sequence);
+                        LogMarksOnMetadatas(id, sequence);
                     }
                 });
                 request.Start();
@@ -497,6 +520,6 @@ namespace Metadata
             while (requests > 0) ;
 
             return master = masterVote.Id;
-        }
+        } 
     }
 }
