@@ -1,0 +1,61 @@
+# Client Concurrency testing
+RECOVER m-0
+# UNFREEZE d-1
+# FREEZE d-2
+# FREEZE d-3
+# FREEZE d-4
+UNFREEZE d-1
+UNFREEZE d-2
+EXESCRIPT c-1 c1.padis
+EXESCRIPT c-2 c1.padis
+# EXESCRIPT c-3 c1.padis
+# EXESCRIPT c-4 c1.padis
+# EXESCRIPT c-5 c1.padis
+# EXESCRIPT c-6 c1.padis
+# EXESCRIPT c-7 c1.padis
+# EXESCRIPT c-8 c1.padis
+# EXESCRIPT c-9 c1.padis
+# EXESCRIPT c-10 c1.padis
+# EXESCRIPT c-11 c1.padis
+# EXESCRIPT c-12 c1.padis
+# EXESCRIPT c-13 c1.padis
+# EXESCRIPT c-14 c1.padis
+# EXESCRIPT c-15 c1.padis
+# EXESCRIPT c-16 c1.padis
+# EXESCRIPT c-17 c1.padis
+# EXESCRIPT c-18 c1.padis
+# EXESCRIPT c-19 c1.padis
+# EXESCRIPT c-20 c1.padis
+# EXESCRIPT c-1 c2.padis
+# EXESCRIPT c-2 c2.padis
+# EXESCRIPT c-3 c2.padis
+# EXESCRIPT c-4 c2.padis
+# EXESCRIPT c-5 c2.padis
+# EXESCRIPT c-6 c2.padis
+# EXESCRIPT c-7 c2.padis
+# EXESCRIPT c-8 c2.padis
+# EXESCRIPT c-9 c2.padis
+# EXESCRIPT c-10 c2.padis
+# EXESCRIPT c-11 c2.padis
+# EXESCRIPT c-12 c2.padis
+# EXESCRIPT c-13 c2.padis
+# EXESCRIPT c-14 c2.padis
+# EXESCRIPT c-15 c2.padis
+# EXESCRIPT c-16 c2.padis
+# EXESCRIPT c-17 c2.padis
+# EXESCRIPT c-18 c2.padis
+# EXESCRIPT c-19 c2.padis
+# EXESCRIPT c-20 c2.padis
+# UNFREEZE d-2
+# UNFREEZE d-3
+# UNFREEZE d-4
+# DUMP c-1
+# DUMP c-2
+# DUMP c-3
+# DUMP c-4
+# DUMP c-5
+# DUMP c-6
+# DUMP c-7
+# DUMP c-8
+# DUMP c-9
+# DUMP c-10

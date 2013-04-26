@@ -132,7 +132,7 @@ namespace Metadata
             fail = true;
         }
 
-        private void UpdateState(MetadataLogDiff diff)
+        private void UpdateState(MetadataDiff diff)
         {
             Console.WriteLine("RECEIVING STATE UPDATE");
 
@@ -179,7 +179,7 @@ namespace Metadata
             log.AddMark(mark, sequence);
         }
 
-        public MetadataLogDiff UpdateMetadata(string id)
+        public MetadataDiff UpdateMetadata(string id)
         {
             return log.BuildDiff(id);
         }

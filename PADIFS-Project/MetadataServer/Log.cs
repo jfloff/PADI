@@ -11,7 +11,7 @@ namespace Metadata
         private FileMetadataTable table;
 
         // marked medata id / snapshots
-        private ConcurrentDictionary<string, Snapshot> marks = new ConcurrentDictionary<string, Snapshot>();
+        private ConcurrentDictionary<string, MetadataSnapshot> marks = new ConcurrentDictionary<string, MetadataSnapshot>();
 
         public Log(FileMetadataTable table, DataServerRegister dataServers)
         {
@@ -25,18 +25,18 @@ namespace Metadata
             // keeps older marks
             if (!marks.ContainsKey(mark))
             {
-                marks[mark] = new Snapshot(table.ToDictionary(), dataServers.ToDictionary(), sequence);
+                marks[mark] = new MetadataSnapshot(table.ToDictionary(), dataServers.ToDictionary(), sequence);
             }
             else if (marks[mark].sequence > sequence)
             {
-                marks[mark] = new Snapshot(table.ToDictionary(), dataServers.ToDictionary(), sequence);
+                marks[mark] = new MetadataSnapshot(table.ToDictionary(), dataServers.ToDictionary(), sequence);
             }
         }
 
-        public MetadataLogDiff BuildDiff(string mark)
+        public MetadataDiff BuildDiff(string mark)
         {
             // ignores sequence parameter
-            Snapshot current = new Snapshot(table.ToDictionary(), dataServers.ToDictionary(), -1);
+            MetadataSnapshot current = new MetadataSnapshot(table.ToDictionary(), dataServers.ToDictionary(), -1);
             DictionaryDiff<string, FileMetadata> tableDiff;
             DictionaryDiff<string, string> dataServersDiff;
             int sequenceToDiff;
@@ -51,19 +51,27 @@ namespace Metadata
             // otherwise we give the state since last mark, and the sequence the snapshot was taken
             else
             {
-                Snapshot past;
+                MetadataSnapshot past;
                 marks.TryRemove(mark, out past);
                 tableDiff = new DictionaryDiff<string, FileMetadata>(past.table, current.table);
                 dataServersDiff = new DictionaryDiff<string, string>(past.dataServers, current.dataServers);
                 sequenceToDiff = past.sequence;
             }
 
-            return new MetadataLogDiff(tableDiff, dataServersDiff, sequenceToDiff);
+            Dictionary<string, MetadataSnapshot> marksCopy = new Dictionary<string,MetadataSnapshot>(marks);
+
+            return new MetadataDiff(tableDiff, dataServersDiff, marksCopy, sequenceToDiff);
         }
 
-        public int MergeDiff(MetadataLogDiff diff, Func<FileMetadata,Action<string>> funcFactory)
+        public int MergeDiff(MetadataDiff diff, Func<FileMetadata,Action<string>> funcFactory)
         {
             int clockDiff = 0;
+
+            // marks
+            foreach (var entry in diff.Marks)
+            {
+                marks[entry.Key] = entry.Value;
+            }
 
             // files
             foreach (var entry in diff.TableDiff.Plus)

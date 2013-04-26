@@ -1,0 +1,42 @@
+RECOVER m-0
+CREATE c-1, f1, 2, 2, 2
+RECOVER m-1
+CREATE c-1, f2, 3, 2, 2
+CREATE c-1, f4, 3, 2, 2
+CREATE c-1, f3, 2, 2, 2
+DELETE c-1, f1
+DELETE c-1, f1
+CREATE c-1, f1, 2, 2, 2
+CREATE c-1, f5, 2, 2, 2
+# OPEN c-1, f1
+CREATE c-1, f6, 3, 2, 2
+RECOVER m-2
+CREATE c-1, f7, 2, 2, 2
+# OPEN c-1, f7
+CREATE c-1, f8, 3, 2, 2
+# OPEN c-1, f2
+CREATE c-1, f5, 3, 2, 2
+CREATE c-1, f9, 2, 2, 2
+CREATE c-1, f10, 3, 2, 2
+CREATE c-1, f1, 3, 2, 2
+# OPEN c-1, f8
+# OPEN c-1, f4
+OPEN c-1, f1
+OPEN c-1, f2
+OPEN c-1, f3
+OPEN c-1, f4
+OPEN c-1, f5
+OPEN c-1, f6
+OPEN c-1, f7
+OPEN c-1, f8
+OPEN c-1, f9
+OPEN c-1, f10
+OPEN c-1, f4
+CLOSE c-1, f1
+CLOSE c-1, f1
+DELETE c-1, f1
+DELETE c-1, f1
+# DUMP m-0
+# DUMP m-1
+# DUMP m-2
+DUMP c-1

@@ -89,6 +89,7 @@ namespace SharedLibrary.Entities
             return this.filename + ":" + this.nbDataServers + ":" + this.readQuorum + ":" + this.writeQuorum + ":" + dataServers;
         }
 
+        // for comparasion on hash keys, etc
         public override bool Equals(object obj)
         {
             // If parameter is null return false.
@@ -138,6 +139,7 @@ namespace SharedLibrary.Entities
                 ^ this.localFilenames.GetHashCode();
         }
 
+        // for deep copies of dictionaries (snapshots)
         public FileMetadata Clone()
         {
             FileMetadata copy = new FileMetadata(this.filename, this.nbDataServers, this.readQuorum, this.writeQuorum);
