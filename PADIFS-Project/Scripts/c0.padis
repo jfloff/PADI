@@ -7,7 +7,7 @@ RECOVER m-0
 UNFREEZE d-1
 UNFREEZE d-2
 EXESCRIPT c-1 c1.padis
-EXESCRIPT c-2 c1.padis
+EXESCRIPT c-2 c2.padis
 # EXESCRIPT c-3 c1.padis
 # EXESCRIPT c-4 c1.padis
 # EXESCRIPT c-5 c1.padis

@@ -176,7 +176,12 @@ namespace Metadata
 
         public void LogMarkOnMetadata(string mark, int sequence)
         {
-            log.AddMark(mark, sequence);
+            if (fail) throw new ProcessFailedException(id);
+
+            if (mark != id)
+            {
+                log.AddMark(mark, sequence);
+            }
         }
 
         public MetadataDiff UpdateMetadata(string id)
@@ -242,7 +247,7 @@ namespace Metadata
          * IMetadataToClient Methods
          */
 
-        private void LogMarksOnMetadatas(string mark, int sequence)
+        private void LogMarkOnMetadatas(string mark, int sequence)
         {
             foreach (var entry in metadatas)
             {
@@ -263,6 +268,8 @@ namespace Metadata
 
         private void CreateOrUpdateOnMetadatas(FileMetadata fileMetadata, int sequence)
         {
+            int requests = metadatas.Count;
+
             foreach (var entry in metadatas)
             {
                 string id = entry.Key;
@@ -277,11 +284,17 @@ namespace Metadata
                     catch (ProcessFailedException)
                     {
                         log.AddMark(id, sequence);
-                        LogMarksOnMetadatas(id, sequence);
+                        LogMarkOnMetadatas(id, sequence);
+                    }
+                    finally
+                    {
+                        Interlocked.Decrement(ref requests);
                     }
                 });
                 request.Start();
             }
+
+            while (requests > 0) ;
         }
 
         // select single data server. refactored for future selects
@@ -360,6 +373,8 @@ namespace Metadata
 
         private void DeleteOnMetadatas(FileMetadata fileMetadata, int sequence)
         {
+            int requests = metadatas.Count;
+
             foreach (var entry in metadatas)
             {
                 string id = entry.Key;
@@ -373,11 +388,17 @@ namespace Metadata
                     catch (ProcessFailedException)
                     {
                         log.AddMark(id, sequence);
-                        LogMarksOnMetadatas(id, sequence);
+                        LogMarkOnMetadatas(id, sequence);
+                    }
+                    finally
+                    {
+                        Interlocked.Decrement(ref requests);
                     }
                 });
                 request.Start();
             }
+
+            while (requests > 0) ;
         }
 
         public void Delete(string filename)
@@ -391,9 +412,9 @@ namespace Metadata
                 throw new FileDoesNotExistException(filename);
 
             FileMetadata fileMetadata = fileMetadataTable.FileMetadata(filename);
-            fileMetadataTable.Remove(fileMetadata.Filename);
 
             DeleteOnMetadatas(fileMetadata, clock);
+            fileMetadataTable.Remove(fileMetadata.Filename);
             clock++;
         }
 
@@ -411,7 +432,7 @@ namespace Metadata
 
         private void DataServerOnMetadatas(string id, string location, int sequence)
         {
-            List<Thread> requests = new List<Thread>();
+            int requests = metadatas.Count;
 
             foreach (var entry in metadatas)
             {
@@ -426,18 +447,17 @@ namespace Metadata
                     catch (ProcessFailedException)
                     {
                         log.AddMark(metadataId, sequence);
-                        LogMarksOnMetadatas(id, sequence);
+                        LogMarkOnMetadatas(id, sequence);
+                    }
+                    finally
+                    {
+                        Interlocked.Decrement(ref requests);
                     }
                 });
                 request.Start();
-                requests.Add(request);
             }
 
-            // joins due to state clock
-            foreach (Thread request in requests)
-            {
-                request.Join();
-            }
+            while (requests > 0) ;
         }
 
         public void DataServer(string id, string location)
