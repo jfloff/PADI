@@ -236,14 +236,8 @@ namespace Client
             {
                 try
                 {
-                    if (!fileRegister.Contains(filename))
-                    {
-                        metadatas[master].Delete(filename);
-                    }
-                    else
-                    {
-                        Console.WriteLine("File " + filename + " is opened. Please close the file first.");
-                    }
+                    fileRegister.Remove(filename);
+                    metadatas[master].Delete(filename);
                     return;
                 }
                 catch (ProcessFailedException)
