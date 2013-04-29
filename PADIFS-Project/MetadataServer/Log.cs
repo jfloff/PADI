@@ -103,7 +103,7 @@ namespace Metadata
             foreach (var entry in diff.DataServersDiff.Plus)
             {
                 clockDiff++;
-                this.dataServers[entry.Key] = entry.Value;
+                this.dataServers.Add(entry.Key, entry.Value);
             }
 
             return clockDiff;

@@ -1,0 +1,10 @@
+RECOVER m-0
+RECOVER d-1
+RECOVER d-2
+RECOVER d-3
+CREATE c-1, f0, 3, 1, 1
+FAIL d-1
+#!
+#wait 6 seconds!!
+CREATE c-1, f1, 3, 1, 1
+RECOVER d-1

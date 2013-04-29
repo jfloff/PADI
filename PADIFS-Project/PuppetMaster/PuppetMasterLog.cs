@@ -19,7 +19,7 @@ namespace PuppetMaster
 
         public void AddLog(string msg)
         {
-            this.logBox.Text += msg;
+            this.logBox.Text += "[" + DateTime.Now.ToString("HH:mm:ss") + "] " + msg + '\n';
         }
     }
 }

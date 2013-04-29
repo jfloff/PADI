@@ -129,7 +129,7 @@ namespace PuppetMaster
                 string id = this.processBox.Text;
 
                 PuppetMaster.DumpProcess(id);
-                SetStatus("Recovered process " + id);
+                SetStatus("DUMP " + id);
             }
         }
 
@@ -140,7 +140,7 @@ namespace PuppetMaster
                 string id = this.processBox.Text;
 
                 PuppetMaster.RecoverProcess(id);
-                SetStatus("Recovered process " + id);
+                SetStatus("RECOVER " + id);
             }
         }
 
@@ -151,7 +151,7 @@ namespace PuppetMaster
                 string id = this.processBox.Text;
 
                 PuppetMaster.FailProcess(id);
-                SetStatus("Failed process " + id);
+                SetStatus("FAIL " + id);
             }
         }
 
@@ -162,7 +162,7 @@ namespace PuppetMaster
                 string id = this.processBox.Text;
 
                 PuppetMaster.UnfreezeProcess(id);
-                SetStatus("Freezed process " + id);
+                SetStatus("UNFREEZE " + id);
             }
         }
 
@@ -173,7 +173,7 @@ namespace PuppetMaster
                 string id = this.processBox.Text;
 
                 PuppetMaster.FreezeProcess(id);
-                SetStatus("Freezed process " + id);
+                SetStatus("FREEZE " + id);
             }
         }
 
@@ -188,7 +188,7 @@ namespace PuppetMaster
                 int writeq = Convert.ToInt32(this.writeQuorumBox.Text);
 
                 PuppetMaster.CreateFile(id, filename, nbData, readq, writeq);
-                SetStatus("Created file " + filename);
+                SetStatus("CREATE " + id + " => " + filename + ":" + nbData + ":" + readq + ":" + writeq);
             }
         }
 
@@ -200,7 +200,7 @@ namespace PuppetMaster
                 string filename = this.filenameBox.Text;
 
                 PuppetMaster.OpenFile(id, filename);
-                SetStatus("Opened file " + filename);
+                SetStatus("OPEN " + id + " => " + filename);
             }
         }
 
@@ -212,7 +212,7 @@ namespace PuppetMaster
                 string filename = this.filenameBox.Text;
 
                 PuppetMaster.DeleteFile(id, filename);
-                SetStatus("Deleted file " + filename);
+                SetStatus("DELETE " + id + " => " + filename);
             }
         }
 
@@ -224,7 +224,7 @@ namespace PuppetMaster
                 string filename = this.filenameBox.Text;
 
                 PuppetMaster.CloseFile(id, filename);
-                SetStatus("Closed file " + filename);
+                SetStatus("CLOSE " + id + " => " + filename);
             }
         }
 
@@ -240,22 +240,21 @@ namespace PuppetMaster
                     case METADATA:
                         {
                             PuppetMaster.StartMetadata(id, port);
-                            SetStatus("Created Metadata with id " + id + " at port " + port);
                             break;
                         }
                     case DATASERVER:
                         {
                             PuppetMaster.StartDataServer(id, port);
-                            SetStatus("Created Data Server with id " + id + " at port " + port);
                             break;
                         }
                     case CLIENT:
                         {
                             PuppetMaster.StartClient(id, port);
-                            SetStatus("Created Client with id " + id + " at port " + port);
                             break;
                         }
                 }
+
+                SetStatus("START " + id + ":" + port);
 
                 this.processBox.Clear();
                 this.portBox.Clear();
@@ -353,7 +352,7 @@ namespace PuppetMaster
                 {
                     this.scriptBox.Text = File.ReadAllText(filename);
                     this.currentScriptLine = -1;
-                    SetStatus("Loaded script " + filename);
+                    SetStatus("LOAD SCRIPT " + filename);
                 }
                 catch (IOException)
                 {
@@ -449,6 +448,8 @@ namespace PuppetMaster
                         int writeq = Convert.ToInt32(steps[5]);
 
                         PuppetMaster.CreateFile(id, filename, nbDataServers, readq, writeq);
+                        SetStatus("CREATE " + id + " => " + filename + ":" + nbDataServers + ":" + readq + ":" + writeq);
+
                         break;
                     }
 
@@ -464,6 +465,7 @@ namespace PuppetMaster
                         string id = steps[1];
                         string filename = steps[2];
                         PuppetMaster.DeleteFile(id, filename);
+                        SetStatus("DELETE " + id + " => " + filename);
                         break;
                     }
 
@@ -479,6 +481,7 @@ namespace PuppetMaster
                         string id = steps[1];
                         string filename = steps[2];
                         PuppetMaster.OpenFile(id, filename);
+                        SetStatus("OPEN " + id + " => " + filename);
                         break;
                     }
 
@@ -494,6 +497,7 @@ namespace PuppetMaster
                         string id = steps[1];
                         string filename = steps[2];
                         PuppetMaster.CloseFile(id, filename);
+                        SetStatus("CLOSE " + id + " => " + filename);
                         break;
                     }
 
@@ -508,6 +512,7 @@ namespace PuppetMaster
 
                         string id = steps[1];
                         PuppetMaster.FailProcess(id);
+                        SetStatus("FAIL " + id);
                         break;
                     }
 
@@ -522,6 +527,7 @@ namespace PuppetMaster
 
                         string id = steps[1];
                         PuppetMaster.RecoverProcess(id);
+                        SetStatus("RECOVER " + id);
                         break;
                     }
 
@@ -536,6 +542,7 @@ namespace PuppetMaster
 
                         string id = steps[1];
                         PuppetMaster.FreezeProcess(id);
+                        SetStatus("FREEZE " + id);
                         break;
                     }
 
@@ -550,6 +557,8 @@ namespace PuppetMaster
 
                         string id = steps[1];
                         PuppetMaster.UnfreezeProcess(id);
+                        SetStatus("UNFREEZE " + id);
+
                         break;
                     }
 
@@ -568,6 +577,8 @@ namespace PuppetMaster
                         int stringRegister = Convert.ToInt32(steps[4]);
 
                         PuppetMaster.ReadFile(id, fileRegister, semantic, stringRegister);
+                        SetStatus("READ " + id + " => " + fileRegister + ":" + semantic + ":" + stringRegister);
+
                         break;
                     }
 
@@ -587,11 +598,15 @@ namespace PuppetMaster
                         string contents = writeSteps[3];
 
                         if (contents.First() != '"'){
-                            PuppetMaster.WriteFile(id, fileRegister, Convert.ToInt32(contents));
+                            int byteArrayRegister = Convert.ToInt32(contents);
+                            PuppetMaster.WriteFile(id, fileRegister, byteArrayRegister);
+                            SetStatus("WRITE " + id + " => " + fileRegister + ":" + byteArrayRegister);
                             return false;
                         }
 
-                        PuppetMaster.WriteFile(id, fileRegister, contents.Substring(1,contents.Length-2));
+                        string actualContents = contents.Substring(1,contents.Length-2);
+                        PuppetMaster.WriteFile(id, fileRegister, actualContents);
+                        SetStatus("WRITE " + id + " => " + fileRegister + ":" + actualContents);
                         break;
                     }
 
@@ -609,10 +624,12 @@ namespace PuppetMaster
                         string id = copySteps[1];
                         int fileRegister1 = Convert.ToInt32(copySteps[2]);
                         int fileRegister2 = Convert.ToInt32(copySteps[4]);
-                        string semantic = copySteps[3];
+                        string semantics = copySteps[3];
                         string salt = copySteps[5].Substring(1, copySteps[5].Length - 2);
 
-                        PuppetMaster.CopyFile(id, fileRegister1, semantic, fileRegister2, salt);
+                        PuppetMaster.CopyFile(id, fileRegister1, semantics, fileRegister2, salt);
+                        SetStatus("COPY " + id + " => " + fileRegister1 + ":" + semantics + ":" + fileRegister2 + ":" + salt);
+
                         break;
                     }
 
@@ -627,6 +644,8 @@ namespace PuppetMaster
 
                         string id = steps[1];
                         PuppetMaster.DumpProcess(id);
+                        SetStatus("DUMP " + id);
+
                         break;
                     }
 
@@ -643,6 +662,8 @@ namespace PuppetMaster
                         string filename = steps[2];
 
                         string path = Application.StartupPath.Remove(Application.StartupPath.Length - 22) + "Scripts\\";
+
+                        SetStatus("EXESCRIPT " + id + ":" + filename);
 
                         Thread script = new Thread(() =>
                         {
@@ -669,7 +690,7 @@ namespace PuppetMaster
 
         private void ProcessBoxMaskInputRejected(object sender, MaskInputRejectedEventArgs e)
         {
-            SetStatus("Invalid Process ID name");
+            SetStatus("[ERROR] Invalid Process ID name");
         }
 
         private void SetStatus(string msg)
@@ -685,7 +706,7 @@ namespace PuppetMaster
 
         private void resetButtonClick(object sender, EventArgs e)
         {
-            this.SetStatus("Reset Puppet Master");
+            this.SetStatus("RESET PUPPET MASTER");
             PuppetMaster.Reset();
             currentScriptLine = -1;
             this.scriptBox.Clear();

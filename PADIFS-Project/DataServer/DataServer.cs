@@ -4,14 +4,11 @@ using SharedLibrary.Exceptions;
 using SharedLibrary.Interfaces;
 using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.Remoting;
 using System.Runtime.Remoting.Channels;
 using System.Runtime.Remoting.Channels.Tcp;
 using System.Threading;
 
-// @TODO Fix primary decision
 
 namespace DataServer
 {
@@ -58,7 +55,32 @@ namespace DataServer
                 WellKnownObjectMode.Singleton);
 
             Console.WriteLine("Data Server " + id + " has started.");
+
             Console.ReadLine();
+        }
+
+        public void SendHeartbeat()
+        {
+            if (fail) return;
+            if (freeze)
+            {
+                freezed.Enqueue(() => SendHeartbeat());
+                return;
+            }
+
+            while (true)
+            {
+                try
+                {
+                    Heartbeat heartbeat = new Heartbeat();
+                    metadatas[master].Heartbeat(id, heartbeat);
+                    return;
+                }
+                catch (ProcessFailedException)
+                {
+                    FindMaster();
+                }
+            }
         }
 
         public void FindMaster()
@@ -79,24 +101,6 @@ namespace DataServer
                         }
                         catch (ProcessFailedException) { }
                     }
-                }
-            }
-        }
-
-        public void SendHeartbeat()
-        {
-            Heartbeat heartbeat = new Heartbeat();
-            // keeps looping untill a master answers
-            while (true)
-            {
-                try
-                {
-                    metadatas[master].Heartbeat(id, heartbeat);
-                    return;
-                }
-                catch (ProcessFailedException)
-                {
-                    FindMaster();
                 }
             }
         }
@@ -125,6 +129,16 @@ namespace DataServer
                     // needs to ask for master since its doing a register
                     master = metadata.Master();
                     metadatas[master].DataServer(DataServer.id, Helper.GetUrl(DataServer.id, DataServer.port));
+                    // start heartbeating
+                    Thread heartbeat = new Thread(() =>
+                    {
+                        while (true)
+                        {
+                            SendHeartbeat();
+                            Thread.Sleep(Helper.DATASERVER_HEARTBEAT_INTERVAL);
+                        }
+                    });
+                    heartbeat.Start();
                 }
                 catch (ProcessFailedException) { }
                 catch (NotTheMasterException) { }
@@ -167,6 +181,7 @@ namespace DataServer
 
             Console.WriteLine("RECOVER");
             fail = false;
+            SendHeartbeat();
         }
 
         public void Freeze()
@@ -184,7 +199,7 @@ namespace DataServer
             Console.WriteLine("UNFREEZE");
 
             freeze = false;
-            while (freezed.Any())
+            while (freezed.Count != 0)
             {
                 Thread pending = new Thread(() =>
                 {

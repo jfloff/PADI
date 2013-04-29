@@ -47,7 +47,7 @@ namespace Metadata
             id = master = args[0];
             int port = Convert.ToInt32(args[1]);
 
-            Console.SetWindowSize(Helper.WINDOW_WIDTH, Helper.WINDOW_HEIGHT);
+            Console.SetWindowSize(Helper.WINDOW_WIDTH, Helper.WINDOW_HEIGHT * 3);
             Console.Title = id;
 
             TcpChannel channel = new TcpChannel(port);
@@ -300,7 +300,7 @@ namespace Metadata
         // select single data server. refactored for future selects
         private void SelectDataServer(string id, FileMetadata fileMetadata)
         {
-            string location = dataServers[id];
+            string location = dataServers.Location(id);
             string localFilename = LocalFilename(fileMetadata.Filename);
 
             // it it has already a version in the table, works with that one
@@ -426,8 +426,12 @@ namespace Metadata
         {
             if (fail) throw new ProcessFailedException(id);
 
-            // what should the system do if a data-server fails?
-            Console.WriteLine("HEARTBEAT");
+            if (dataServers.Failed(id))
+            {
+                CheckPending(id);
+            }
+            
+            dataServers.Touch(id);
         }
 
         private void DataServerOnMetadatas(string id, string location, int sequence)
@@ -471,22 +475,26 @@ namespace Metadata
             {
                 DataServerOnMetadatas(id, location, clock);
                 clock++;
+                dataServers.Add(id, location);
 
-                dataServers[id] = location;
+                CheckPending(id);
+            }
+        }
 
-                foreach (var entry in fileMetadataTable.Pending)
+        private static void CheckPending(string id)
+        {
+            foreach (var entry in fileMetadataTable.Pending)
+            {
+                string futureId = id;
+                ConcurrentQueue<Action<string>> pending = entry;
+
+                Thread pendingRequest = new Thread(() =>
                 {
-                    string futureId = id;
-                    ConcurrentQueue<Action<string>> pending = entry;
-
-                    Thread pendingRequest = new Thread(() =>
-                    {
-                        Action<string> action;
-                        pending.TryDequeue(out action);
-                        action(futureId);
-                    });
-                    pendingRequest.Start();
-                }
+                    Action<string> action;
+                    pending.TryDequeue(out action);
+                    action(futureId);
+                });
+                pendingRequest.Start();
             }
         }
 
@@ -508,7 +516,7 @@ namespace Metadata
 
             if (!dataServers.Contains(id))
             {
-                dataServers[id] = location;
+                dataServers.Add(id, location);
                 clock++;
             }
         }
