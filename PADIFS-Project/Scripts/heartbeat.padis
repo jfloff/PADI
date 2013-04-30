@@ -8,3 +8,19 @@ FAIL d-1
 #wait 6 seconds!!
 CREATE c-1, f1, 3, 1, 1
 RECOVER d-1
+WRITE c-1, 0, "COISAS0"
+READ c-1, 0, default, 0
+READ c-1, 0, default, 0
+READ c-1, 0, default, 0
+READ c-1, 0, default, 0
+READ c-1, 0, default, 0
+READ c-1, 0, default, 0
+READ c-1, 0, default, 0
+READ c-1, 0, default, 0
+READ c-1, 0, default, 0
+READ c-1, 0, default, 0
+READ c-1, 0, default, 0
+READ c-1, 0, default, 0
+READ c-1, 0, default, 0
+READ c-1, 0, default, 0
+READ c-1, 0, default, 0

@@ -426,6 +426,8 @@ namespace Metadata
         {
             if (fail) throw new ProcessFailedException(id);
 
+            Console.WriteLine("ID = " + id + " => " + heartbeat.Score);
+
             if (dataServers.Failed(id))
             {
                 CheckPending(id);

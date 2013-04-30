@@ -14,8 +14,15 @@ namespace DataServer
 {
     public class DataServer : MarshalByRefObject, IDataServerToPM, IDataServerToClient
     {
+        private class FileStatistics
+        {
+            public int reads = 0;
+            public int writes = 0;
+        };
+
         // localFilename / FileData
         private static ConcurrentDictionary<string, FileData> files = new ConcurrentDictionary<string, FileData>();
+        private static ConcurrentDictionary<string, FileStatistics> statistics = new ConcurrentDictionary<string, FileStatistics>();
 
         // id / interface
         private static ConcurrentDictionary<string, IMetadataToDataServer> metadatas
@@ -72,7 +79,7 @@ namespace DataServer
             {
                 try
                 {
-                    Heartbeat heartbeat = new Heartbeat();
+                    Heartbeat heartbeat = new Heartbeat(Score());
                     metadatas[master].Heartbeat(id, heartbeat);
                     return;
                 }
@@ -81,6 +88,22 @@ namespace DataServer
                     FindMaster();
                 }
             }
+        }
+
+        private int Score()
+        {
+            int score = 0;
+            if (statistics.Count != 0)
+            {
+                // SOM Fi(reads/writes) / nFiles
+                foreach (var entry in statistics)
+                {
+                    FileStatistics fileStatistics = entry.Value;
+                    score += fileStatistics.reads / fileStatistics.writes;
+                }
+                score /= statistics.Count;
+            }
+            return score;
         }
 
         public void FindMaster()
@@ -229,6 +252,7 @@ namespace DataServer
             {
                 Console.WriteLine("CREATE FILE " + localFilename);
                 files[localFilename] = new FileData();
+                statistics[localFilename] = new FileStatistics();
             }
 
             return files[localFilename].Version;
@@ -249,8 +273,11 @@ namespace DataServer
             {
                 Console.WriteLine("CREATE FILE " + localFilename);
                 files[localFilename] = new FileData();
+                statistics[localFilename] = new FileStatistics();
+                statistics[localFilename].reads++;
             }
 
+            statistics[localFilename].reads++;
             return files[localFilename];
         }
 
@@ -269,11 +296,14 @@ namespace DataServer
             {
                 Console.WriteLine("CREATE FILE " + localFilename);
                 files[localFilename] = newFile;
+                statistics[localFilename] = new FileStatistics();
+                statistics[localFilename].writes++;
                 return;
             }
 
             FileData currentFile = files[localFilename];
             files[localFilename] = FileData.Latest(currentFile, newFile);
+            statistics[localFilename].writes++;
         }
     }
 }
