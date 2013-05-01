@@ -336,7 +336,7 @@ namespace Metadata
             // select possible data servers
             int selected = 0;
             string dataServerId = null;
-            while (dataServers.TryMoveNext(dataServerId, out dataServerId))
+            while(dataServers.TryMoveNext(dataServerId, out dataServerId))
             {
                 if (selected++ >= fileMetadata.NbDataServers) break;
 

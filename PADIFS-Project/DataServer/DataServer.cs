@@ -90,9 +90,9 @@ namespace DataServer
             }
         }
 
-        private int Weight()
+        private double Weight()
         {
-            int weight = 0;
+            double weight = 0;
             if (statistics.Count != 0)
             {
                 // SOM Fi(reads/writes) / nFiles

@@ -1,6 +1,7 @@
 ﻿using SharedLibrary;
 using SharedLibrary.Entities;
 using System;
+using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 
@@ -11,43 +12,34 @@ namespace Metadata
         private class DataServerInfo
         {
             public string location;
-            public int weight;
+            public double weight;
             public DateTime lastHeartbeat;
 
             public DataServerInfo(string location)
             {
                 this.location = location;
-                this.weight = 1;
+                this.weight = 0;
                 this.lastHeartbeat = DateTime.Now;
             }
         };
 
-        class WeightCompararer : IComparer<KeyValuePair<string, int>>
+        class WeightCompararer : IComparer<double>
         {
-            public int Compare(KeyValuePair<string, int> x, KeyValuePair<string, int> y)
+            public int Compare(double x, double y)
             {
-                if (x.Value > y.Value) return -1;
-                if (x.Value < y.Value) return 1;
-                return string.Compare(x.Key, y.Key);
+                if (x > y) return 1;
+                if (x < y) return -1;
+                return 0;
             }
         };
 
         // CREATE DICTIONARY FOR FAILED METADATAS
         // id / location
         private ConcurrentDictionary<string, DataServerInfo> infos = new ConcurrentDictionary<string, DataServerInfo>();
-        // score / id
-        private SortedSet<KeyValuePair<string, int>> weights = new SortedSet<KeyValuePair<string, int>>(new WeightCompararer());
-
-
+        // score / set of ids
+        private SortedDictionary<double, SortedSet<string>> weights = new SortedDictionary<double, SortedSet<string>>(new WeightCompararer());
         // dummy object for lock
         private readonly object padlock = new object();
-        // original enumerator
-        private IEnumerator<KeyValuePair<string, int>> original;
-
-        public DataServerRegister()
-        {
-            this.original = this.weights.GetEnumerator();
-        }
 
         public override string ToString()
         {
@@ -92,15 +84,22 @@ namespace Metadata
             return infos[id].location;
         }
 
-        public void UpdateWeight(string id, int weight)
+        public void UpdateWeight(string id, double weight)
         {
-            lock (padlock) 
+            lock (padlock)
             {
-                this.weights.Add(new KeyValuePair<string, int>(id, weight));
-                this.original = this.weights.GetEnumerator();
+                // if new weight
+                if (!this.weights.ContainsKey(weight))
+                {
+                    this.weights[weight] = new SortedSet<string>();
+                }
+                
+                // remove the previous weight
+                this.weights[this.infos[id].weight].Remove(id);
+                    
+                this.weights[weight].Add(id);
+                this.infos[id].weight = weight;
             }
-
-            this.infos[id].weight = weight;
         }
 
         public void Add(string id, string location)
@@ -114,28 +113,31 @@ namespace Metadata
 
         public bool TryMoveNext(string last, out string value)
         {
+            bool ret = false;
+            value = default(string);
+            bool skipped = (last == null) ? true : false;
+
             lock (padlock)
             {
-                bool hadNext;
-                while (true)
+                foreach (var weight in weights)
                 {
-                    hadNext = this.original.MoveNext();
-                    if (hadNext)
+                    foreach (string id in weight.Value)
                     {
-                        if (string.Compare(last, this.original.Current.Key) == 0) continue;
-                        if (Failed(this.original.Current.Key)) continue;
+                        if (skipped)
+                        {
+                            value = id;
+                            ret = true;
+                            break;
+                        }
 
-                        value = this.original.Current.Key;
+                        if (id == last) skipped = true;
                     }
-                    else
-                    {
-                        value = default(string);
-                        this.original = this.weights.GetEnumerator();
-                    }
-                    break;
+
+                    if (ret) break;
                 }
-                return hadNext;
             }
+
+            return ret;
         }
     }
 }

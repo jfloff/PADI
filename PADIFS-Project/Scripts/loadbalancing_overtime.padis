@@ -1,0 +1,23 @@
+RECOVER m-0
+RECOVER d-1
+RECOVER d-2
+RECOVER d-3
+DUMP c-1
+#!
+
+CREATE c-1, f0, 2, 1, 1
+READ c-1, 0, default, 0
+READ c-1, 0, default, 0
+READ c-1, 0, default, 0
+WRITE c-1, 0, "COISAS0
+
+CREATE c-1, f1, 2, 1, 1
+READ c-1, 0, default, 0
+READ c-1, 0, default, 0
+READ c-1, 0, default, 0
+
+CREATE c-1, f2, 1, 1, 1
+READ c-1, 0, default, 0
+READ c-1, 0, default, 0
+READ c-1, 0, default, 0
+WRITE c-1, 0, "COISAS0"
