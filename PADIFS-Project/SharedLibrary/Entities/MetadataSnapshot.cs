@@ -7,10 +7,10 @@ namespace SharedLibrary.Entities
     public struct MetadataSnapshot
     {
         public Dictionary<string, FileMetadata> table;
-        public Dictionary<string, string> dataServers;
+        public Dictionary<string, DataServerInfo> dataServers;
         public int sequence;
 
-        public MetadataSnapshot(Dictionary<string, FileMetadata> table, Dictionary<string, string> dataServers, int sequence)
+        public MetadataSnapshot(Dictionary<string, FileMetadata> table, Dictionary<string, DataServerInfo> dataServers, int sequence)
         {
             this.table = table;
             this.dataServers = dataServers;

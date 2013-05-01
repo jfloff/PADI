@@ -38,14 +38,14 @@ namespace Metadata
             // ignores sequence parameter
             MetadataSnapshot current = new MetadataSnapshot(table.ToDictionary(), dataServers.ToDictionary(), -1);
             DictionaryDiff<string, FileMetadata> tableDiff;
-            DictionaryDiff<string, string> dataServersDiff;
+            DictionaryDiff<string, DataServerInfo> dataServersDiff;
             int sequenceToDiff;
 
             // if BuildDiff was called on a non-existant mark, give whole state
             if (!marks.ContainsKey(mark))
             {
                 tableDiff = new DictionaryDiff<string, FileMetadata>(current.table);
-                dataServersDiff = new DictionaryDiff<string, string>(current.dataServers);
+                dataServersDiff = new DictionaryDiff<string, DataServerInfo>(current.dataServers);
                 sequenceToDiff = 0;
             }
             // otherwise we give the state since last mark, and the sequence the snapshot was taken
@@ -54,7 +54,7 @@ namespace Metadata
                 MetadataSnapshot past;
                 marks.TryRemove(mark, out past);
                 tableDiff = new DictionaryDiff<string, FileMetadata>(past.table, current.table);
-                dataServersDiff = new DictionaryDiff<string, string>(past.dataServers, current.dataServers);
+                dataServersDiff = new DictionaryDiff<string, DataServerInfo>(past.dataServers, current.dataServers);
                 sequenceToDiff = past.sequence;
             }
 

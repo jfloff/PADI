@@ -47,7 +47,7 @@ namespace Metadata
             id = master = args[0];
             int port = Convert.ToInt32(args[1]);
 
-            Console.SetWindowSize(Helper.WINDOW_WIDTH, Helper.WINDOW_HEIGHT * 3);
+            Console.SetWindowSize(Helper.WINDOW_WIDTH, Helper.WINDOW_HEIGHT * 6);
             Console.Title = id;
 
             TcpChannel channel = new TcpChannel(port);
@@ -173,6 +173,16 @@ namespace Metadata
         /**
          * IMetadataToMetadata Methods
          */
+
+        public void HeartbeatOnMetadata(string id, Heartbeat heartbeat)
+        {
+            if (fail) throw new ProcessFailedException(id);
+
+            if(dataServers.Contains(id))
+            {
+                dataServers.Touch(id, heartbeat);
+            }
+        }
 
         public void LogMarkOnMetadata(string mark, int sequence)
         {
@@ -422,16 +432,45 @@ namespace Metadata
          * IMetadataToDataServer Methods
          */
 
+        private void HeartbeatOnMetadatas(string id, Heartbeat heartbeat)
+        {
+            int requests = metadatas.Count;
+
+            foreach (var entry in metadatas)
+            {
+                IMetadataToMetadata metadata = entry.Value;
+                Thread request = new Thread(() =>
+                {
+                    try
+                    {
+                        metadata.HeartbeatOnMetadata(id, heartbeat);
+                    }
+                    catch (ProcessFailedException) { }
+                    finally
+                    {
+                        Interlocked.Decrement(ref requests);
+                    }
+                });
+                request.Start();
+            }
+
+            while (requests > 0) ;
+        }
+
         public void Heartbeat(string id, Heartbeat heartbeat)
         {
             if (fail) throw new ProcessFailedException(id);
 
-            if (dataServers.Failed(id))
+            if (dataServers.Contains(id))
             {
-                CheckPending(id);
+                if (dataServers.Failed(id))
+                {
+                    CheckPending(id);
+                }
+
+                HeartbeatOnMetadatas(id, heartbeat);
+                dataServers.Touch(id, heartbeat);
             }
-            
-            dataServers.Touch(id, heartbeat);
         }
 
         private void DataServerOnMetadatas(string id, string location, int sequence)
@@ -548,6 +587,6 @@ namespace Metadata
             while (requests > 0) ;
 
             return master = masterVote.Id;
-        } 
+        }
     }
 }

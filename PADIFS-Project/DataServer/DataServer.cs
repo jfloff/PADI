@@ -51,7 +51,7 @@ namespace DataServer
             id = args[0];
             port = Convert.ToInt32(args[1]);
 
-            Console.SetWindowSize(Helper.WINDOW_WIDTH, Helper.WINDOW_HEIGHT*4);
+            Console.SetWindowSize(Helper.WINDOW_WIDTH, Helper.WINDOW_HEIGHT);
             Console.Title = id;
 
             TcpChannel channel = new TcpChannel(port);

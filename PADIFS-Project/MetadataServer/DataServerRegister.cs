@@ -9,20 +9,6 @@ namespace Metadata
 {
     public class DataServerRegister
     {
-        private class DataServerInfo
-        {
-            public string location;
-            public double weight;
-            public DateTime lastHeartbeat;
-
-            public DataServerInfo(string location)
-            {
-                this.location = location;
-                this.weight = 0;
-                this.lastHeartbeat = DateTime.Now;
-            }
-        };
-
         class WeightCompararer : IComparer<double>
         {
             public int Compare(double x, double y)
@@ -46,20 +32,14 @@ namespace Metadata
             string ret = "[\n";
             foreach (var entry in infos)
             {
-                ret += "  <" + entry.Key + ":" + entry.Value.location + ":" + entry.Value.weight + ":" + entry.Value.lastHeartbeat + "> \n";
+                ret += "  <" + entry.Key + ":" + entry.Value.Location + ":" + entry.Value.Weight + ":" + entry.Value.LastHeartbeat + "> \n";
             }
             return ret + "]";
         }
 
-        // LACKS PASSING THE REST OF THE INFORMATION
-        public Dictionary<string, string> ToDictionary() 
+        public Dictionary<string, DataServerInfo> ToDictionary() 
         {
-            Dictionary<string, string> copy = new Dictionary<string, string>();
-            foreach (var entry in infos)
-            {
-                copy[entry.Key] = entry.Value.location;
-            }
-            return copy;
+            return new Dictionary<string, DataServerInfo>(this.infos);
         }
 
         public bool Contains(string id)
@@ -69,19 +49,19 @@ namespace Metadata
 
         public bool Failed(string id)
         {
-            double elapsed = Math.Abs(this.infos[id].lastHeartbeat.Subtract(DateTime.Now).TotalMilliseconds);
+            double elapsed = Math.Abs(this.infos[id].LastHeartbeat.Subtract(DateTime.Now).TotalMilliseconds);
             return !(elapsed < (Helper.DATASERVER_HEARTBEAT_INTERVAL * Helper.HEARTBEAT_EXPIRE));
         }
 
         public void Touch(string id, Heartbeat heartbeat)
         {
-            this.infos[id].lastHeartbeat = DateTime.Now;
+            this.infos[id].LastHeartbeat = DateTime.Now;
             this.UpdateWeight(id, heartbeat.Weight);
         }
 
         public string Location(string id)
         {
-            return infos[id].location;
+            return infos[id].Location;
         }
 
         public void UpdateWeight(string id, double weight)
@@ -95,10 +75,10 @@ namespace Metadata
                 }
                 
                 // remove the previous weight
-                this.weights[this.infos[id].weight].Remove(id);
+                this.weights[this.infos[id].Weight].Remove(id);
                     
                 this.weights[weight].Add(id);
-                this.infos[id].weight = weight;
+                this.infos[id].Weight = weight;
             }
         }
 
@@ -109,6 +89,11 @@ namespace Metadata
                 this.infos[id] = new DataServerInfo(location);
                 UpdateWeight(id, 0);
             }
+        }
+
+        internal void Add(string id, DataServerInfo dataServerInfo)
+        {
+            this.infos[id] = dataServerInfo;
         }
 
         public bool TryMoveNext(string last, out string value)

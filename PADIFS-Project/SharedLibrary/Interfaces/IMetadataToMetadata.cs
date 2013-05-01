@@ -10,5 +10,6 @@ namespace SharedLibrary.Interfaces
         void DeleteOnMetadata(FileMetadata fileMetadata, int sequence);
         void DataServerOnMetadata(string id, string location, int sequence);
         void LogMarkOnMetadata(string mark, int sequence);
+        void HeartbeatOnMetadata(string id, Heartbeat heartbeat);
     }
 }
