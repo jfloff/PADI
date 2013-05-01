@@ -1,4 +1,5 @@
 ﻿using SharedLibrary;
+using SharedLibrary.Entities;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -21,14 +22,31 @@ namespace Metadata
             }
         };
 
+        class WeightCompararer : IComparer<KeyValuePair<string, int>>
+        {
+            public int Compare(KeyValuePair<string, int> x, KeyValuePair<string, int> y)
+            {
+                if (x.Value > y.Value) return -1;
+                if (x.Value < y.Value) return 1;
+                return string.Compare(x.Key, y.Key);
+            }
+        };
+
         // CREATE DICTIONARY FOR FAILED METADATAS
         // id / location
         private ConcurrentDictionary<string, DataServerInfo> infos = new ConcurrentDictionary<string, DataServerInfo>();
-        private IEnumerator<KeyValuePair<string, DataServerInfo>> enumerator;
+        // score / id
+        private SortedSet<KeyValuePair<string, int>> weights = new SortedSet<KeyValuePair<string, int>>(new WeightCompararer());
+
+
+        // dummy object for lock
+        private readonly object padlock = new object();
+        // original enumerator
+        private IEnumerator<KeyValuePair<string, int>> original;
 
         public DataServerRegister()
         {
-            this.enumerator = infos.GetEnumerator();
+            this.original = this.weights.GetEnumerator();
         }
 
         public override string ToString()
@@ -63,9 +81,10 @@ namespace Metadata
             return !(elapsed < (Helper.DATASERVER_HEARTBEAT_INTERVAL * Helper.HEARTBEAT_EXPIRE));
         }
 
-        public void Touch(string id)
+        public void Touch(string id, Heartbeat heartbeat)
         {
             this.infos[id].lastHeartbeat = DateTime.Now;
+            this.UpdateWeight(id, heartbeat.Weight);
         }
 
         public string Location(string id)
@@ -73,36 +92,49 @@ namespace Metadata
             return infos[id].location;
         }
 
+        public void UpdateWeight(string id, int weight)
+        {
+            lock (padlock) 
+            {
+                this.weights.Add(new KeyValuePair<string, int>(id, weight));
+                this.original = this.weights.GetEnumerator();
+            }
+
+            this.infos[id].weight = weight;
+        }
+
         public void Add(string id, string location)
         {
             if (!this.infos.ContainsKey(id))
             {
                 this.infos[id] = new DataServerInfo(location);
-                this.enumerator.MoveNext();
+                UpdateWeight(id, 0);
             }
         }
 
-        public IEnumerable<KeyValuePair<string, string>> UniqueDataServers
+        public bool TryMoveNext(string last, out string value)
         {
-            get
+            lock (padlock)
             {
-                string firstId = this.enumerator.Current.Key;
+                bool hadNext;
                 while (true)
                 {
-                    if (firstId == null) break;
-
-                    if (!Failed(this.enumerator.Current.Key))
+                    hadNext = this.original.MoveNext();
+                    if (hadNext)
                     {
-                        yield return new KeyValuePair<string, string>(this.enumerator.Current.Key, this.enumerator.Current.Value.location);
-                    }
-                    if (!this.enumerator.MoveNext())
-                    {
-                        this.enumerator = this.infos.GetEnumerator();
-                        this.enumerator.MoveNext();
-                    }
+                        if (string.Compare(last, this.original.Current.Key) == 0) continue;
+                        if (Failed(this.original.Current.Key)) continue;
 
-                    if (this.enumerator.Current.Key == firstId) break;
+                        value = this.original.Current.Key;
+                    }
+                    else
+                    {
+                        value = default(string);
+                        this.original = this.weights.GetEnumerator();
+                    }
+                    break;
                 }
+                return hadNext;
             }
         }
     }

@@ -335,11 +335,11 @@ namespace Metadata
             
             // select possible data servers
             int selected = 0;
-            foreach(var entry in dataServers.UniqueDataServers)
+            string dataServerId = null;
+            while (dataServers.TryMoveNext(dataServerId, out dataServerId))
             {
                 if (selected++ >= fileMetadata.NbDataServers) break;
 
-                string dataServerId = entry.Key;
                 SelectDataServer(dataServerId, fileMetadata);
             }
 
@@ -426,14 +426,12 @@ namespace Metadata
         {
             if (fail) throw new ProcessFailedException(id);
 
-            Console.WriteLine("ID = " + id + " => " + heartbeat.Score);
-
             if (dataServers.Failed(id))
             {
                 CheckPending(id);
             }
             
-            dataServers.Touch(id);
+            dataServers.Touch(id, heartbeat);
         }
 
         private void DataServerOnMetadatas(string id, string location, int sequence)

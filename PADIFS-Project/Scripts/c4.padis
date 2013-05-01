@@ -1,0 +1,51 @@
+CREATE c-4, f1, 2, 2, 2
+CREATE c-4, f2, 3, 2, 2
+CREATE c-4, f3, 2, 2, 2
+CREATE c-4, f4, 3, 2, 2
+CREATE c-4, f5, 2, 2, 2
+CREATE c-4, f6, 3, 2, 2
+CREATE c-4, f7, 2, 2, 2
+CREATE c-4, f8, 3, 2, 2
+CREATE c-4, f9, 2, 2, 2
+CREATE c-4, f10, 3, 2, 2
+OPEN c-4, f1
+OPEN c-4, f2
+OPEN c-4, f3
+OPEN c-4, f4
+OPEN c-4, f5
+OPEN c-4, f6
+OPEN c-4, f7
+OPEN c-4, f8
+OPEN c-4, f9
+OPEN c-4, f10
+WRITE c-4, 0, "COISAS0"
+READ c-4, 0, default, 0
+READ c-4, 1, monotonic, 1
+WRITE c-4, 1, "COISAS1"
+WRITE c-4, 2, "COISAS2"
+READ c-4, 2, default, 2
+WRITE c-4, 3, "COISAS3"
+READ c-4, 3, monotonic, 3
+WRITE c-4, 4, "COISAS4"
+READ c-4, 4, default, 4
+READ c-4, 5, monotonic, 5
+WRITE c-4, 5, "COISAS5"
+WRITE c-4, 6, "COISAS6"
+READ c-4, 6, default, 6
+WRITE c-4, 7, "COISAS7"
+READ c-4, 7, monotonic, 7
+READ c-4, 8, default, 8
+WRITE c-4, 8, "COISAS8"
+READ c-4, 9, monotonic, 9
+WRITE c-4, 9, "COISAS9"
+DELETE c-4, f1
+DELETE c-4, f2
+DELETE c-4, f3
+DELETE c-4, f4
+DELETE c-4, f5
+DELETE c-4, f6
+DELETE c-4, f7
+DELETE c-4, f8
+DELETE c-4, f9
+DELETE c-4, f10
+DUMP c-4

@@ -16,8 +16,8 @@ namespace DataServer
     {
         private class FileStatistics
         {
-            public int reads = 0;
-            public int writes = 0;
+            public int reads = 1;
+            public int writes = 1;
         };
 
         // localFilename / FileData
@@ -51,7 +51,7 @@ namespace DataServer
             id = args[0];
             port = Convert.ToInt32(args[1]);
 
-            Console.SetWindowSize(Helper.WINDOW_WIDTH, Helper.WINDOW_HEIGHT);
+            Console.SetWindowSize(Helper.WINDOW_WIDTH, Helper.WINDOW_HEIGHT*4);
             Console.Title = id;
 
             TcpChannel channel = new TcpChannel(port);
@@ -79,7 +79,7 @@ namespace DataServer
             {
                 try
                 {
-                    Heartbeat heartbeat = new Heartbeat(Score());
+                    Heartbeat heartbeat = new Heartbeat(Weight());
                     metadatas[master].Heartbeat(id, heartbeat);
                     return;
                 }
@@ -90,20 +90,20 @@ namespace DataServer
             }
         }
 
-        private int Score()
+        private int Weight()
         {
-            int score = 0;
+            int weight = 0;
             if (statistics.Count != 0)
             {
                 // SOM Fi(reads/writes) / nFiles
                 foreach (var entry in statistics)
                 {
                     FileStatistics fileStatistics = entry.Value;
-                    score += fileStatistics.reads / fileStatistics.writes;
+                    weight += fileStatistics.reads / fileStatistics.writes;
                 }
-                score /= statistics.Count;
+                weight /= statistics.Count;
             }
-            return score;
+            return weight;
         }
 
         public void FindMaster()

@@ -5,15 +5,15 @@ namespace SharedLibrary.Entities
     [Serializable]
     public class Heartbeat
     {
-        private int score;
+        private int weight;
 
-        public Heartbeat(int score)
+        public Heartbeat(int weight)
         {
-            this.score = score;
+            this.weight = weight;
         }
 
-        public int Score { 
-            get { return this.score; } 
+        public int Weight { 
+            get { return this.weight; } 
         }
     }
 }

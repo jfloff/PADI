@@ -19,6 +19,11 @@ namespace PuppetMaster
 
         public void AddLog(string msg)
         {
+            if (this.logBox.InvokeRequired)
+            {
+                this.logBox.Invoke(new Action<string>(AddLog), msg);
+                return;
+            }   
             this.logBox.Text += "[" + DateTime.Now.ToString("HH:mm:ss") + "] " + msg + '\n';
         }
     }

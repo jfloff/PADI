@@ -294,8 +294,16 @@ namespace Client
         {
             Console.WriteLine("READ FILE = " + fileRegisterIndex);
 
-            FileData fileData = ReadFileData(fileRegisterIndex, semantics);
-            byteRegister[byteRegisterIndex] = fileData.Contents;
+            try
+            {
+                FileData fileData = ReadFileData(fileRegisterIndex, semantics);
+                byteRegister[byteRegisterIndex] = fileData.Contents;
+            }
+            catch (FileDoesNotExistException e)
+            {
+                Console.WriteLine(e.Message);
+                return;
+            }
         }
 
         private LatestVersion ReadVersion(int fileRegisterIndex, Helper.Semantics semantics)
@@ -378,82 +386,90 @@ namespace Client
         {
             Console.WriteLine("WRITE FILE = " + fileRegisterIndex);
 
-            // forces to get always the most recent file
-            FileVersion latest = ReadVersion(fileRegisterIndex, Helper.Semantics.MONOTONIC).Version;
-            latest.Increment(Client.id);
-            FileData fileData = new FileData(latest, contents);
-
-            string filename = fileRegister.FilenameAt(fileRegisterIndex);
-            FileMetadata fileMetadata = fileRegister.FileMetadataAt(fileRegisterIndex);
-            // data server id / bool write
-            ConcurrentDictionary<string, bool> writes = new ConcurrentDictionary<string, bool>();
-            int requests = 0;
-            bool quorumReached = false;
-
-            //QUORUM
-            while (true)
+            try
             {
-                // voting
-                WriteQuorum quorum = new WriteQuorum(fileMetadata.WriteQuorum);
-                foreach (var entry in writes)
+                // forces to get always the most recent file
+                FileVersion latest = ReadVersion(fileRegisterIndex, Helper.Semantics.MONOTONIC).Version;
+                latest.Increment(Client.id);
+                FileData fileData = new FileData(latest, contents);
+
+                string filename = fileRegister.FilenameAt(fileRegisterIndex);
+                FileMetadata fileMetadata = fileRegister.FileMetadataAt(fileRegisterIndex);
+                // data server id / bool write
+                ConcurrentDictionary<string, bool> writes = new ConcurrentDictionary<string, bool>();
+                int requests = 0;
+                bool quorumReached = false;
+
+                //QUORUM
+                while (true)
                 {
-                    bool vote = entry.Value;
-
-                    quorum.AddVote(vote);
-                    if (quorum.CheckQuorum())
+                    // voting
+                    WriteQuorum quorum = new WriteQuorum(fileMetadata.WriteQuorum);
+                    foreach (var entry in writes)
                     {
-                        quorumReached = true;
-                        break;
-                    }
-                }
+                        bool vote = entry.Value;
 
-                // found the quorum file
-                if (quorumReached) break;
-
-                // if all the votes arrived at the quorum
-                // stops when all requests are counted (requests = 0)
-                if (quorum.Count == (requests + quorum.Count))
-                {
-                    // get possible new fileMetadata locations
-                    // possible optimization
-                    // check if there are no dataa servers
-                    fileMetadata = OpenFileMetadata(filename);
-
-                    // broadcast to all dataServers that have that file
-                    foreach (var entry in fileMetadata.Locations)
-                    {
-                        string id = entry.Key;
-                        string location = entry.Value;
-                        string localFilename = fileMetadata.LocalFilenames[id];
-
-                        // increment right away so it doesn't request untill its decremented
-                        Interlocked.Increment(ref requests);
-                        Thread request = new Thread(() =>
+                        quorum.AddVote(vote);
+                        if (quorum.CheckQuorum())
                         {
-                            IDataServerToClient dataServer = (IDataServerToClient)Activator.GetObject(
-                                typeof(IDataServerToClient),
-                                location);
-                            bool vote = false;
-                            try
+                            quorumReached = true;
+                            break;
+                        }
+                    }
+
+                    // found the quorum file
+                    if (quorumReached) break;
+
+                    // if all the votes arrived at the quorum
+                    // stops when all requests are counted (requests = 0)
+                    if (quorum.Count == (requests + quorum.Count))
+                    {
+                        // get possible new fileMetadata locations
+                        // possible optimization
+                        // check if there are no dataa servers
+                        fileMetadata = OpenFileMetadata(filename);
+
+                        // broadcast to all dataServers that have that file
+                        foreach (var entry in fileMetadata.Locations)
+                        {
+                            string id = entry.Key;
+                            string location = entry.Value;
+                            string localFilename = fileMetadata.LocalFilenames[id];
+
+                            // increment right away so it doesn't request untill its decremented
+                            Interlocked.Increment(ref requests);
+                            Thread request = new Thread(() =>
                             {
-                                dataServer.Write(localFilename, fileData);
-                                vote = true;
-                            }
-                            catch (ProcessFailedException) { }
-                            catch (ProcessFreezedException) { }
-                            finally
-                            {
-                                writes[id] = vote;
-                                Interlocked.Decrement(ref requests);
-                            }
-                        });
-                        request.Start();
+                                IDataServerToClient dataServer = (IDataServerToClient)Activator.GetObject(
+                                    typeof(IDataServerToClient),
+                                    location);
+                                bool vote = false;
+                                try
+                                {
+                                    dataServer.Write(localFilename, fileData);
+                                    vote = true;
+                                }
+                                catch (ProcessFailedException) { }
+                                catch (ProcessFreezedException) { }
+                                finally
+                                {
+                                    writes[id] = vote;
+                                    Interlocked.Decrement(ref requests);
+                                }
+                            });
+                            request.Start();
+                        }
                     }
                 }
-            }
 
-            // update file registers
-            fileRegister.SetFileDataAt(fileRegisterIndex, fileData);
+                // update file registers
+                fileRegister.SetFileDataAt(fileRegisterIndex, fileData);
+            }
+            catch (FileDoesNotExistException e)
+            {
+                Console.WriteLine(e.Message);
+                return;
+            }
         }
 
         public void Write(int fileRegisterIndex, int byteRegisterIndex)
@@ -471,9 +487,17 @@ namespace Client
         {
             Console.WriteLine("COPY FILE " + fileRegisterIndex1 + " TO + " + fileRegisterIndex2);
 
-            FileData fileData = ReadFileData(fileRegisterIndex1, semantics);
-            byte[] saltedContents = Helper.AppendBytes(fileData.Contents, salt);
-            Write(fileRegisterIndex2, saltedContents);
+            try
+            {
+                FileData fileData = ReadFileData(fileRegisterIndex1, semantics);
+                byte[] saltedContents = Helper.AppendBytes(fileData.Contents, salt);
+                Write(fileRegisterIndex2, saltedContents);
+            }
+            catch (FileDoesNotExistException e)
+            {
+                Console.WriteLine(e.Message);
+                return;
+            }
         }
 
         public void Dump()
