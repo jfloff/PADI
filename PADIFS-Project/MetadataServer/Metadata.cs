@@ -233,6 +233,13 @@ namespace Metadata
             if (fileMetadata.CurrentNbDataServers != 0) clockSkip++;
 
             fileMetadataTable.SetFileMetadata(fileMetadata.Filename, fileMetadata, FutureSelectDataServer(fileMetadata));
+            foreach (var entry in fileMetadata.LocalFilenames)
+            {
+                string dataServerId = entry.Key;
+                string localFilename = entry.Value;
+
+                dataServers.AddFile(dataServerId, localFilename);
+            }
             clock += clockSkip;
         }
 
@@ -249,6 +256,13 @@ namespace Metadata
             if (fileMetadataTable.Contains(fileMetadata.Filename))
             {
                 fileMetadataTable.Remove(fileMetadata.Filename);
+                foreach (var entry in fileMetadata.LocalFilenames)
+                {
+                    string dataServerId = entry.Key;
+                    string localFilename = entry.Value;
+
+                    dataServers.RemoveFile(dataServerId, localFilename);
+                }
                 clock++;
             }
         }
@@ -318,9 +332,11 @@ namespace Metadata
             {
                 fileMetadata = fileMetadataTable.FileMetadata(fileMetadata.Filename);
             }
-
-            int sequence = clock;
+            
             fileMetadata.AddDataServer(id, location, localFilename);
+            dataServers.AddFile(id, localFilename);
+            
+            int sequence = clock;
             CreateOrUpdateOnMetadatas(fileMetadata, sequence);
             clock++;
         }
@@ -425,6 +441,13 @@ namespace Metadata
 
             DeleteOnMetadatas(fileMetadata, clock);
             fileMetadataTable.Remove(fileMetadata.Filename);
+            foreach (var entry in fileMetadata.LocalFilenames)
+            {
+                string dataServerId = entry.Key;
+                string localFilename = entry.Value;
+
+                dataServers.RemoveFile(dataServerId, localFilename);
+            }
             clock++;
         }
 
@@ -457,7 +480,7 @@ namespace Metadata
             while (requests > 0) ;
         }
 
-        public void Heartbeat(string id, Heartbeat heartbeat)
+        public DataServerFiles Heartbeat(string id, Heartbeat heartbeat)
         {
             if (fail) throw new ProcessFailedException(id);
 
@@ -470,7 +493,11 @@ namespace Metadata
 
                 HeartbeatOnMetadatas(id, heartbeat);
                 dataServers.Touch(id, heartbeat);
+
+                return new DataServerFiles(dataServers.DataServerFiles(id));
             }
+
+            return null;
         }
 
         private void DataServerOnMetadatas(string id, string location, int sequence)

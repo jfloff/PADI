@@ -23,7 +23,7 @@ RECOVER m-1
 RECOVER m-2
 #more operations...
 WRITE c-1, 0, "Text contents of the file. Contents are a string delimited by double quotes as this one"
-READ c-1, 0, monotonic, 0
+READ c-1, 0, default, 0
 FAIL m-2
 FREEZE d-2
 # The next write writes the contents of byte-array register 0

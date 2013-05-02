@@ -39,6 +39,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Entities\DataServerFiles.cs" />
     <Compile Include="Entities\DataServerInfo.cs" />
     <Compile Include="Entities\DictionaryDiff.cs" />
     <Compile Include="Entities\FileVersion.cs" />

@@ -42,6 +42,11 @@ namespace Metadata
             return new Dictionary<string, DataServerInfo>(this.infos);
         }
 
+        public ICollection<string> DataServerFiles(string id)
+        {
+            return this.infos[id].Files;
+        }
+
         public bool Contains(string id)
         {
             return this.infos.ContainsKey(id);
@@ -62,6 +67,16 @@ namespace Metadata
         public string Location(string id)
         {
             return infos[id].Location;
+        }
+
+        public void AddFile(string id, string localFilename)
+        {
+            this.infos[id].AddFile(localFilename);
+        }
+
+        public void RemoveFile(string id, string localFilename)
+        {
+            this.infos[id].RemoveFile(localFilename);
         }
 
         public void UpdateWeight(string id, double weight)
@@ -91,7 +106,7 @@ namespace Metadata
             }
         }
 
-        internal void Add(string id, DataServerInfo dataServerInfo)
+        public void Add(string id, DataServerInfo dataServerInfo)
         {
             this.infos[id] = dataServerInfo;
         }

@@ -40,7 +40,7 @@ namespace Metadata
 
         public void Remove(string filename)
         {
-            FileMetadata ignoredFile; this.files.TryRemove(filename, out ignoredFile);
+            FileMetadata ingoredFile; this.files.TryRemove(filename, out ingoredFile);
             ConcurrentQueue<Action<string>> ignoredPending; this.pending.TryRemove(filename, out ignoredPending);
         }
 

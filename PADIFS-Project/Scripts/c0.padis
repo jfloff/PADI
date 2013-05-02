@@ -2,21 +2,19 @@
 RECOVER m-0
 UNFREEZE d-1
 UNFREEZE d-2
-# FREEZE d-3
-# FREEZE d-4
-DUMP c-1
-DUMP c-2
+FREEZE d-3
+FREEZE d-4
 EXESCRIPT c-1 c1.padis
 EXESCRIPT c-2 c2.padis
 EXESCRIPT c-3 c3.padis
 EXESCRIPT c-4 c4.padis
 EXESCRIPT c-5 c5.padis
 EXESCRIPT c-6 c6.padis
-# EXESCRIPT c-7 c7.padis
-# EXESCRIPT c-8 c8.padis
-# EXESCRIPT c-9 c9.padis
-# EXESCRIPT c-10 c10.padis
-# EXESCRIPT c-11 c11.padis
+EXESCRIPT c-7 c7.padis
+EXESCRIPT c-8 c8.padis
+EXESCRIPT c-9 c9.padis
+EXESCRIPT c-10 c10.padis
+EXESCRIPT c-11 c11.padis
 # EXESCRIPT c-12 c12.padis
 # EXESCRIPT c-13 c13.padis
 # EXESCRIPT c-14 c14.padis
@@ -46,9 +44,8 @@ EXESCRIPT c-6 c6.padis
 # EXESCRIPT c-18 c2.padis
 # EXESCRIPT c-19 c2.padis
 # EXESCRIPT c-20 c2.padis
-# UNFREEZE d-2
-# UNFREEZE d-3
-# UNFREEZE d-4
+UNFREEZE d-3
+UNFREEZE d-4
 # DUMP c-1
 # DUMP c-2
 # DUMP c-3

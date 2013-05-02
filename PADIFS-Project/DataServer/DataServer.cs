@@ -80,7 +80,19 @@ namespace DataServer
                 try
                 {
                     Heartbeat heartbeat = new Heartbeat(Weight());
-                    metadatas[master].Heartbeat(id, heartbeat);
+                    DataServerFiles metadataFiles = metadatas[master].Heartbeat(id, heartbeat);
+
+                    // remove files
+                    foreach (var entry in files)
+                    {
+                        string filename = entry.Key;
+
+                        if (!metadataFiles.Contains(filename))
+                        {
+                            FileData ignoredFileData; files.TryRemove(filename, out ignoredFileData);
+                            FileStatistics ignoredStats; statistics.TryRemove(filename, out ignoredStats);
+                        }
+                    }
                     return;
                 }
                 catch (ProcessFailedException)

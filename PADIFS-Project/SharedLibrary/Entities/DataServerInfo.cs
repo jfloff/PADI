@@ -1,8 +1,6 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace SharedLibrary.Entities
 {
@@ -12,6 +10,7 @@ namespace SharedLibrary.Entities
         private string location;
         private double weight;
         private DateTime lastHeartbeat;
+        private ConcurrentDictionary<string, int> files = new ConcurrentDictionary<string, int>();
 
         public DataServerInfo(string location)
         {
@@ -35,6 +34,21 @@ namespace SharedLibrary.Entities
         {
             get { return this.lastHeartbeat; }
             set { this.lastHeartbeat = value;  }
+        }
+
+        public ICollection<string> Files
+        {
+            get { return this.files.Keys; }
+        }
+
+        public void AddFile(string localFilename)
+        {
+            this.files[localFilename] = 1;
+        }
+
+        public void RemoveFile(string localFilename)
+        {
+            int ignored; this.files.TryRemove(localFilename, out ignored);
         }
 
         // for comparasion on hash keys, etc

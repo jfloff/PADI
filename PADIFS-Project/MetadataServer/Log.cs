@@ -73,6 +73,13 @@ namespace Metadata
                 marks[entry.Key] = entry.Value;
             }
 
+            // data servers
+            foreach (var entry in diff.DataServersDiff.Plus)
+            {
+                clockDiff++;
+                this.dataServers.Add(entry.Key, entry.Value);
+            }
+
             // files
             foreach (var entry in diff.TableDiff.Plus)
             {
@@ -92,18 +99,20 @@ namespace Metadata
                 }
 
                 this.table.SetFileMetadata(filename, fileMetadata, funcFactory(fileMetadata));
+                foreach (var localfiles in fileMetadata.LocalFilenames)
+                {
+                    dataServers.AddFile(localfiles.Key, localfiles.Value);
+                }
             }
             foreach (var entry in diff.TableDiff.Minus)
             {
                 clockDiff++;
                 this.table.Remove(entry.Key);
-            }
 
-            // data servers
-            foreach (var entry in diff.DataServersDiff.Plus)
-            {
-                clockDiff++;
-                this.dataServers.Add(entry.Key, entry.Value);
+                foreach (var localfiles in entry.Value.LocalFilenames)
+                {
+                    dataServers.RemoveFile(localfiles.Key, localfiles.Value);
+                }
             }
 
             return clockDiff;

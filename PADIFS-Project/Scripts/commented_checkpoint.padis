@@ -15,7 +15,7 @@ RECOVER m-2
 # get all the metadata pending
 WRITE c-1, 0, "Text contents of the file. Contents are a string delimited by double quotes as this one"
 # writes f1 to d-1 and d-2
-READ c-1, 0, monotonic, 0
+READ c-1, 0, default, 0
 # reads f1, the latest version ever and stores contents in byte-register 0
 FREEZE d-2
 COPY c-1, 0, default, 1, " salt example"
