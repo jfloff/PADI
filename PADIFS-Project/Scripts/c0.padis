@@ -12,9 +12,9 @@ EXESCRIPT c-5 c5.padis
 EXESCRIPT c-6 c6.padis
 EXESCRIPT c-7 c7.padis
 EXESCRIPT c-8 c8.padis
-EXESCRIPT c-9 c9.padis
-EXESCRIPT c-10 c10.padis
-EXESCRIPT c-11 c11.padis
+# EXESCRIPT c-9 c9.padis
+# EXESCRIPT c-10 c10.padis
+# EXESCRIPT c-11 c11.padis
 # EXESCRIPT c-12 c12.padis
 # EXESCRIPT c-13 c13.padis
 # EXESCRIPT c-14 c14.padis

@@ -1,7 +1,9 @@
 ﻿using SharedLibrary;
 using SharedLibrary.Entities;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Threading;
 
 namespace Client
 {
@@ -15,11 +17,11 @@ namespace Client
         }
 
         // index / filename
-        private Dictionary<int, string> filenames = new Dictionary<int, string>();
+        private ConcurrentDictionary<int, string> filenames = new ConcurrentDictionary<int, string>();
         // filename / index
-        private Dictionary<string, RegisterInfo> infos = new Dictionary<string, RegisterInfo>();
-        private volatile int index = 0;
-        private volatile int count = 0;
+        private ConcurrentDictionary<string, RegisterInfo> infos = new ConcurrentDictionary<string, RegisterInfo>();
+        private int index = 0;
+        private int count = 0;
 
         public bool Contains(string filename)
         {
@@ -68,8 +70,8 @@ namespace Client
                 infos[filename].fileData = new FileData();
                 infos[filename].fileMetadata = fileMetadata;
 
-                index++;
-                count++;
+                Interlocked.Increment(ref index);
+                Interlocked.Increment(ref count);
             }
             else
             {
@@ -82,9 +84,9 @@ namespace Client
             if (infos.ContainsKey(filename))
             {
                 int i = infos[filename].index;
-                infos.Remove(filename);
-                filenames.Remove(i);
-                count--;
+                RegisterInfo ignoredRegisterInfo;  infos.TryRemove(filename, out ignoredRegisterInfo);
+                string ignoredFilename; filenames.TryRemove(i, out ignoredFilename);
+                Interlocked.Decrement(ref count);
             }
         }
 

@@ -35,7 +35,7 @@ namespace Client
         // index / fileregister struct
         FileRegister fileRegister = new FileRegister();
         // index / byte contents
-        private static Dictionary<int, byte[]> byteRegister = new Dictionary<int, byte[]>();
+        private static ConcurrentDictionary<int, byte[]> byteRegister = new ConcurrentDictionary<int, byte[]>();
 
         private static string master = string.Empty;
         private static string id;
@@ -338,6 +338,10 @@ namespace Client
                 // found the quorum file
                 if (quorumVersion != null) break;
 
+                // if there are still pending requests
+                // dont create new ones
+                if (requests > 0) continue;
+
                 // if all the votes arrived at the quorum
                 // stops when all requests are counted (requests = 0)
                 if (quorum.Count == (requests + quorum.Count))
@@ -419,6 +423,10 @@ namespace Client
 
                     // found the quorum file
                     if (quorumReached) break;
+
+                    // if there are still pending requests
+                    // dont create new ones
+                    if (requests > 0) continue;
 
                     // if all the votes arrived at the quorum
                     // stops when all requests are counted (requests = 0)
@@ -506,9 +514,9 @@ namespace Client
             Console.WriteLine("File Registers");
             Console.WriteLine(fileRegister);
             Console.WriteLine("Byte Registers");
-            for (int i = 0; i < byteRegister.Count; i++)
+            foreach (var entry in byteRegister)
             {
-                Console.WriteLine(i + ":" + Helper.BytesToString(byteRegister[i]));
+                Console.WriteLine(entry.Key + ":" + Helper.BytesToString(entry.Value));
             }
         }
     }

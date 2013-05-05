@@ -302,7 +302,7 @@ namespace DataServer
                 throw new ProcessFreezedException(id);
             }
 
-            Console.WriteLine("WRITE " + localFilename);
+            Console.WriteLine("WRITE " + localFilename + " : CONTENTS " + Helper.BytesToString(newFile.Contents));
 
             if (!files.ContainsKey(localFilename))
             {
