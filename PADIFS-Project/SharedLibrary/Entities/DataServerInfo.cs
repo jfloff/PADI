@@ -8,14 +8,14 @@ namespace SharedLibrary.Entities
     public class DataServerInfo
     {
         private string location;
-        private double weight;
+        private Weight weight;
         private DateTime lastHeartbeat;
         private ConcurrentDictionary<string, int> files = new ConcurrentDictionary<string, int>();
 
         public DataServerInfo(string location)
         {
             this.location = location;
-            this.weight = 0;
+            this.weight = new Weight();
             this.lastHeartbeat = DateTime.Now;
         }
 
@@ -24,7 +24,7 @@ namespace SharedLibrary.Entities
             get { return this.location; }
         }
 
-        public double Weight
+        public Weight Weight
         {
             get { return this.weight; }
             set { this.weight = value; }

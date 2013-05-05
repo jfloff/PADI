@@ -4,7 +4,7 @@ using System.Linq;
 namespace SharedLibrary.Entities
 {
     [Serializable]
-    public class FileData// : IEquatable<FileData>
+    public class FileData
     {
         private FileVersion version;
         private byte[] contents;

@@ -9,21 +9,11 @@ namespace Metadata
 {
     public class DataServerRegister
     {
-        class WeightCompararer : IComparer<double>
-        {
-            public int Compare(double x, double y)
-            {
-                if (x > y) return 1;
-                if (x < y) return -1;
-                return 0;
-            }
-        };
-
         // CREATE DICTIONARY FOR FAILED METADATAS
         // id / location
         private ConcurrentDictionary<string, DataServerInfo> infos = new ConcurrentDictionary<string, DataServerInfo>();
         // score / set of ids
-        private SortedDictionary<double, SortedSet<string>> weights = new SortedDictionary<double, SortedSet<string>>(new WeightCompararer());
+        private SortedDictionary<Weight, SortedSet<string>> weights = new SortedDictionary<Weight, SortedSet<string>>();
         // dummy object for lock
         private readonly object padlock = new object();
 
@@ -58,10 +48,10 @@ namespace Metadata
             return !(elapsed < (Helper.DATASERVER_HEARTBEAT_INTERVAL * Helper.HEARTBEAT_EXPIRE));
         }
 
-        public void Touch(string id, Heartbeat heartbeat)
+        public void Touch(string id, Weight weight)
         {
             this.infos[id].LastHeartbeat = DateTime.Now;
-            this.UpdateWeight(id, heartbeat.Weight);
+            this.UpdateWeight(id, weight);
         }
 
         public string Location(string id)
@@ -79,7 +69,7 @@ namespace Metadata
             this.infos[id].RemoveFile(localFilename);
         }
 
-        public void UpdateWeight(string id, double weight)
+        public void UpdateWeight(string id, Weight weight)
         {
             lock (padlock)
             {
@@ -102,7 +92,7 @@ namespace Metadata
             if (!this.infos.ContainsKey(id))
             {
                 this.infos[id] = new DataServerInfo(location);
-                UpdateWeight(id, 0);
+                UpdateWeight(id, new Weight());
             }
         }
 

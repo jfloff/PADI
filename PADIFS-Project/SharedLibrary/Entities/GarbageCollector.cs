@@ -6,26 +6,18 @@ using System.Collections.Generic;
 namespace SharedLibrary.Entities
 {
     [Serializable]
-    public class DataServerFiles : IEnumerable<string>
+    public class GarbageCollector : IEnumerable<string>
     {
-        private ICollection<string> files;
+        private HashSet<string> toDelete = new HashSet<string>();
 
-        public DataServerFiles(ICollection<string> files)
+        public void Add(string filename)
         {
-            this.files = files;
-        }
-
-        public bool Contains(string filename)
-        {
-            return this.files.Contains(filename);
+            toDelete.Add(filename);
         }
 
         public IEnumerator<string> GetEnumerator()
         {
-            foreach (string filename in this.files)
-            {
-                yield return filename;
-            }
+            return this.toDelete.GetEnumerator();
         }
 
         // Explicit interface implementation for nongeneric interface

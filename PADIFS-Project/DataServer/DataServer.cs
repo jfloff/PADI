@@ -4,6 +4,7 @@ using SharedLibrary.Exceptions;
 using SharedLibrary.Interfaces;
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Runtime.Remoting;
 using System.Runtime.Remoting.Channels;
 using System.Runtime.Remoting.Channels.Tcp;
@@ -14,15 +15,9 @@ namespace DataServer
 {
     public class DataServer : MarshalByRefObject, IDataServerToPM, IDataServerToClient
     {
-        private class FileStatistics
-        {
-            public int reads = 1;
-            public int writes = 1;
-        };
-
         // localFilename / FileData
         private static ConcurrentDictionary<string, FileData> files = new ConcurrentDictionary<string, FileData>();
-        private static ConcurrentDictionary<string, FileStatistics> statistics = new ConcurrentDictionary<string, FileStatistics>();
+        private static ConcurrentDictionary<string, Weight> weights = new ConcurrentDictionary<string, Weight>();
 
         // id / interface
         private static ConcurrentDictionary<string, IMetadataToDataServer> metadatas
@@ -79,20 +74,15 @@ namespace DataServer
             {
                 try
                 {
-                    Heartbeat heartbeat = new Heartbeat(Weight());
-                    DataServerFiles metadataFiles = metadatas[master].Heartbeat(id, heartbeat);
+                    Heartbeat heartbeat = new Heartbeat(Weight(), new Dictionary<string, Weight>(weights));
+                    GarbageCollector toDelete = metadatas[master].Heartbeat(id, heartbeat);
 
-                    // remove files
-                    foreach (var entry in files)
+                    foreach (string filename in toDelete)
                     {
-                        string filename = entry.Key;
-
-                        if (!metadataFiles.Contains(filename))
-                        {
-                            FileData ignoredFileData; files.TryRemove(filename, out ignoredFileData);
-                            FileStatistics ignoredStats; statistics.TryRemove(filename, out ignoredStats);
-                        }
+                        FileData ignoredFileData; files.TryRemove(filename, out ignoredFileData);
+                        Weight ignoredStats; weights.TryRemove(filename, out ignoredStats);
                     }
+
                     return;
                 }
                 catch (ProcessFailedException)
@@ -102,18 +92,18 @@ namespace DataServer
             }
         }
 
-        private double Weight()
+        private Weight Weight()
         {
-            double weight = 0;
-            if (statistics.Count != 0)
+            Weight weight = new Weight();
+            if (weights.Count != 0)
             {
                 // SOM Fi(reads/writes) / nFiles
-                foreach (var entry in statistics)
+                foreach (var entry in weights)
                 {
-                    FileStatistics fileStatistics = entry.Value;
-                    weight += fileStatistics.reads / fileStatistics.writes;
+                    Weight fileWeight = entry.Value;
+                    weight.Reads += fileWeight.Reads;
+                    weight.Writes += fileWeight.Writes;
                 }
-                weight /= statistics.Count;
             }
             return weight;
         }
@@ -264,7 +254,7 @@ namespace DataServer
             {
                 Console.WriteLine("CREATE FILE " + localFilename);
                 files[localFilename] = new FileData();
-                statistics[localFilename] = new FileStatistics();
+                weights[localFilename] = new Weight();
             }
 
             return files[localFilename].Version;
@@ -285,11 +275,10 @@ namespace DataServer
             {
                 Console.WriteLine("CREATE FILE " + localFilename);
                 files[localFilename] = new FileData();
-                statistics[localFilename] = new FileStatistics();
-                statistics[localFilename].reads++;
+                weights[localFilename] = new Weight();
             }
 
-            statistics[localFilename].reads++;
+            weights[localFilename].Reads++;
             return files[localFilename];
         }
 
@@ -308,14 +297,13 @@ namespace DataServer
             {
                 Console.WriteLine("CREATE FILE " + localFilename);
                 files[localFilename] = newFile;
-                statistics[localFilename] = new FileStatistics();
-                statistics[localFilename].writes++;
+                weights[localFilename] = new Weight();
                 return;
             }
 
             FileData currentFile = files[localFilename];
             files[localFilename] = FileData.Latest(currentFile, newFile);
-            statistics[localFilename].writes++;
+            weights[localFilename].Writes++;
         }
     }
 }

@@ -12,12 +12,12 @@ READ c-1, 0, default, 0
 WRITE c-1, 0, "COISAS0
 
 CREATE c-1, f1, 2, 1, 1
-READ c-1, 0, default, 0
-READ c-1, 0, default, 0
-READ c-1, 0, default, 0
+READ c-1, 1, default, 1
+READ c-1, 1, default, 1
+READ c-1, 1, default, 1
 
 CREATE c-1, f2, 1, 1, 1
-READ c-1, 0, default, 0
-READ c-1, 0, default, 0
-READ c-1, 0, default, 0
-WRITE c-1, 0, "COISAS0"
+READ c-1, 2, default, 2
+READ c-1, 2, default, 2
+READ c-1, 2, default, 2
+WRITE c-1, 2, "COISAS0"

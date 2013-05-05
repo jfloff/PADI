@@ -36,5 +36,4 @@ DUMP m-2
 DELETE c-2, f2
 CLOSE c-1, f2
 # script1 below would exist in the local puppet master disk
-#!
 EXESCRIPT c-1 script1.padis

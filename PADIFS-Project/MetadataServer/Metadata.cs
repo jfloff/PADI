@@ -180,7 +180,7 @@ namespace Metadata
 
             if(dataServers.Contains(id))
             {
-                dataServers.Touch(id, heartbeat);
+                dataServers.Touch(id, heartbeat.DataServerWeight);
             }
         }
 
@@ -480,7 +480,7 @@ namespace Metadata
             while (requests > 0) ;
         }
 
-        public DataServerFiles Heartbeat(string id, Heartbeat heartbeat)
+        public GarbageCollector Heartbeat(string id, Heartbeat heartbeat)
         {
             if (fail) throw new ProcessFailedException(id);
 
@@ -492,9 +492,20 @@ namespace Metadata
                 }
 
                 HeartbeatOnMetadatas(id, heartbeat);
-                dataServers.Touch(id, heartbeat);
+                GarbageCollector toDelete = new GarbageCollector();
 
-                return new DataServerFiles(dataServers.DataServerFiles(id));
+                foreach (var entry in heartbeat.FileWeights)
+                {
+                    string localFilename = entry.Key;
+                    Weight fileWeight = entry.Value;
+
+                    if (!dataServers.DataServerFiles(id).Contains(localFilename))
+                    {
+                        toDelete.Add(localFilename);
+                    }
+                }
+                dataServers.Touch(id, heartbeat.DataServerWeight);
+                return toDelete;
             }
 
             return null;

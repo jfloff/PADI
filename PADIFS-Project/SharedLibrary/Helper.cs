@@ -11,7 +11,7 @@ namespace SharedLibrary
         {
             DEFAULT,
             MONOTONIC
-        }
+        };
 
         public const int WINDOW_HEIGHT = 5;
         public const int WINDOW_WIDTH = 80;
