@@ -1,0 +1,6 @@
+RECOVER m-0
+FAIL m-1
+CREATE c-1, f1, 3, 2, 2
+DELETE c-1, f1
+RECOVER m-1
+CREATE c-1, f2, 3, 2, 2

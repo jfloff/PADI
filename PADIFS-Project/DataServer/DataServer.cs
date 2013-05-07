@@ -75,7 +75,7 @@ namespace DataServer
                 try
                 {
                     Heartbeat heartbeat = new Heartbeat(Weight(), new Dictionary<string, Weight>(weights));
-                    GarbageCollector toDelete = metadatas[master].Heartbeat(id, heartbeat);
+                    GarbageCollected toDelete = metadatas[master].Heartbeat(id, heartbeat);
 
                     foreach (string filename in toDelete)
                     {
@@ -159,7 +159,7 @@ namespace DataServer
                     {
                         while (true)
                         {
-                            SendHeartbeat();
+                            //SendHeartbeat();
                             Thread.Sleep(Helper.DATASERVER_HEARTBEAT_INTERVAL);
                         }
                     });

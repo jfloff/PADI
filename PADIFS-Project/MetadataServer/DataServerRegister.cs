@@ -9,6 +9,21 @@ namespace Metadata
 {
     public class DataServerRegister
     {
+        private class DataServerInfo
+        {
+            public string location;
+            public Weight weight;
+            public DateTime lastHeartbeat;
+            public ConcurrentDictionary<string, Weight> files = new ConcurrentDictionary<string, Weight>();
+
+            public DataServerInfo(string location)
+            {
+                this.location = location;
+                this.weight = new Weight();
+                this.lastHeartbeat = DateTime.Now;
+            }
+        };
+
         // CREATE DICTIONARY FOR FAILED METADATAS
         // id / location
         private ConcurrentDictionary<string, DataServerInfo> infos = new ConcurrentDictionary<string, DataServerInfo>();
@@ -22,19 +37,9 @@ namespace Metadata
             string ret = "[\n";
             foreach (var entry in infos)
             {
-                ret += "  <" + entry.Key + ":" + entry.Value.Location + ":" + entry.Value.Weight + ":" + entry.Value.LastHeartbeat + "> \n";
+                ret += "  <" + entry.Key + ":" + entry.Value.location + ":" + entry.Value.weight + ":" + entry.Value.lastHeartbeat + "> \n";
             }
             return ret + "]";
-        }
-
-        public Dictionary<string, DataServerInfo> ToDictionary() 
-        {
-            return new Dictionary<string, DataServerInfo>(this.infos);
-        }
-
-        public ICollection<string> DataServerFiles(string id)
-        {
-            return this.infos[id].Files;
         }
 
         public bool Contains(string id)
@@ -42,49 +47,9 @@ namespace Metadata
             return this.infos.ContainsKey(id);
         }
 
-        public bool Failed(string id)
-        {
-            double elapsed = Math.Abs(this.infos[id].LastHeartbeat.Subtract(DateTime.Now).TotalMilliseconds);
-            return !(elapsed < (Helper.DATASERVER_HEARTBEAT_INTERVAL * Helper.HEARTBEAT_EXPIRE));
-        }
-
-        public void Touch(string id, Weight weight)
-        {
-            this.infos[id].LastHeartbeat = DateTime.Now;
-            this.UpdateWeight(id, weight);
-        }
-
         public string Location(string id)
         {
-            return infos[id].Location;
-        }
-
-        public void AddFile(string id, string localFilename)
-        {
-            this.infos[id].AddFile(localFilename);
-        }
-
-        public void RemoveFile(string id, string localFilename)
-        {
-            this.infos[id].RemoveFile(localFilename);
-        }
-
-        public void UpdateWeight(string id, Weight weight)
-        {
-            lock (padlock)
-            {
-                // if new weight
-                if (!this.weights.ContainsKey(weight))
-                {
-                    this.weights[weight] = new SortedSet<string>();
-                }
-                
-                // remove the previous weight
-                this.weights[this.infos[id].Weight].Remove(id);
-                    
-                this.weights[weight].Add(id);
-                this.infos[id].Weight = weight;
-            }
+            return infos[id].location;
         }
 
         public void Add(string id, string location)
@@ -96,9 +61,49 @@ namespace Metadata
             }
         }
 
-        public void Add(string id, DataServerInfo dataServerInfo)
+        public void AddFile(string id, string localFilename)
         {
-            this.infos[id] = dataServerInfo;
+            this.infos[id].files[localFilename] = new Weight();
+        }
+
+        public void RemoveFile(string id, string localFilename)
+        {
+            Weight ignored; this.infos[id].files.TryRemove(localFilename, out ignored);
+        }
+
+        public bool Failed(string id)
+        {
+            double elapsed = Math.Abs(this.infos[id].lastHeartbeat.Subtract(DateTime.Now).TotalMilliseconds);
+            return !(elapsed < (Helper.DATASERVER_HEARTBEAT_INTERVAL * Helper.HEARTBEAT_EXPIRE));
+        }
+
+        public void Touch(string id, Weight weight)
+        {
+            this.infos[id].lastHeartbeat = DateTime.Now;
+            this.UpdateWeight(id, weight);
+        }
+
+        public void UpdateWeight(string id, Weight weight)
+        {
+            lock (padlock)
+            {
+                // if new weight
+                if (!this.weights.ContainsKey(weight))
+                {
+                    this.weights[weight] = new SortedSet<string>();
+                }
+
+                // remove the previous weight
+                this.weights[this.infos[id].weight].Remove(id);
+
+                this.weights[weight].Add(id);
+                this.infos[id].weight = weight;
+            }
+        }
+
+        public ConcurrentDictionary<string, Weight> Files(string id)
+        {
+            return this.infos[id].files;
         }
 
         public bool TryMoveNext(string last, out string value)

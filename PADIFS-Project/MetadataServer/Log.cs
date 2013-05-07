@@ -2,120 +2,117 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Reflection;
 
 namespace Metadata
 {
     public class Log
     {
-        private DataServerRegister dataServers;
-        private FileMetadataTable table;
+        private static readonly char separator = '\n';
 
         // marked medata id / snapshots
-        private ConcurrentDictionary<string, MetadataSnapshot> marks = new ConcurrentDictionary<string, MetadataSnapshot>();
-
-        public Log(FileMetadataTable table, DataServerRegister dataServers)
-        {
-            this.table = table;
-            this.dataServers = dataServers;
-        }
+        private ConcurrentDictionary<string, int> marks = new ConcurrentDictionary<string, int>();
+        // sequence / operation
+        private ConcurrentDictionary<int, string> operations = new ConcurrentDictionary<int, string>();
 
         // adds mark to start keeping states
-        public void AddMark(string mark, int sequence)
+        public bool AddMark(string mark, int sequence)
         {
             // keeps older marks
-            if (!marks.ContainsKey(mark))
+            if (!marks.ContainsKey(mark) || (marks[mark] > sequence))
             {
-                marks[mark] = new MetadataSnapshot(table.ToDictionary(), dataServers.ToDictionary(), sequence);
+                marks[mark] = sequence;
+                return true;
             }
-            else if (marks[mark].sequence > sequence)
-            {
-                marks[mark] = new MetadataSnapshot(table.ToDictionary(), dataServers.ToDictionary(), sequence);
-            }
+            return false;
         }
 
-        public MetadataDiff BuildDiff(string mark)
+        public void LogOperation(int sequence, string operation, params object[] args)
         {
-            // ignores sequence parameter
-            MetadataSnapshot current = new MetadataSnapshot(table.ToDictionary(), dataServers.ToDictionary(), -1);
-            DictionaryDiff<string, FileMetadata> tableDiff;
-            DictionaryDiff<string, DataServerInfo> dataServersDiff;
-            int sequenceToDiff;
-
-            // if BuildDiff was called on a non-existant mark, give whole state
-            if (!marks.ContainsKey(mark))
+            string serialize = operation + separator;
+            foreach (object arg in args)
             {
-                tableDiff = new DictionaryDiff<string, FileMetadata>(current.table);
-                dataServersDiff = new DictionaryDiff<string, DataServerInfo>(current.dataServers);
-                sequenceToDiff = 0;
+                serialize += arg.ToString() + separator;
             }
-            // otherwise we give the state since last mark, and the sequence the snapshot was taken
-            else
-            {
-                MetadataSnapshot past;
-                marks.TryRemove(mark, out past);
-                tableDiff = new DictionaryDiff<string, FileMetadata>(past.table, current.table);
-                dataServersDiff = new DictionaryDiff<string, DataServerInfo>(past.dataServers, current.dataServers);
-                sequenceToDiff = past.sequence;
-            }
-
-            Dictionary<string, MetadataSnapshot> marksCopy = new Dictionary<string,MetadataSnapshot>(marks);
-
-            return new MetadataDiff(tableDiff, dataServersDiff, marksCopy, sequenceToDiff);
+            operations[sequence] = serialize;
         }
 
-        public int MergeDiff(MetadataDiff diff, Func<FileMetadata,Action<string>> funcFactory)
+        public MetadataDiff BuildDiff(string mark, int clock)
         {
-            int clockDiff = 0;
+            // starts at clock-1 becasue clock is incremented at the end of an operation
+            int startAt = clock - 1;
+            // either has a mark, or we need the whole state
+            int stopAt = (marks.ContainsKey(mark)) ? marks[mark] : 0;
 
-            // marks
-            foreach (var entry in diff.Marks)
+            // adds operations missing to the diff
+            MetadataDiff diff = new MetadataDiff();
+            // only if there is any operations
+            if (operations.Count != 0)
             {
-                marks[entry.Key] = entry.Value;
-            }
-
-            // data servers
-            foreach (var entry in diff.DataServersDiff.Plus)
-            {
-                clockDiff++;
-                this.dataServers.Add(entry.Key, entry.Value);
-            }
-
-            // files
-            foreach (var entry in diff.TableDiff.Plus)
-            {
-                string filename = entry.Key;
-                FileMetadata fileMetadata = entry.Value;
-
-                // create file found
-                if (!this.table.Contains(filename))
+                for (int i = startAt; i >= stopAt; i--)
                 {
-                    // clocks data servers and create file
-                    clockDiff += fileMetadata.CurrentNbDataServers + 1;
-                }
-                else
-                {
-                    // clocks new data servers
-                    clockDiff += fileMetadata.CurrentNbDataServers - this.table.FileMetadata(filename).CurrentNbDataServers;
-                }
-
-                this.table.SetFileMetadata(filename, fileMetadata, funcFactory(fileMetadata));
-                foreach (var localfiles in fileMetadata.LocalFilenames)
-                {
-                    dataServers.AddFile(localfiles.Key, localfiles.Value);
-                }
-            }
-            foreach (var entry in diff.TableDiff.Minus)
-            {
-                clockDiff++;
-                this.table.Remove(entry.Key);
-
-                foreach (var localfiles in entry.Value.LocalFilenames)
-                {
-                    dataServers.RemoveFile(localfiles.Key, localfiles.Value);
+                    diff.AddOperation(operations[i]);
                 }
             }
 
-            return clockDiff;
+            return diff;
+        }
+
+        public void MergeDiff(Metadata metadata, MetadataDiff diff)
+        {
+            foreach (string operation in diff.Operations)
+            {
+                string[] words = operation.Split(separator);
+                string methodName = words[0];
+
+                switch (methodName)
+                {
+                    case ("AddMarkOnMetadata"):
+                        {
+                            metadata.AddMarkOnMetadata(words[1], int.Parse(words[2]), int.Parse(words[3]));
+                            break;
+                        }
+                    case ("OpenOnMetadata"):
+                        {
+                            metadata.OpenOnMetadata(words[1], words[2], int.Parse(words[3]));
+                            break;
+                        }
+                    case ("CloseOnMetadata"):
+                        {
+                            metadata.CloseOnMetadata(words[1], words[2], int.Parse(words[3]));
+                            break;
+                        }
+                    case ("CreateOnMetadata"):
+                        {
+                            metadata.CreateOnMetadata(words[1], words[2], int.Parse(words[3]), int.Parse(words[4]), int.Parse(words[5]), int.Parse(words[6]));
+                            break;
+                        }
+                    case ("SelectOnMetadata"):
+                        {
+                            metadata.SelectOnMetadata(words[1], words[2], words[3], int.Parse(words[4]));
+                            break;
+                        }
+                    case ("DeleteOnMetadata"):
+                        {
+                            metadata.DeleteOnMetadata(words[1], int.Parse(words[2]));
+                            break;
+                        }
+                    case ("DataServerOnMetadata"):
+                        {
+                            metadata.DataServerOnMetadata(words[1], words[2], int.Parse(words[3]));
+                            break;
+                        }
+                    case ("HeartbeatOnMetadata"):
+                        {
+                            throw new NotImplementedException();
+                            break;
+                        }
+                    default:
+                        {
+                            throw new Exception("NOT SUPPOSED TO REACH HERE" + methodName);
+                        }
+                }
+            }
         }
     }
 }

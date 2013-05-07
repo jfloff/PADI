@@ -127,7 +127,7 @@ namespace Client
             {
                 try
                 {
-                    FileMetadata fileMetadata = metadatas[master].Create(filename, nbDataServers, readQuorum, writeQuorum);
+                    FileMetadata fileMetadata = metadatas[master].Create(id, filename, nbDataServers, readQuorum, writeQuorum);
                     fileRegister.AddOrUpdate(filename, fileMetadata);
                     return;
                 }
@@ -183,7 +183,7 @@ namespace Client
             {
                 try
                 {
-                    FileMetadata fileMetadata = metadatas[master].Open(filename);
+                    FileMetadata fileMetadata = metadatas[master].Open(id, filename);
                     fileRegister.AddOrUpdate(filename, fileMetadata);
                     return fileMetadata;
                 }
@@ -208,7 +208,7 @@ namespace Client
                 try
                 {
                     fileRegister.Remove(filename);
-                    metadatas[master].Close(filename);
+                    metadatas[master].Close(id, filename);
                     return;
                 }
                 catch (ProcessFailedException)
@@ -237,7 +237,7 @@ namespace Client
                 try
                 {
                     fileRegister.Remove(filename);
-                    metadatas[master].Delete(filename);
+                    metadatas[master].Delete(id, filename);
                     return;
                 }
                 catch (ProcessFailedException)

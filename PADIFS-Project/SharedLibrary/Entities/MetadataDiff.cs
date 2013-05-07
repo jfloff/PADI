@@ -7,49 +7,21 @@ using System.Collections.Generic;
 namespace SharedLibrary.Entities
 {
     [Serializable]
-    // implements IEnumerable so we can foreach this class
     public class MetadataDiff
     {
-        // filename / metadata
-        private DictionaryDiff<string, FileMetadata> tableDiff;
-        // id / location
-        private DictionaryDiff<string, DataServerInfo> dataServersDiff;
-        // mark / snapshot
-        private Dictionary<string, MetadataSnapshot> marks;
-        // sequence for number
-        private int sequence;
+        // action queue
+        private Stack<string> operations = new Stack<string>();
 
-        public MetadataDiff(DictionaryDiff<string, FileMetadata> tableDiff,
-            DictionaryDiff<string, DataServerInfo> dataServersDiff,
-            Dictionary<string, MetadataSnapshot> marks, 
-            int sequence)
+        public void AddOperation(string operation)
         {
-            this.tableDiff = tableDiff;
-            this.dataServersDiff = dataServersDiff;
-            this.marks = marks;
-            this.sequence = sequence;
+            this.operations.Push(operation);
         }
 
-        public DictionaryDiff<string, FileMetadata> TableDiff
+        public Stack<string> Operations
         {
-            get { return this.tableDiff; }
+            get { return this.operations; }
         }
-
-        public DictionaryDiff<string, DataServerInfo> DataServersDiff
-        {
-            get { return this.dataServersDiff; }
-        }
-
-        public Dictionary<string, MetadataSnapshot> Marks
-        {
-            get { return this.marks; }
-        }
-
-        public int Sequence 
-        {
-            get { return this.sequence; }
-        }
-         
+        
     }
 }
 

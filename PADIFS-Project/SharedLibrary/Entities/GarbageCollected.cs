@@ -6,7 +6,7 @@ using System.Collections.Generic;
 namespace SharedLibrary.Entities
 {
     [Serializable]
-    public class GarbageCollector : IEnumerable<string>
+    public class GarbageCollected : IEnumerable<string>
     {
         private HashSet<string> toDelete = new HashSet<string>();
 

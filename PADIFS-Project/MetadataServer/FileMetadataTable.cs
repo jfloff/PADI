@@ -8,29 +8,31 @@ namespace Metadata
 {
     public class FileMetadataTable
     {
-        // filename / FileMetadata+queue of pending requests for each file 
-        private ConcurrentDictionary<string, FileMetadata> files = new ConcurrentDictionary<string, FileMetadata>();
-        private ConcurrentDictionary<string, ConcurrentQueue<Action<string>>> pending
-            = new ConcurrentDictionary<string, ConcurrentQueue<Action<string>>>();
+        private class TableEntry 
+        {
+            public FileMetadata metadata;
+            public ConcurrentQueue<Action<string>> pending = new ConcurrentQueue<Action<string>>();
+            public ConcurrentDictionary<string, bool> clients = new ConcurrentDictionary<string,bool>();
 
+            public TableEntry(FileMetadata metadata)
+            {
+                this.metadata = metadata;
+            }
+        }
+
+        // filename / FileMetadata+queue of pending requests for each file 
+        private ConcurrentDictionary<string, TableEntry> files = new ConcurrentDictionary<string, TableEntry>();
+        // localFilename / filename
+        private ConcurrentDictionary<string, string> localFilenames = new ConcurrentDictionary<string, string>();
+        
         public override string ToString()
         {
             string ret = "[\n";
             foreach (var entry in files)
             {
-                ret += "  <" + entry.Value + ":" + pending[entry.Key].Count + "> \n";
+                ret += "  <" + entry.Value.metadata + ":" + entry.Value.pending.Count + ":" + entry.Value.clients.Count + "> \n";
             }
             return ret + "]";
-        }
-
-        public Dictionary<string, FileMetadata> ToDictionary()
-        {
-            Dictionary<string, FileMetadata> clone = new Dictionary<string, FileMetadata>();
-            foreach (var entry in files)
-            {
-                clone[entry.Key] = entry.Value.Clone();
-            }
-            return clone;
         }
 
         public bool Contains(string filename)
@@ -38,75 +40,84 @@ namespace Metadata
             return this.files.ContainsKey(filename);
         }
 
-        public void Remove(string filename)
-        {
-            FileMetadata ingoredFile; this.files.TryRemove(filename, out ingoredFile);
-            ConcurrentQueue<Action<string>> ignoredPending; this.pending.TryRemove(filename, out ignoredPending);
-        }
-
         public FileMetadata FileMetadata(string filename)
         {
-            return files[filename];
+            return files[filename].metadata;
         }
-
-        public void EnqueueSelectDataServer(string filename, Action<string> enqueueAction, int number = 1)
+        
+        // returns true if it signal was really made (not duplicate)
+        public bool Open(string clientId, string filename)
         {
-            if (number <= 0) return;
-
-            for (; number > 0; number--)
+            if (!files[filename].clients.ContainsKey(clientId))
             {
-                pending[filename].Enqueue(enqueueAction);
+                files[filename].clients[clientId] = true;
+                return true;
             }
+            // already open before
+            return false;
         }
 
-        public void DequeueSelectDataServer(string filename, int number = -1)
+        // returns true if it signal was really made (not duplicate)
+        public bool Close(string clientId, string filename)
         {
-            if (number >= 0) return;
-
-            for (; number < 0; number++)
+            if (files[filename].clients.ContainsKey(clientId))
             {
-                Action<string> ignored; pending[filename].TryDequeue(out ignored);
+                bool ignored; files[filename].clients.TryRemove(clientId, out ignored);
+                return true;
             }
+            // never opened the file
+            return false;
         }
 
-        public void SetFileMetadata(string filename, FileMetadata fileMetadata, Action<string> enqueueAction)
+        public FileMetadata Remove(string filename)
         {
-            if (this.Contains(filename))
+            TableEntry tableEntry;
+            this.files.TryRemove(filename, out tableEntry);
+
+            // remove localfilenames
+            foreach (var entry in tableEntry.metadata.LocalFilenames)
             {
-                int number = fileMetadata.NbDataServers - fileMetadata.CurrentNbDataServers - pending[filename].Count;
-                EnqueueSelectDataServer(filename, enqueueAction, number);
-                DequeueSelectDataServer(filename, number);
-                this.files[filename] = fileMetadata;
+                string localFilename = entry.Value;
+                string ingoredFilename; this.localFilenames.TryRemove(localFilename, out ingoredFilename);
             }
-            else
-            {
-                this.files[filename] = fileMetadata;
-                this.pending[filename] = new ConcurrentQueue<Action<string>>();
-                int number = fileMetadata.NbDataServers - fileMetadata.CurrentNbDataServers;
-                this.EnqueueSelectDataServer(filename, enqueueAction, number);
-            }
+
+            return tableEntry.metadata;
         }
 
-        public IEnumerable<KeyValuePair<string, FileMetadata>> Files
+        public void Create(string clientId, string filename, int nbDataServers, int readQuorum, int writeQuorum)
+        {
+            this.files[filename] = new TableEntry(new FileMetadata(filename, nbDataServers, readQuorum, writeQuorum));
+            Open(clientId, filename);
+        }
+
+        public void AddDataServer(string filename, string dataServerId, string location, string localFilename)
+        {
+            this.files[filename].metadata.AddDataServer(dataServerId, location, localFilename);
+            localFilenames[localFilename] = filename;
+        }
+
+        public void EnqueueSelect(string filename, Action<string> pending)
+        {
+            this.files[filename].pending.Enqueue(pending);
+        }
+
+        public Action<string> DequeueSelect(string filename)
+        {
+            Action<string> pending;
+            this.files[filename].pending.TryDequeue(out pending);
+            return pending;
+        }
+
+        // returns files that have pending requests
+        public IEnumerable<string> Pending
         {
             get
             {
                 foreach (var entry in files)
                 {
-                    yield return entry;
-                }
-            }
-        }
-
-        public IEnumerable<ConcurrentQueue<Action<string>>> Pending
-        {
-            get
-            {
-                foreach (var entry in pending)
-                {
-                    if (entry.Value.Count != 0)
+                    if (entry.Value.pending.Count != 0)
                     {
-                        yield return entry.Value;
+                        yield return entry.Key;
                     }
                 }
             }

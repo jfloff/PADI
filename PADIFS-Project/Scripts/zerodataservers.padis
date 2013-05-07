@@ -8,5 +8,6 @@ UNFREEZE d-2
 UNFREEZE d-3
 UNFREEZE d-4
 UNFREEZE d-5
+#!
 WRITE c-1, 0, "Text contents of the file. Contents are a string delimited by double quotes as this one"
 DUMP c-1

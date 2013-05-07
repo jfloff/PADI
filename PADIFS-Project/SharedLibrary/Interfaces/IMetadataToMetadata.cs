@@ -6,10 +6,13 @@ namespace SharedLibrary.Interfaces
     {
         MasterVote MasterVoting(MasterVote vote);
         MetadataDiff UpdateMetadata(string id);
-        void CreateOrUpdateOnMetadata(FileMetadata fileMetadata, int sequence);
-        void DeleteOnMetadata(FileMetadata fileMetadata, int sequence);
+        void SelectOnMetadata(string filename, string dataServerId, string localFilename, int sequence);
+        void CreateOnMetadata(string clientId, string filename, int nbDataServers, int readQuorum, int writeQuorum, int sequence);
+        void DeleteOnMetadata(string filename, int sequence);
         void DataServerOnMetadata(string id, string location, int sequence);
-        void LogMarkOnMetadata(string mark, int sequence);
-        void HeartbeatOnMetadata(string id, Heartbeat heartbeat);
+        void AddMarkOnMetadata(string mark, int markSequence, int sequence);
+        void HeartbeatOnMetadata(string id, Heartbeat heartbeat, int sequence);
+        void OpenOnMetadata(string clientId, string filename, int sequence);
+        void CloseOnMetadata(string clientId, string filename, int sequence);
     }
 }

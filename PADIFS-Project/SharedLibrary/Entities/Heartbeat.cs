@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace SharedLibrary.Entities
 {
-    [Serializable]
+    [Serializable()]
     public class Heartbeat
     {
         private Weight dataServerWeight;
