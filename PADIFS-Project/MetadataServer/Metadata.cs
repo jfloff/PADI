@@ -173,9 +173,9 @@ namespace Metadata
         {
             if (log.AddMark(mark, markSequence))
             {
-                clock++;
-                log.LogOperation(clock, "AddMarkOnMetadata", mark, markSequence, clock);
-                AddMarkOnMetadatas(mark, markSequence, clock);
+                int sequence = clock++;
+                log.LogOperation(sequence, "AddMarkOnMetadata", mark, markSequence, sequence);
+                AddMarkOnMetadatas(mark, markSequence, sequence);
             }
         }
 
@@ -193,9 +193,9 @@ namespace Metadata
 
             if (table.Open(clientId, filename))
             {
-                log.LogOperation(clock, "OpenOnMetadata", clientId, filename, clock);
-                OpenOnMetadatas(clientId, filename, clock);
-                clock++;
+                int sequence = clock++;
+                log.LogOperation(sequence, "OpenOnMetadata", clientId, filename, sequence);
+                OpenOnMetadatas(clientId, filename, sequence);
             }
 
             return table.FileMetadata(filename);
@@ -244,9 +244,9 @@ namespace Metadata
 
             if (table.Close(clientId, filename))
             {
-                log.LogOperation(clock, "CloseOnMetadata", clientId, filename, clock);
-                CloseOnMetadatas(clientId, filename, clock);
-                clock++;
+                int sequence = clock++;
+                log.LogOperation(clock, "CloseOnMetadata", clientId, filename, sequence);
+                CloseOnMetadatas(clientId, filename, sequence);
             }
         }
 
@@ -292,13 +292,13 @@ namespace Metadata
             Console.WriteLine("CREATE METADATA FILENAME: " + filename + " NBDATASERVERS: " + nbDataServers
                 + " READQUORUM: " + readQuorum + " WRITEQUORUM: " + writeQuorum);
 
-            log.LogOperation(clock, "CreateOnMetadata", clientId, filename, nbDataServers, readQuorum, writeQuorum, clock);
+            int sequence = clock++;
+            log.LogOperation(sequence, "CreateOnMetadata", clientId, filename, nbDataServers, readQuorum, writeQuorum, sequence);
 
             //create file
             table.Create(clientId, filename, nbDataServers, readQuorum, writeQuorum);
             EnqueuePending(filename, nbDataServers);
-            CreateOnMetadatas(clientId, filename, nbDataServers, readQuorum, writeQuorum, clock);
-            clock++;
+            CreateOnMetadatas(clientId, filename, nbDataServers, readQuorum, writeQuorum, sequence);
 
             // select possible data servers
             int selected = 0;
@@ -327,12 +327,12 @@ namespace Metadata
         {
             string localFilename = LocalFilename(filename);
 
-            log.LogOperation(clock, "SelectOnMetadata", filename, dataServerId, localFilename, clock);
+            int sequence = clock++;
+            log.LogOperation(sequence, "SelectOnMetadata", filename, dataServerId, localFilename, sequence);
 
             table.AddDataServer(filename, dataServerId, dataServers.Location(dataServerId), localFilename);
             dataServers.AddFile(dataServerId, localFilename);
-            SelectOnMetadatas(filename, dataServerId, localFilename, clock);
-            clock++;
+            SelectOnMetadatas(filename, dataServerId, localFilename, sequence);
         }
 
         private void SelectOnMetadatas(string filename, string dataServerId, string localFilename, int sequence)
@@ -411,9 +411,10 @@ namespace Metadata
                 throw new FileDoesNotExistException(filename);
             }
 
-            log.LogOperation(clock, "DeleteOnMetadata", filename, clock);
+            int sequence = clock++;
+            log.LogOperation(sequence, "DeleteOnMetadata", filename, sequence);
 
-            DeleteOnMetadatas(filename, clock);
+            DeleteOnMetadatas(filename, sequence);
             FileMetadata removed = table.Remove(filename);
 
             // remove localFilenames from data servers
@@ -424,8 +425,6 @@ namespace Metadata
 
                 dataServers.RemoveFile(dataServerId, localFilename);
             }
-
-            clock++;
         }
 
         private void DeleteOnMetadatas(string filename, int sequence)
@@ -496,11 +495,11 @@ namespace Metadata
 
             if (!dataServers.Contains(dataServerId))
             {
-                log.LogOperation(clock, "DataServerOnMetadata", dataServerId, location, clock);
+                int sequence = clock++;
+                log.LogOperation(sequence, "DataServerOnMetadata", dataServerId, location, sequence);
 
-                DataServerOnMetadatas(dataServerId, location, clock);
+                DataServerOnMetadatas(dataServerId, location, sequence);
                 dataServers.Add(dataServerId, location);
-                clock++;
                 CheckPending(dataServerId);
             }
         }
@@ -554,7 +553,8 @@ namespace Metadata
 
             if (dataServers.Contains(dataServerId))
             {
-                log.LogOperation(clock, "HeartbeatOnMetadata", dataServerId, heartbeat, clock);
+                int sequence = clock++;
+                log.LogOperation(sequence, "HeartbeatOnMetadata", dataServerId, heartbeat, sequence);
 
                 GarbageCollected toDelete = new GarbageCollected();
 
@@ -575,8 +575,7 @@ namespace Metadata
                     // lacking load balancing
                 }
 
-                HeartbeatOnMetadatas(dataServerId, heartbeat, clock);
-                clock++;
+                HeartbeatOnMetadatas(dataServerId, heartbeat, sequence);
 
                 if (dataServers.Failed(dataServerId))
                 {

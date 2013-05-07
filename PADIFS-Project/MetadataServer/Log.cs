@@ -1,4 +1,5 @@
-﻿using SharedLibrary.Entities;
+﻿using SharedLibrary;
+using SharedLibrary.Entities;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -32,27 +33,27 @@ namespace Metadata
             string serialize = operation + separator;
             foreach (object arg in args)
             {
-                serialize += arg.ToString() + separator;
+                serialize += Helper.SerializeObject<object>(arg) + separator;
             }
             operations[sequence] = serialize;
         }
 
         public MetadataDiff BuildDiff(string mark, int clock)
         {
-            // starts at clock-1 becasue clock is incremented at the end of an operation
+            MetadataDiff diff = new MetadataDiff();
+
+            // if no operations logged
+            if (operations.Count == 0) return diff;
+
+            // starts at clock to discount for last increment
             int startAt = clock - 1;
             // either has a mark, or we need the whole state
             int stopAt = (marks.ContainsKey(mark)) ? marks[mark] : 0;
 
             // adds operations missing to the diff
-            MetadataDiff diff = new MetadataDiff();
-            // only if there is any operations
-            if (operations.Count != 0)
+            for (int i = startAt; i >= stopAt; i--)
             {
-                for (int i = startAt; i >= stopAt; i--)
-                {
-                    diff.AddOperation(operations[i]);
-                }
+                diff.AddOperation(operations[i]);
             }
 
             return diff;
@@ -69,42 +70,61 @@ namespace Metadata
                 {
                     case ("AddMarkOnMetadata"):
                         {
-                            metadata.AddMarkOnMetadata(words[1], int.Parse(words[2]), int.Parse(words[3]));
+                            metadata.AddMarkOnMetadata(Helper.DeserializeObject<string>(words[1]), 
+                                Helper.DeserializeObject<int>(words[2]), 
+                                Helper.DeserializeObject<int>(words[3]));
                             break;
                         }
                     case ("OpenOnMetadata"):
                         {
-                            metadata.OpenOnMetadata(words[1], words[2], int.Parse(words[3]));
+                            metadata.OpenOnMetadata(Helper.DeserializeObject<string>(words[1]), 
+                                Helper.DeserializeObject<string>(words[2]), 
+                                Helper.DeserializeObject<int>(words[3]));
                             break;
                         }
                     case ("CloseOnMetadata"):
                         {
-                            metadata.CloseOnMetadata(words[1], words[2], int.Parse(words[3]));
+                            metadata.CloseOnMetadata(Helper.DeserializeObject<string>(words[1]),
+                                Helper.DeserializeObject<string>(words[2]),
+                                Helper.DeserializeObject<int>(words[3]));
                             break;
                         }
                     case ("CreateOnMetadata"):
                         {
-                            metadata.CreateOnMetadata(words[1], words[2], int.Parse(words[3]), int.Parse(words[4]), int.Parse(words[5]), int.Parse(words[6]));
+                            metadata.CreateOnMetadata(Helper.DeserializeObject<string>(words[1]), 
+                                Helper.DeserializeObject<string>(words[2]), 
+                                Helper.DeserializeObject<int>(words[3]),
+                                Helper.DeserializeObject<int>(words[4]), 
+                                Helper.DeserializeObject<int>(words[5]), 
+                                Helper.DeserializeObject<int>(words[6]));
                             break;
                         }
                     case ("SelectOnMetadata"):
                         {
-                            metadata.SelectOnMetadata(words[1], words[2], words[3], int.Parse(words[4]));
+                            metadata.SelectOnMetadata(Helper.DeserializeObject<string>(words[1]), 
+                                Helper.DeserializeObject<string>(words[2]),
+                                Helper.DeserializeObject<string>(words[3]), 
+                                Helper.DeserializeObject<int>(words[4]));
                             break;
                         }
                     case ("DeleteOnMetadata"):
                         {
-                            metadata.DeleteOnMetadata(words[1], int.Parse(words[2]));
+                            metadata.DeleteOnMetadata(Helper.DeserializeObject<string>(words[1]), 
+                                Helper.DeserializeObject<int>(words[2]));
                             break;
                         }
                     case ("DataServerOnMetadata"):
                         {
-                            metadata.DataServerOnMetadata(words[1], words[2], int.Parse(words[3]));
+                            metadata.DataServerOnMetadata(Helper.DeserializeObject<string>(words[1]), 
+                                Helper.DeserializeObject<string>(words[2]), 
+                                Helper.DeserializeObject<int>(words[3]));
                             break;
                         }
                     case ("HeartbeatOnMetadata"):
                         {
-                            throw new NotImplementedException();
+                            metadata.HeartbeatOnMetadata(Helper.DeserializeObject<string>(words[1]),
+                                Helper.DeserializeObject<Heartbeat>(words[2]),
+                                Helper.DeserializeObject<int>(words[3]));
                             break;
                         }
                     default:
