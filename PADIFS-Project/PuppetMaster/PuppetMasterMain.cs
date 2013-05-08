@@ -12,6 +12,7 @@ namespace PuppetMaster
     public partial class PuppetMasterMain : Form
     {
         private int currentScriptLine = -1;
+        private string filepath;
 
         private const int METADATA = 0;
         private const int DATASERVER = 1;
@@ -240,6 +241,7 @@ namespace PuppetMaster
                     case METADATA:
                         {
                             PuppetMaster.StartMetadata(id, port);
+                            PuppetMaster.RecoverProcess(id);
                             break;
                         }
                     case DATASERVER:
@@ -348,6 +350,8 @@ namespace PuppetMaster
             if (result == DialogResult.OK)
             {
                 string filename = openScriptDialog.FileName;
+                filepath = GetFilepath(filename);
+                this.SetStatus("CURRENT FILEPATH = " + filepath);
                 try
                 {
                     this.scriptBox.Text = File.ReadAllText(filename);
@@ -359,6 +363,12 @@ namespace PuppetMaster
                     SetStatus("[ERROR] Failed to load script");
                 }
             }
+        }
+
+        private string GetFilepath(string filename)
+        {
+            int index = filename.LastIndexOf("\\");
+            return filename.Substring(0, index+1);
         }
 
         private void ExecuteAllScriptButtonClick(object sender, EventArgs e)
@@ -661,14 +671,12 @@ namespace PuppetMaster
                         string id = steps[1];
                         string filename = steps[2];
 
-                        string path = Application.StartupPath.Remove(Application.StartupPath.Length - 22) + "Scripts\\";
-
                         SetStatus("EXESCRIPT " + id + ":" + filename);
 
                         Thread script = new Thread(() =>
                         {
                             int linenumber = 0;
-                            foreach (string line in File.ReadLines(path + filename))
+                            foreach (string line in File.ReadLines(filepath + filename))
                             {
                                 ReadCommand(line, linenumber++);
                             }

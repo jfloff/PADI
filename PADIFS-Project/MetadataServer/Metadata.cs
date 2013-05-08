@@ -130,9 +130,11 @@ namespace Metadata
 
         private void UpdateMyself(MetadataDiff diff)
         {
-            Console.WriteLine("RECEIVING STATE UPDATE");
+            Console.WriteLine("RECEIVING STATE UPDATE ...");
 
             log.MergeDiff(this, diff);
+            
+            Console.WriteLine("... STATE UPDATE FINISHED");
         }
 
         public void Recover()
@@ -245,7 +247,7 @@ namespace Metadata
             if (table.Close(clientId, filename))
             {
                 int sequence = clock++;
-                log.LogOperation(clock, "CloseOnMetadata", clientId, filename, sequence);
+                log.LogOperation(sequence, "CloseOnMetadata", clientId, filename, sequence);
                 CloseOnMetadatas(clientId, filename, sequence);
             }
         }
@@ -553,8 +555,12 @@ namespace Metadata
 
             if (dataServers.Contains(dataServerId))
             {
-                int sequence = clock++;
-                log.LogOperation(sequence, "HeartbeatOnMetadata", dataServerId, heartbeat, sequence);
+                /**
+                 * IGNORING HEARTBEAT REPLICATION
+                 */
+                //int sequence = clock++;
+                //log.LogOperation(sequence, "HeartbeatOnMetadata", dataServerId, heartbeat, sequence);
+                //HeartbeatOnMetadatas(dataServerId, heartbeat, sequence);
 
                 GarbageCollected toDelete = new GarbageCollected();
 
@@ -562,12 +568,11 @@ namespace Metadata
                 dataServers.Touch(dataServerId, heartbeat.DataServerWeight);
                 foreach (var entry in heartbeat.FileWeights)
                 {
-                    // garbage collection
                     string localFilename = entry.Key;
                     Weight fileWeight = entry.Value;
 
-                    // to refactor probably
-                    if (!dataServers.Files(dataServerId).ContainsKey(localFilename))
+                    // garbage collection
+                    if (!dataServers.ContainsFile(dataServerId, localFilename))
                     {
                         toDelete.Add(localFilename);
                     }
@@ -575,7 +580,6 @@ namespace Metadata
                     // lacking load balancing
                 }
 
-                HeartbeatOnMetadatas(dataServerId, heartbeat, sequence);
 
                 if (dataServers.Failed(dataServerId))
                 {
@@ -758,60 +762,15 @@ namespace Metadata
 
             Console.WriteLine("ADD LOG MARK FROM MASTER");
 
-            // if own mark just skips operation
-            if (mark == id)
-            {
-                clock++;
-                return;
-            }
-            
-            if (log.AddMark(mark, markSequence))
-            {
-                log.LogOperation(clock, "AddMarkOnMetadata", mark, markSequence, clock);
-                clock++;
-            }
+            // also update its own mark ... for consistency purposes
+            log.ForceAddMark(mark, markSequence);
+            log.LogOperation(clock, "AddMarkOnMetadata", mark, markSequence, clock);
+            clock++;
         }
 
         public void HeartbeatOnMetadata(string dataServerId, Heartbeat heartbeat, int sequence)
         {
-            if (fail) throw new ProcessFailedException(id);
-
-            // message out of sequence, adds to queue
-            if (sequence != clock)
-            {
-                pending[sequence] = () => HeartbeatOnMetadata(dataServerId, heartbeat, sequence);
-                return;
-            }
-
-            if (!dataServers.Contains(dataServerId)) return;
-
-            log.LogOperation(clock, "HeartbeatOnMetadata", dataServerId, heartbeat, clock);
-            
-            GarbageCollected toDelete = new GarbageCollected();
-
-            // update data server weight
-            dataServers.Touch(dataServerId, heartbeat.DataServerWeight);
-            foreach (var entry in heartbeat.FileWeights)
-            {
-                // garbage collection
-                string localFilename = entry.Key;
-                Weight fileWeight = entry.Value;
-
-                // to refactor probably
-                if (!dataServers.Files(dataServerId).ContainsKey(localFilename))
-                {
-                    toDelete.Add(localFilename);
-                }
-
-                // lacking load balancing
-            }
-
-            clock++;
-
-            if (dataServers.Failed(dataServerId))
-            {
-                CheckPending(dataServerId);
-            }
+            throw new NotImplementedException();
         }
 
         public MasterVote MasterVoting(MasterVote vote)

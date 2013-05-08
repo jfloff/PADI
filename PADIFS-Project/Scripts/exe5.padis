@@ -1,0 +1,24 @@
+#this is an exescript file for script.txt
+OPEN c-5, f551
+OPEN c-5, f515
+OPEN c-5, f555
+WRITE c-5,0,"f551-5"
+COPY c-5,0,monotonic,1,";c-51"
+COPY c-5,1,monotonic,2,";c-52"
+COPY c-5,2,monotonic,1,";c-53"
+COPY c-5,1,monotonic,0,";c-54"
+COPY c-5,0,monotonic,1,";c-55"
+COPY c-5,1,monotonic,2,";c-56"
+COPY c-5,2,monotonic,1,";c-57"
+COPY c-5,1,monotonic,0,";c-58"
+COPY c-5,0,monotonic,1,";c-58"
+COPY c-5,1,monotonic,2,";c-5A"
+COPY c-5,2,monotonic,1,";c-5B"
+COPY c-5,1,monotonic,0,";c-5C"
+COPY c-5,0,monotonic,1,";c-5D"
+COPY c-5,1,monotonic,2,";c-5E"
+COPY c-5,2,monotonic,1,";c-5F"
+COPY c-5,1,monotonic,0,";c-5G"
+CLOSE c-5,f551
+CLOSE c-5,f515
+CLOSE c-5,f555

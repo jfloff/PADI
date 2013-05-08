@@ -101,9 +101,9 @@ namespace Metadata
             }
         }
 
-        public ConcurrentDictionary<string, Weight> Files(string id)
+        public bool ContainsFile(string id, string localFilename)
         {
-            return this.infos[id].files;
+            return this.infos[id].files.ContainsKey(localFilename);
         }
 
         public bool TryMoveNext(string last, out string value)

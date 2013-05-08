@@ -16,6 +16,12 @@ namespace Metadata
         // sequence / operation
         private ConcurrentDictionary<int, string> operations = new ConcurrentDictionary<int, string>();
 
+        // overwrites mark even if there is a new one -- to avoid creating a RemoveMarkOnMetadata
+        public void ForceAddMark(string mark, int sequence)
+        {
+            marks[mark] = sequence;
+        }
+
         // adds mark to start keeping states
         public bool AddMark(string mark, int sequence)
         {
@@ -48,7 +54,7 @@ namespace Metadata
             // starts at clock to discount for last increment
             int startAt = clock - 1;
             // either has a mark, or we need the whole state
-            int stopAt = (marks.ContainsKey(mark)) ? marks[mark] : 0;
+            int stopAt = GetMarkSequence(mark);
 
             // adds operations missing to the diff
             for (int i = startAt; i >= stopAt; i--)
@@ -57,6 +63,16 @@ namespace Metadata
             }
 
             return diff;
+        }
+
+        private int GetMarkSequence(string mark)
+        {
+            int sequence = 0;
+            if (marks.ContainsKey(mark))
+            {
+                marks.TryRemove(mark, out sequence);
+            }
+            return sequence;
         }
 
         public void MergeDiff(Metadata metadata, MetadataDiff diff)
@@ -70,61 +86,77 @@ namespace Metadata
                 {
                     case ("AddMarkOnMetadata"):
                         {
-                            metadata.AddMarkOnMetadata(Helper.DeserializeObject<string>(words[1]), 
-                                Helper.DeserializeObject<int>(words[2]), 
-                                Helper.DeserializeObject<int>(words[3]));
+                            string mark = Helper.DeserializeObject<string>(words[1]);
+                            int markSequence = Helper.DeserializeObject<int>(words[2]);
+                            int sequence = Helper.DeserializeObject<int>(words[3]);
+
+                            metadata.AddMarkOnMetadata(mark, markSequence, sequence);
                             break;
                         }
                     case ("OpenOnMetadata"):
                         {
-                            metadata.OpenOnMetadata(Helper.DeserializeObject<string>(words[1]), 
-                                Helper.DeserializeObject<string>(words[2]), 
-                                Helper.DeserializeObject<int>(words[3]));
+                            string clientId = Helper.DeserializeObject<string>(words[1]);
+                            string filename = Helper.DeserializeObject<string>(words[2]);
+                            int sequence = Helper.DeserializeObject<int>(words[3]);
+
+                            metadata.OpenOnMetadata(clientId, filename, sequence);
                             break;
                         }
                     case ("CloseOnMetadata"):
                         {
-                            metadata.CloseOnMetadata(Helper.DeserializeObject<string>(words[1]),
-                                Helper.DeserializeObject<string>(words[2]),
-                                Helper.DeserializeObject<int>(words[3]));
+                            string clientId = Helper.DeserializeObject<string>(words[1]);
+                            string filename = Helper.DeserializeObject<string>(words[2]);
+                            int sequence = Helper.DeserializeObject<int>(words[3]);
+
+                            metadata.CloseOnMetadata(clientId, filename, sequence);
                             break;
                         }
                     case ("CreateOnMetadata"):
                         {
-                            metadata.CreateOnMetadata(Helper.DeserializeObject<string>(words[1]), 
-                                Helper.DeserializeObject<string>(words[2]), 
-                                Helper.DeserializeObject<int>(words[3]),
-                                Helper.DeserializeObject<int>(words[4]), 
-                                Helper.DeserializeObject<int>(words[5]), 
-                                Helper.DeserializeObject<int>(words[6]));
+                            string clientId = Helper.DeserializeObject<string>(words[1]);
+                            string filename = Helper.DeserializeObject<string>(words[2]);
+                            int nbDataServers = Helper.DeserializeObject<int>(words[3]);
+                            int readQuorum = Helper.DeserializeObject<int>(words[4]);
+                            int writeQuorum = Helper.DeserializeObject<int>(words[5]);
+                            int sequence = Helper.DeserializeObject<int>(words[6]);
+
+                            metadata.CreateOnMetadata(clientId, filename, nbDataServers, readQuorum, writeQuorum, sequence);
                             break;
                         }
                     case ("SelectOnMetadata"):
                         {
-                            metadata.SelectOnMetadata(Helper.DeserializeObject<string>(words[1]), 
-                                Helper.DeserializeObject<string>(words[2]),
-                                Helper.DeserializeObject<string>(words[3]), 
-                                Helper.DeserializeObject<int>(words[4]));
+                            string filename = Helper.DeserializeObject<string>(words[1]);
+                            string dataServerId = Helper.DeserializeObject<string>(words[2]);
+                            string localFilename = Helper.DeserializeObject<string>(words[3]);
+                            int sequence = Helper.DeserializeObject<int>(words[4]);
+
+                            metadata.SelectOnMetadata(filename, dataServerId, localFilename, sequence);
                             break;
                         }
                     case ("DeleteOnMetadata"):
                         {
-                            metadata.DeleteOnMetadata(Helper.DeserializeObject<string>(words[1]), 
-                                Helper.DeserializeObject<int>(words[2]));
+                            string filename = Helper.DeserializeObject<string>(words[1]);
+                            int sequence = Helper.DeserializeObject<int>(words[2]);
+
+                            metadata.DeleteOnMetadata(filename, sequence);
                             break;
                         }
                     case ("DataServerOnMetadata"):
                         {
-                            metadata.DataServerOnMetadata(Helper.DeserializeObject<string>(words[1]), 
-                                Helper.DeserializeObject<string>(words[2]), 
-                                Helper.DeserializeObject<int>(words[3]));
+                            string dataServerId = Helper.DeserializeObject<string>(words[1]);
+                            string location = Helper.DeserializeObject<string>(words[2]);
+                            int sequence = Helper.DeserializeObject<int>(words[3]);
+
+                            metadata.DataServerOnMetadata(dataServerId, location, sequence);
                             break;
                         }
                     case ("HeartbeatOnMetadata"):
                         {
-                            metadata.HeartbeatOnMetadata(Helper.DeserializeObject<string>(words[1]),
-                                Helper.DeserializeObject<Heartbeat>(words[2]),
-                                Helper.DeserializeObject<int>(words[3]));
+                            string dataServerId = Helper.DeserializeObject<string>(words[1]);
+                            Heartbeat heartbeat = Helper.DeserializeObject<Heartbeat>(words[2]);
+                            int sequence = Helper.DeserializeObject<int>(words[3]);
+
+                            metadata.HeartbeatOnMetadata(dataServerId, heartbeat, sequence);
                             break;
                         }
                     default:

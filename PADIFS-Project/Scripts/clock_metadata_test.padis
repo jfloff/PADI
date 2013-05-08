@@ -7,6 +7,7 @@ CREATE c-0, f0, 2, 1, 1
 FAIL m-0
 CREATE c-0, f1, 2, 1, 1
 CREATE c-0, f2, 2, 1, 1
+#!
 RECOVER m-0
 FAIL m-1
 CLOSE c-0, f2

@@ -145,30 +145,32 @@ namespace DataServer
             metadatas[id] = metadata;
 
             // in case data server is booting up
-            if (master == string.Empty)
+            // locking so N locations dont enter
+            lock (master)
             {
-                // since we are sure one of the metadatas is up
-                // we can just wait for the next metada register to ask for master
-                try
+                if (master == string.Empty)
                 {
-                    // needs to ask for master since its doing a register
-                    master = metadata.Master();
-                    metadatas[master].DataServer(DataServer.id, Helper.GetUrl(DataServer.id, DataServer.port));
-                    // start heartbeating
-                    Thread heartbeat = new Thread(() =>
+                    // since we are sure one of the metadatas is up
+                    // we can just wait for the next metada register to ask for master
+                    try
                     {
-                        while (true)
+                        // needs to ask for master since its doing a register
+                        master = metadata.Master();
+                        metadatas[master].DataServer(DataServer.id, Helper.GetUrl(DataServer.id, DataServer.port));
+                        // start heartbeating
+                        Thread heartbeat = new Thread(() =>
                         {
-                            //SendHeartbeat();
-                            Thread.Sleep(Helper.DATASERVER_HEARTBEAT_INTERVAL);
-                        }
-                    });
-                    heartbeat.Start();
+                            while (true)
+                            {
+                                SendHeartbeat();
+                                Thread.Sleep(Helper.DATASERVER_HEARTBEAT_INTERVAL);
+                            }
+                        });
+                        heartbeat.Start();
+                    }
+                    catch (ProcessFailedException) { }
+                    catch (NotTheMasterException) { }
                 }
-                catch (ProcessFailedException) { }
-                catch (NotTheMasterException) { }
-
-                return;
             }
         }
 
