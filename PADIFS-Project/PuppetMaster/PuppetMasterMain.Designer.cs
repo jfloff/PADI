@@ -553,9 +553,9 @@ namespace PuppetMaster
             // 
             this.statusStrip.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.statusStripLabel});
-            this.statusStrip.Location = new System.Drawing.Point(0, 720);
+            this.statusStrip.Location = new System.Drawing.Point(0, 716);
             this.statusStrip.Name = "statusStrip";
-            this.statusStrip.Size = new System.Drawing.Size(185, 22);
+            this.statusStrip.Size = new System.Drawing.Size(200, 22);
             this.statusStrip.TabIndex = 61;
             this.statusStrip.Text = "statusStrip";
             // 
@@ -588,7 +588,8 @@ namespace PuppetMaster
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(185, 742);
+            this.AutoScroll = true;
+            this.ClientSize = new System.Drawing.Size(185, 708);
             this.Controls.Add(this.resetButton);
             this.Controls.Add(this.processBox);
             this.Controls.Add(this.statusStrip);
