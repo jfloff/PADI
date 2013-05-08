@@ -1,0 +1,21 @@
+# NEW1
+# NO WRITE QUORUM FOR F2
+# This script is for groups that fill in the file register with the CREATE operations. 
+# There is another for groups who fill in the file register with the OPEN operation.
+RECOVER m-0
+RECOVER m-1
+UNFREEZE d-1
+UNFREEZE d-2
+CREATE c-1,f1,2,2,2
+WRITE c-1,0,"contents"
+READ c-1,0,default,1
+DUMP m-1
+DUMP d-1
+DUMP c-1
+READ c-1,0,default,1
+CREATE c-2,f2,3,1,3
+COPY c-1,0,default,1," salt example"
+CLOSE c-1,f1
+DUMP m-1
+CLOSE c-1,f2
+DUMP m-1

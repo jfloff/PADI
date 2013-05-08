@@ -777,7 +777,7 @@ namespace Metadata
         {
             if (fail) throw new ProcessFailedException(id);
 
-            Console.WriteLine("MY MASTER VOTE");
+            Console.WriteLine("TAKE MY MASTER VOTE");
 
             MasterVote newMaster = MasterVote.Choose(new MasterVote(id, clock), vote);
             master = newMaster.Id;
@@ -804,28 +804,16 @@ namespace Metadata
             Console.WriteLine("MASTER VOTING");
 
             MasterVote masterVote = new MasterVote(id, clock);
-            int requests = metadatas.Count;
             foreach (var entry in metadatas)
             {
-                Thread vote = new Thread(() =>
+                IMetadataToMetadata metadata = entry.Value;
+                try
                 {
-                    IMetadataToMetadata metadata = entry.Value;
-                    try
-                    {
-                        // chooses better vote between previous master and the one from the metadata
-                        masterVote = MasterVote.Choose(metadata.MasterVoting(masterVote), masterVote);
-                    }
-                    catch (ProcessFailedException) { }
-                    finally
-                    {
-                        Interlocked.Decrement(ref requests);
-                    }
-                });
-                vote.Start();
+                    // chooses better vote between previous master and the one from the metadata
+                    masterVote = MasterVote.Choose(metadata.MasterVoting(masterVote), masterVote);
+                }
+                catch (ProcessFailedException) { }
             }
-
-            // waits for all the requests to arrive
-            while (requests > 0) ;
 
             return master = masterVote.Id;
         }

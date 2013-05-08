@@ -145,32 +145,28 @@ namespace DataServer
             metadatas[id] = metadata;
 
             // in case data server is booting up
-            // locking so N locations dont enter
-            lock (master)
+            if (master == string.Empty)
             {
-                if (master == string.Empty)
+                // since we are sure one of the metadatas is up
+                // we can just wait for the next metada register to ask for master
+                try
                 {
-                    // since we are sure one of the metadatas is up
-                    // we can just wait for the next metada register to ask for master
-                    try
+                    // needs to ask for master since its doing a register
+                    master = metadata.Master();
+                    metadatas[master].DataServer(DataServer.id, Helper.GetUrl(DataServer.id, DataServer.port));
+                    // start heartbeating
+                    Thread heartbeat = new Thread(() =>
                     {
-                        // needs to ask for master since its doing a register
-                        master = metadata.Master();
-                        metadatas[master].DataServer(DataServer.id, Helper.GetUrl(DataServer.id, DataServer.port));
-                        // start heartbeating
-                        Thread heartbeat = new Thread(() =>
+                        while (true)
                         {
-                            while (true)
-                            {
-                                SendHeartbeat();
-                                Thread.Sleep(Helper.DATASERVER_HEARTBEAT_INTERVAL);
-                            }
-                        });
-                        heartbeat.Start();
-                    }
-                    catch (ProcessFailedException) { }
-                    catch (NotTheMasterException) { }
+                            SendHeartbeat();
+                            Thread.Sleep(Helper.DATASERVER_HEARTBEAT_INTERVAL);
+                        }
+                    });
+                    heartbeat.Start();
                 }
+                catch (ProcessFailedException) { }
+                catch (NotTheMasterException) { }
             }
         }
 

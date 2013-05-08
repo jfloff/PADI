@@ -105,20 +105,16 @@ namespace Client
             metadatas[id] = metadata;
 
             // in case client is booting up
-            // locking so N locations dont enter
-            lock (master)
+            if (master == string.Empty)
             {
-                if (master == string.Empty)
+                // since we are sure one of the metadatas is up
+                // we can just wait for the next metada register to ask for master
+                try
                 {
-                    // since we are sure one of the metadatas is up
-                    // we can just wait for the next metada register to ask for master
-                    try
-                    {
-                        // needs to ask for master since its doing a register
-                        master = metadata.Master();
-                    }
-                    catch (ProcessFailedException) { }
+                    // needs to ask for master since its doing a register
+                    master = metadata.Master();
                 }
+                catch (ProcessFailedException) { }
             }
         }
 

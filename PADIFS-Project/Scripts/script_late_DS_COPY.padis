@@ -1,0 +1,1 @@
+COPY c-1, 0, default, 1, " salt example"

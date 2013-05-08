@@ -128,16 +128,13 @@ namespace PuppetMaster
         {
             if (!processes.ContainsKey(id))
             {
-                Thread start = null;
                 switch (id.First())
                 {
                     default: break;
-                    case 'm': start = new Thread(() => StartMetadata(id, port++)); break;
-                    case 'd': start = new Thread(() => StartDataServer(id, port++)); break;
-                    case 'c': start = new Thread(() => StartClient(id, port++)); break;
+                    case 'm': StartMetadata(id, port++); break;
+                    case 'd': StartDataServer(id, port++); break;
+                    case 'c': StartClient(id, port++); break;
                 }
-                start.Start();
-                start.Join();
             }
 
             return processes[id];
@@ -146,94 +143,81 @@ namespace PuppetMaster
         public static void CloseFile(string id, string filename)
         {
             IClientToPM client = (IClientToPM)GetProcess(id);
-            Thread close = new Thread(() => client.Close(filename));
-            close.Start();
+            client.Close(filename);
         }
 
         public static void DeleteFile(string id, string filename)
         {
             IClientToPM client = (IClientToPM)GetProcess(id);
-            Thread delete = new Thread(() => client.Delete(filename));
-            delete.Start();
+            client.Delete(filename);
         }
 
         public static void OpenFile(string id, string filename)
         {
             IClientToPM client = (IClientToPM)GetProcess(id);
-            Thread open = new Thread(() => client.Open(filename));
-            open.Start();
+            client.Open(filename);
         }
 
         public static void CreateFile(string id, string filename, int nbData, int readq, int writeq)
         {
             IClientToPM client = (IClientToPM)GetProcess(id);
-            Thread create = new Thread(() => client.Create(filename, nbData, readq, writeq));
-            create.Start();
+            client.Create(filename, nbData, readq, writeq);
         }
 
         public static void FailProcess(string id)
         {
             IServerToPM server = (IServerToPM)GetProcess(id);
-            Thread fail = new Thread(() => server.Fail());
-            fail.Start();
+            server.Fail();
         }
 
         public static void RecoverProcess(string id)
         {
             IServerToPM server = (IServerToPM)GetProcess(id);
-            Thread recover = new Thread(() => server.Recover());
-            recover.Start();
+            server.Recover();
         }
 
         public static void UnfreezeProcess(string id)
         {
             IDataServerToPM server = (IDataServerToPM)GetProcess(id);
-            Thread unfreeze = new Thread(() => server.Unfreeze());
-            unfreeze.Start();
+            server.Unfreeze();
         }
 
         public static void FreezeProcess(string id)
         {
             IDataServerToPM server = (IDataServerToPM)GetProcess(id);
-            Thread freeze = new Thread(() => server.Freeze());
-            freeze.Start();
+            server.Freeze();
         }
 
         public static void ReadFile(string id, int fileRegister, string semantics, int byteRegister)
         {
             Helper.Semantics semanticsId = getSemanticsId(semantics);
             IClientToPM client = (IClientToPM)GetProcess(id);
-            Thread read = new Thread(() => client.Read(fileRegister, semanticsId, byteRegister));
-            read.Start();
+            client.Read(fileRegister, semanticsId, byteRegister);
         }
 
         public static void WriteFile(string id, int fileRegister, int byteRegister)
         {
             IClientToPM client = (IClientToPM)GetProcess(id);
-            Thread write = new Thread(() => client.Write(fileRegister, byteRegister));
-            write.Start();
+            client.Write(fileRegister, byteRegister);
         }
 
         public static void WriteFile(string id, int fileRegister, string contents)
         {
             IClientToPM client = (IClientToPM)GetProcess(id);
-            Thread write = new Thread(() => client.Write(fileRegister, Helper.StringToBytes(contents)));
-            write.Start();
+            client.Write(fileRegister, Helper.StringToBytes(contents));
         }
 
         public static void CopyFile(string id, int fileRegister1, string semantics, int fileRegister2, string salt)
         {
             Helper.Semantics semanticsId = getSemanticsId(semantics);
             IClientToPM client = (IClientToPM)GetProcess(id);
-            Thread copy = new Thread(() => client.Copy(fileRegister1, semanticsId, fileRegister2, Helper.StringToBytes(salt)));
-            copy.Start();
+            client.Copy(fileRegister1, semanticsId, fileRegister2, Helper.StringToBytes(salt));
         }
 
         public static void DumpProcess(string id)
         {
             IProcessToPM process = (IProcessToPM)GetProcess(id);
-            Thread dump = new Thread(() => process.Dump());
-            dump.Start();
+            process.Dump();
         }
 
         private static Helper.Semantics getSemanticsId(string semantics)
