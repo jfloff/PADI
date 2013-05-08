@@ -1,0 +1,16 @@
+RECOVER m-0
+RECOVER d-1
+DUMP c-1
+
+#file with 3 reads
+CREATE c-1, f0, 1, 1, 1
+READ c-1, 0, default, 0
+READ c-1, 0, default, 0
+READ c-1, 0, default, 0
+#file with 3 reads
+CREATE c-1, f1, 1, 1, 1
+READ c-1, 1, default, 1
+READ c-1, 1, default, 1
+READ c-1, 1, default, 1
+
+RECOVER d-2

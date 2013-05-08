@@ -582,7 +582,7 @@ namespace PuppetMaster
             this.resetButton.TabIndex = 63;
             this.resetButton.Text = "Reset";
             this.resetButton.UseVisualStyleBackColor = true;
-            this.resetButton.Click += new System.EventHandler(this.resetButtonClick);
+            this.resetButton.Click += new System.EventHandler(this.ResetButtonClick);
             // 
             // PuppetMasterMain
             // 
@@ -638,7 +638,7 @@ namespace PuppetMaster
             this.Controls.Add(this.groupBox1);
             this.Name = "PuppetMasterMain";
             this.StartPosition = System.Windows.Forms.FormStartPosition.Manual;
-            this.Text = "PuppetMaster";
+            this.Text = "git";
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.PuppetMasterFormClosing);
             ((System.ComponentModel.ISupportInitialize)(this.stringRegisterNumber)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.fileRegister1Number)).EndInit();

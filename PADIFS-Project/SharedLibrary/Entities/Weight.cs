@@ -5,8 +5,8 @@ namespace SharedLibrary.Entities
     [Serializable]
     public class Weight : IEquatable<Weight>, IComparable<Weight>
     {
-        private int reads = 0;
-        private int writes = 0;
+        private int reads;
+        private int writes;
 
         public int Reads
         {
@@ -18,6 +18,43 @@ namespace SharedLibrary.Entities
         {
             get { return this.writes; }
             set { this.writes = value; }
+        }
+
+        public Weight()
+        {
+            this.reads = 0;
+            this.writes = 0;
+        }
+
+        public Weight(int reads, int writes)
+        {
+            this.reads = reads;
+            this.writes = writes;
+        }
+
+        // Declare which operator to overload (+)
+        public static Weight operator +(Weight w1, Weight w2)
+        {
+            return new Weight(w1.reads + w2.reads, w1.writes + w2.writes);
+        }
+
+        // Declare which operator to overload (+)
+        public static Weight Median(Weight sum, int n)
+        {
+            return new Weight(sum.reads/n, sum.writes/n);
+        }
+
+        public static int Compare(Weight w1, Weight w2)
+        {
+            //prioritizes reads
+            if (w1.reads > w2.reads) return 1;
+            if (w1.reads < w2.reads) return -1;
+
+            //if reads are equal check writes
+            if (w1.writes > w2.writes) return 1;
+            if (w1.writes < w2.writes) return -1;
+
+            return 0;
         }
 
         public override string ToString()
@@ -63,14 +100,7 @@ namespace SharedLibrary.Entities
         // priority for reads
         public int CompareTo(Weight other)
         {
-            if (this.reads > other.reads) return 1;
-            if (this.reads < other.reads) return -1;
-
-            //if reads are equal check writes
-            if (this.writes > other.writes) return 1;
-            if (this.writes < other.writes) return -1;
-
-            return 0;
+            return Compare(this, other);
         }
     }
 }

@@ -134,11 +134,11 @@ namespace Metadata
 
         private void UpdateMyself(MetadataDiff diff)
         {
-            Console.WriteLine("RECEIVING STATE UPDATE ...");
+            Console.WriteLine("--RECEIVING STATE UPDATE--");
 
             log.MergeDiff(this, diff);
             
-            Console.WriteLine("... STATE UPDATE FINISHED");
+            Console.WriteLine("--STATE UPDATE FINISHED--");
         }
 
         public void Recover()
@@ -583,9 +583,15 @@ namespace Metadata
 
                     // lacking load balancing
                     string filename = table.FilenameByLocalFilename(localFilename);
-                    foreach (var weights in dataServers.Weights)
+                    foreach (var dataServerWeight in dataServers.Weights)
                     {
-                        //
+                        string checkingId = dataServerWeight.Key;
+                        Weight checkingWeight = dataServerWeight.Value;
+
+                        if (Weight.Compare(fileWeight + checkingWeight, dataServers.MedianWeight) <= 0)
+                        {
+                            Console.WriteLine("MIGRATE TO " + checkingId);
+                        }
                     }
                 }
 

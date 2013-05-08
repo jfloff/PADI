@@ -32,6 +32,19 @@ namespace Metadata
         // dummy object for lock
         private readonly object padlock = new object();
 
+
+        public Weight MedianWeight {
+            get
+            {
+                Weight sum = new Weight();
+                foreach (var entry in infos)
+                {
+                    sum += entry.Value.weight;
+                }
+                return Weight.Median(sum, infos.Count);
+            }
+        }
+
         public override string ToString()
         {
             string ret = "[\n";

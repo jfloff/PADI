@@ -714,7 +714,7 @@ namespace PuppetMaster
             PuppetMaster.KillConsoles();
         }
 
-        private void resetButtonClick(object sender, EventArgs e)
+        private void ResetButtonClick(object sender, EventArgs e)
         {
             this.SetStatus("RESET PUPPET MASTER");
             PuppetMaster.Reset();
