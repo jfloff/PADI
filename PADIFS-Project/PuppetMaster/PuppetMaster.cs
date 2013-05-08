@@ -120,7 +120,7 @@ namespace PuppetMaster
             SendMetadataLocations(client);
         }
 
-        private static IProcessToPM GetProcess(string id)
+        public static IProcessToPM GetProcess(string id)
         {
             if (!processes.ContainsKey(id))
             {

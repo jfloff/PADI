@@ -673,7 +673,7 @@ namespace PuppetMaster
 
                         SetStatus("EXESCRIPT " + id + ":" + filename);
 
-                        PuppetMaster.StartClient(id);
+                        PuppetMaster.GetProcess(id);
 
                         Thread script = new Thread(() =>
                         {
