@@ -10,6 +10,7 @@ READ c-1, 0, default, 0
 READ c-1, 0, default, 0
 READ c-1, 0, default, 0
 WRITE c-1, 0, "COISAS0
+CLOSE c-1, f0
 
 CREATE c-1, f1, 2, 1, 1
 READ c-1, 1, default, 1

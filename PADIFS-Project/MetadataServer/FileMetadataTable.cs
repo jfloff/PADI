@@ -23,7 +23,7 @@ namespace Metadata
         // filename / FileMetadata+queue of pending requests for each file 
         private ConcurrentDictionary<string, TableEntry> files = new ConcurrentDictionary<string, TableEntry>();
         // localFilename / filename
-        private ConcurrentDictionary<string, string> localFilenames = new ConcurrentDictionary<string, string>();
+        private ConcurrentDictionary<string, string> filenamesByLocal = new ConcurrentDictionary<string, string>();
         
         public override string ToString()
         {
@@ -78,7 +78,7 @@ namespace Metadata
             foreach (var entry in tableEntry.metadata.LocalFilenames)
             {
                 string localFilename = entry.Value;
-                string ingoredFilename; this.localFilenames.TryRemove(localFilename, out ingoredFilename);
+                string ingoredFilename; this.filenamesByLocal.TryRemove(localFilename, out ingoredFilename);
             }
 
             return tableEntry.metadata;
@@ -93,7 +93,7 @@ namespace Metadata
         public void AddDataServer(string filename, string dataServerId, string location, string localFilename)
         {
             this.files[filename].metadata.AddDataServer(dataServerId, location, localFilename);
-            localFilenames[localFilename] = filename;
+            filenamesByLocal[localFilename] = filename;
         }
 
         public void EnqueueSelect(string filename, Action<string> pending)
@@ -106,6 +106,17 @@ namespace Metadata
             Action<string> pending;
             this.files[filename].pending.TryDequeue(out pending);
             return pending;
+        }
+
+        public string FilenameByLocalFilename(string localFilename)
+        {
+            return this.filenamesByLocal[localFilename];
+        }
+
+        // checks if file doesn't have any clients
+        public bool Free(string filename)
+        {
+            return (this.files[filename].clients.Count == 0);
         }
 
         // returns files that have pending requests

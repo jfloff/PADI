@@ -104,6 +104,11 @@ namespace PuppetMaster
             SendMetadataLocations(dataServer);
         }
 
+        public static void StartClient(string id)
+        {
+            StartClient(id, port++);
+        }
+
         public static void StartClient(string id, int port)
         {
             consoles.Add(Process.Start("Client.exe", id + " " + port));

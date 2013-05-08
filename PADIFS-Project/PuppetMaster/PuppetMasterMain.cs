@@ -673,6 +673,8 @@ namespace PuppetMaster
 
                         SetStatus("EXESCRIPT " + id + ":" + filename);
 
+                        PuppetMaster.StartClient(id);
+
                         Thread script = new Thread(() =>
                         {
                             int linenumber = 0;

@@ -574,7 +574,7 @@ namespace Metadata
                 {
                     string localFilename = entry.Key;
                     Weight fileWeight = entry.Value;
-
+                    
                     // garbage collection
                     if (!dataServers.ContainsFile(dataServerId, localFilename))
                     {
@@ -582,6 +582,11 @@ namespace Metadata
                     }
 
                     // lacking load balancing
+                    string filename = table.FilenameByLocalFilename(localFilename);
+                    foreach (var weights in dataServers.Weights)
+                    {
+                        //
+                    }
                 }
 
 

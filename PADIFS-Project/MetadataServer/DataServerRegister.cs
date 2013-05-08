@@ -106,6 +106,17 @@ namespace Metadata
             return this.infos[id].files.ContainsKey(localFilename);
         }
 
+        public IEnumerable<KeyValuePair<string, Weight>> Weights
+        {
+            get
+            {
+                foreach (var entry in infos)
+                {
+                    yield return new KeyValuePair<string, Weight>(entry.Key, entry.Value.weight);
+                }
+            }
+        }
+
         public bool TryMoveNext(string last, out string value)
         {
             bool ret = false;

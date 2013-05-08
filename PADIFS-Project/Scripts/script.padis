@@ -9,6 +9,8 @@ UNFREEZE d-5
 CREATE c-1,f551,5,5,1
 CREATE c-2,f515,5,1,5
 CREATE c-3,f555,5,5,5
+DUMP c-4
+DUMP c-5
 EXESCRIPT c-1 exe1.padis
 EXESCRIPT c-2 exe2.padis
 EXESCRIPT c-3 exe3.padis
