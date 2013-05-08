@@ -590,7 +590,7 @@ namespace Metadata
 
                         if (Weight.Compare(fileWeight + checkingWeight, dataServers.MedianWeight) <= 0)
                         {
-                            Console.WriteLine("MIGRATE TO " + checkingId);
+                            //Console.WriteLine("MIGRATE TO " + checkingId);
                         }
                     }
                 }

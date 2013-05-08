@@ -41,7 +41,7 @@ namespace SharedLibrary.Entities
         public static int MostRecent(FileVersion v1, FileVersion v2)
         {
             int clockDiff = v1.clock - v2.clock;
-            if (clockDiff == 0) return string.Compare(v2.clientId, v2.clientId);
+            if (clockDiff == 0) return string.Compare(v2.clientId, v1.clientId);
             return clockDiff;
         }
 

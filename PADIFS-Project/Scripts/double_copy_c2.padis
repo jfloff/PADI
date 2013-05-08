@@ -1,0 +1,1 @@
+COPY c-2, 0, default, 1, ";c-2"

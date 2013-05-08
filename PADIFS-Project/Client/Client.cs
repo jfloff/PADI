@@ -312,6 +312,8 @@ namespace Client
 
         private LatestVersion ReadVersion(int fileRegisterIndex, Helper.Semantics semantics)
         {
+            Console.WriteLine("READ VERSION " + fileRegisterIndex);
+
             string filename = fileRegister.FilenameAt(fileRegisterIndex);
             FileVersion original = fileRegister.FileDataAt(fileRegisterIndex).Version;
             FileMetadata fileMetadata = fileRegister.FileMetadataAt(fileRegisterIndex);
@@ -497,7 +499,7 @@ namespace Client
 
         public void Copy(int fileRegisterIndex1, Helper.Semantics semantics, int fileRegisterIndex2, byte[] salt)
         {
-            Console.WriteLine("COPY FILE " + fileRegisterIndex1 + " TO + " + fileRegisterIndex2);
+            Console.WriteLine("COPY FILE " + fileRegisterIndex1 + " TO " + fileRegisterIndex2);
 
             try
             {

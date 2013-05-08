@@ -293,19 +293,22 @@ namespace DataServer
                 throw new ProcessFreezedException(id);
             }
 
-            Console.WriteLine("WRITE " + localFilename + " : CONTENTS " + Helper.BytesToString(newFile.Contents));
+            Console.WriteLine("WRITE " + localFilename 
+                + " : CONTENTS " + Helper.BytesToString(newFile.Contents) 
+                + " : VERSION " + newFile.Version);
 
             if (!files.ContainsKey(localFilename))
             {
                 Console.WriteLine("CREATE FILE " + localFilename);
                 files[localFilename] = newFile;
                 weights[localFilename] = new Weight();
+                weights[localFilename].Writes++;
                 return;
             }
 
-            FileData currentFile = files[localFilename];
-            files[localFilename] = FileData.Latest(currentFile, newFile);
+            files[localFilename] = FileData.Latest(files[localFilename], newFile);
             weights[localFilename].Writes++;
+            Console.WriteLine("STORED = " + files[localFilename].Version);
         }
     }
 }

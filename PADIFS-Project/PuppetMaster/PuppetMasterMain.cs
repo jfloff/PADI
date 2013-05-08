@@ -705,6 +705,12 @@ namespace PuppetMaster
 
         private void SetStatus(string msg)
         {
+            if (statusStrip.InvokeRequired)
+            {
+                this.statusStrip.Invoke(new Action<string>(SetStatus), msg);
+                return;
+            }
+
             this.statusStripLabel.Text = msg;
             this.log.AddLog(msg);
         }

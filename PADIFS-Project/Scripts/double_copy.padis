@@ -1,0 +1,16 @@
+# NEW 1B1
+# WRITE QUORUM FOR F2 WITH D-3 ENTERERING AS LATE AS POSSIBLE
+RECOVER m-0
+UNFREEZE d-1
+
+CREATE c-1, f1, 1,1,1
+WRITE c-1,0,"f551-1"
+
+CREATE c-2, f2, 1,1,1
+WRITE c-2,0,"f551-1"
+
+OPEN c-1, f2
+OPEN c-2, f1
+
+EXESCRIPT c-1 double_copy_c1.padis
+EXESCRIPT c-1 double_copy_c2.padis
