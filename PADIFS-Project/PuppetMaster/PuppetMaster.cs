@@ -41,21 +41,12 @@ namespace PuppetMaster
 
         private static void SendMetadataLocations(IProcessToPM process)
         {
-            List<Thread> requests = new List<Thread>();
-
             foreach (var entry in metadataLocations)
             {
                 string id = entry.Key;
                 string location = entry.Value;
 
-                Thread metadataLocation = new Thread(() => process.MetadataLocation(id, location));
-                requests.Add(metadataLocation);
-                metadataLocation.Start();
-            }
-
-            foreach (Thread request in requests)
-            {
-                request.Join();
+                process.MetadataLocation(id, location);
             }
         }
 
