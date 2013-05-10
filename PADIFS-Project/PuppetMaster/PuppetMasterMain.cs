@@ -77,7 +77,7 @@ namespace PuppetMaster
         {
             this.failButton.Visible = toggle;
             this.recoverButton.Visible = toggle;
-            this.processBox.Mask = "m-0";
+            this.processIdBox.Mask = "m-0";
             this.startButton.Enabled = true;
         }
 
@@ -87,7 +87,7 @@ namespace PuppetMaster
             this.recoverButton.Visible = toggle;
             this.freezeButton.Visible = toggle;
             this.unfreezeButton.Visible = toggle;
-            this.processBox.Mask = "d-0";
+            this.processIdBox.Mask = "d-0";
         }
 
         private void ToggleClientElements(bool toggle)
@@ -110,8 +110,8 @@ namespace PuppetMaster
             this.fileRegister2Number.Visible = toggle;
             this.semanticsLabel.Visible = toggle;
             this.semanticsSelectionBox.Visible = toggle;
-            this.stringRegisterLabel.Visible = toggle;
-            this.stringRegisterNumber.Visible = toggle;
+            this.byteRegisterLabel.Visible = toggle;
+            this.byteRegisterNumber.Visible = toggle;
             this.contentsLabel.Visible = toggle;
             this.contentsBox.Visible = toggle;
             this.readButton.Visible = toggle;
@@ -119,15 +119,15 @@ namespace PuppetMaster
             this.saltLabel.Visible = toggle;
             this.saltBox.Visible = toggle;
             this.copyButton.Visible = toggle;
-            this.executeClientScriptButton.Visible = toggle;
-            this.processBox.Mask = "c-0";
+            this.processIdBox.Mask = "c-0";
+            this.exeScriptButton.Visible = toggle;
         }
 
         private void DumpButtonClick(object sender, EventArgs e)
         {
             if (CheckId())
             {
-                string id = this.processBox.Text;
+                string id = this.processIdBox.Text;
 
                 PuppetMaster.DumpProcess(id);
                 SetStatus("DUMP " + id);
@@ -138,7 +138,7 @@ namespace PuppetMaster
         {
             if (CheckId())
             {
-                string id = this.processBox.Text;
+                string id = this.processIdBox.Text;
 
                 PuppetMaster.RecoverProcess(id);
                 SetStatus("RECOVER " + id);
@@ -149,7 +149,7 @@ namespace PuppetMaster
         {
             if (CheckId())
             {
-                string id = this.processBox.Text;
+                string id = this.processIdBox.Text;
 
                 PuppetMaster.FailProcess(id);
                 SetStatus("FAIL " + id);
@@ -160,7 +160,7 @@ namespace PuppetMaster
         {
             if (CheckId())
             {
-                string id = this.processBox.Text;
+                string id = this.processIdBox.Text;
 
                 PuppetMaster.UnfreezeProcess(id);
                 SetStatus("UNFREEZE " + id);
@@ -171,7 +171,7 @@ namespace PuppetMaster
         {
             if (CheckId())
             {
-                string id = this.processBox.Text;
+                string id = this.processIdBox.Text;
 
                 PuppetMaster.FreezeProcess(id);
                 SetStatus("FREEZE " + id);
@@ -182,7 +182,7 @@ namespace PuppetMaster
         {
             if (CheckId() && CheckFilename() && CheckNbDataServers() && CheckReadQuorum() && CheckWriteQuorum())
             {
-                string id = this.processBox.Text;
+                string id = this.processIdBox.Text;
                 string filename = this.filenameBox.Text;
                 int nbData = Convert.ToInt32(this.NbDataServersBox.Text);
                 int readq = Convert.ToInt32(this.readQuorumBox.Text);
@@ -197,7 +197,7 @@ namespace PuppetMaster
         {
             if (CheckId() && CheckFilename())
             {
-                string id = this.processBox.Text;
+                string id = this.processIdBox.Text;
                 string filename = this.filenameBox.Text;
 
                 PuppetMaster.OpenFile(id, filename);
@@ -209,7 +209,7 @@ namespace PuppetMaster
         {
             if (CheckId() && CheckFilename())
             {
-                string id = this.processBox.Text;
+                string id = this.processIdBox.Text;
                 string filename = this.filenameBox.Text;
 
                 PuppetMaster.DeleteFile(id, filename);
@@ -221,7 +221,7 @@ namespace PuppetMaster
         {
             if (CheckId() && CheckFilename())
             {
-                string id = this.processBox.Text;
+                string id = this.processIdBox.Text;
                 string filename = this.filenameBox.Text;
 
                 PuppetMaster.CloseFile(id, filename);
@@ -233,7 +233,7 @@ namespace PuppetMaster
         {
             if (CheckId() && CheckPort())
             {
-                string id = this.processBox.Text;
+                string id = this.processIdBox.Text;
                 int port = Convert.ToInt32(this.portBox.Text);
 
                 switch (componentSelectionBox.SelectedIndex)
@@ -258,9 +258,94 @@ namespace PuppetMaster
 
                 SetStatus("START " + id + ":" + port);
 
-                this.processBox.Clear();
+                this.processIdBox.Clear();
                 this.portBox.Clear();
             }
+        }
+
+        private void ReadButtonClick(object sender, EventArgs e)
+        {
+            if (CheckId())
+            {
+                string id = this.processIdBox.Text;
+                int fileRegister = (int) this.fileRegister1Number.Value;
+                string semantics = this.semanticsSelectionBox.ValueMember;
+                int byteRegister = (int)this.byteRegisterNumber.Value;
+
+                PuppetMaster.ReadFile(id, fileRegister, semantics, byteRegister);
+                SetStatus("READ " + id + " => " + fileRegister + ":" + semantics + ":" + byteRegister);
+            }
+        }
+
+        private void WriteButtonClick(object sender, EventArgs e)
+        {
+            if (CheckId())
+            {
+                string id = this.processIdBox.Text;
+                int fileRegister = (int)this.fileRegister1Number.Value;
+
+                // write from byteRegister
+                if (string.IsNullOrEmpty(this.filenameBox.Text))
+                {
+                    int byteRegister = (int)this.byteRegisterNumber.Value;
+
+                    PuppetMaster.WriteFile(id, fileRegister, byteRegister);
+                    SetStatus("WRITE " + id + " => " + fileRegister + ":" + byteRegister);
+                }
+                // write contents
+                else
+                {
+                    string contents = this.contentsBox.Text;
+
+                    PuppetMaster.WriteFile(id, fileRegister, contents);
+                    SetStatus("WRITE " + id + " => " + fileRegister + ":" + contents);
+                }
+            }
+        }
+
+        private void CopyButtonClick(object sender, EventArgs e)
+        {
+            if (CheckId())
+            {
+                string id = this.processIdBox.Text;
+                int fileRegister1 = (int)this.fileRegister1Number.Value;
+                int fileRegister2 = (int)this.fileRegister2Number.Value;
+                string semantics = this.semanticsSelectionBox.ValueMember;
+                string salt = saltBox.Text;
+
+                PuppetMaster.CopyFile(id, fileRegister1, semantics, fileRegister2, salt);
+                SetStatus("COPY " + id + " => " + fileRegister1 + ":" + semantics + ":" + fileRegister2 + ":" + salt);
+            }
+        }
+
+        private void ExeScriptButtonClick(object sender, EventArgs e)
+        {
+            if (CheckId())
+            {
+                DialogResult result = this.openScriptDialog.ShowDialog();
+                if (result == DialogResult.OK)
+                {
+                    string id = this.processIdBox.Text;
+                    string filename = openScriptDialog.FileName;
+
+                    ExeScript(id, filename);
+                }
+            }
+        }
+
+        private void ExeScript(string id, string filename)
+        {
+            PuppetMaster.GetProcess(id);
+
+            Thread script = new Thread(() =>
+            {
+                int linenumber = 0;
+                foreach (string line in File.ReadLines(filepath + filename))
+                {
+                    ReadCommand(line, linenumber++);
+                }
+            });
+            script.Start();
         }
 
         /**
@@ -335,7 +420,7 @@ namespace PuppetMaster
 
         private bool CheckId()
         {
-            if (string.IsNullOrEmpty(this.processBox.Text))
+            if (string.IsNullOrEmpty(this.processIdBox.Text))
             {
                 SetStatus("[ERROR] Process Id is Empty");
                 return false;
@@ -584,10 +669,10 @@ namespace PuppetMaster
                         string id = steps[1];
                         int fileRegister = Convert.ToInt32(steps[2]);
                         string semantic = steps[3];
-                        int stringRegister = Convert.ToInt32(steps[4]);
+                        int byteRegister = Convert.ToInt32(steps[4]);
 
-                        PuppetMaster.ReadFile(id, fileRegister, semantic, stringRegister);
-                        SetStatus("READ " + id + " => " + fileRegister + ":" + semantic + ":" + stringRegister);
+                        PuppetMaster.ReadFile(id, fileRegister, semantic, byteRegister);
+                        SetStatus("READ " + id + " => " + fileRegister + ":" + semantic + ":" + byteRegister);
 
                         break;
                     }
@@ -673,17 +758,7 @@ namespace PuppetMaster
 
                         SetStatus("EXESCRIPT " + id + ":" + filename);
 
-                        PuppetMaster.GetProcess(id);
-
-                        Thread script = new Thread(() =>
-                        {
-                            int linenumber = 0;
-                            foreach (string line in File.ReadLines(filepath + filename))
-                            {
-                                ReadCommand(line, linenumber++);
-                            }
-                        });
-                        script.Start();
+                        ExeScript(id, filename);
 
                         break;
                     }
