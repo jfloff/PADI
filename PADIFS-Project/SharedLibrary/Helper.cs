@@ -21,6 +21,7 @@ namespace SharedLibrary
         public const int PING_INTERVAL = 10000;
         public const int DATASERVER_HEARTBEAT_INTERVAL = 3000;
         public const int HEARTBEAT_EXPIRE = 3;
+        public const int LOAD_BALANCING_INTERVAL = 4500;
 
         public static string GetUrl(string id, int port)
         {

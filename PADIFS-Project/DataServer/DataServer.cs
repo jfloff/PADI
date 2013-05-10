@@ -13,7 +13,7 @@ using System.Threading;
 
 namespace DataServer
 {
-    public class DataServer : MarshalByRefObject, IDataServerToPM, IDataServerToClient
+    public class DataServer : MarshalByRefObject, IDataServerToPM, IDataServerToClient, IDataServerToMetadata
     {
         // localFilename / FileData
         private static ConcurrentDictionary<string, FileData> files = new ConcurrentDictionary<string, FileData>();
@@ -46,7 +46,7 @@ namespace DataServer
             id = args[0];
             port = Convert.ToInt32(args[1]);
 
-            Console.SetWindowSize(Helper.WINDOW_WIDTH, Helper.WINDOW_HEIGHT);
+            Console.SetWindowSize(Helper.WINDOW_WIDTH, Helper.WINDOW_HEIGHT*3);
             Console.Title = id;
 
             TcpChannel channel = new TcpChannel(port);
@@ -74,13 +74,13 @@ namespace DataServer
             {
                 try
                 {
-                    Heartbeat heartbeat = new Heartbeat(Weight(), new Dictionary<string, Weight>(weights));
+                    Heartbeat heartbeat = new Heartbeat(MyWeight(), new Dictionary<string, Weight>(weights));
                     GarbageCollected toDelete = metadatas[master].Heartbeat(id, heartbeat);
 
-                    foreach (string filename in toDelete)
+                    foreach (string localFilename in toDelete)
                     {
-                        FileData ignoredFileData; files.TryRemove(filename, out ignoredFileData);
-                        Weight ignoredStats; weights.TryRemove(filename, out ignoredStats);
+                        FileData ignoredFileData; files.TryRemove(localFilename, out ignoredFileData);
+                        Weight ignoredStats; weights.TryRemove(localFilename, out ignoredStats);
                     }
 
                     return;
@@ -92,7 +92,7 @@ namespace DataServer
             }
         }
 
-        private Weight Weight()
+        private Weight MyWeight()
         {
             Weight weight = new Weight();
             if (weights.Count != 0)
@@ -178,12 +178,14 @@ namespace DataServer
         public void Dump()
         {
             Console.WriteLine("DUMP");
-            Console.WriteLine("Opened File Datas");
+            Console.WriteLine("WEIGHT = " + MyWeight());
+            Console.WriteLine("FILE DATAS");
             foreach (var entry in files)
             {
-                string filename = entry.Key;
+                string localFilename = entry.Key;
                 FileData fileData = entry.Value;
-                Console.WriteLine(filename + ":" + fileData);
+
+                Console.WriteLine(localFilename + ":" + fileData + ":" + weights[localFilename]);
             }
         }
 
@@ -272,7 +274,6 @@ namespace DataServer
             }
 
             Console.WriteLine("READ " + localFilename);
-
             if (!files.ContainsKey(localFilename))
             {
                 Console.WriteLine("CREATE FILE " + localFilename);
@@ -302,13 +303,63 @@ namespace DataServer
                 Console.WriteLine("CREATE FILE " + localFilename);
                 files[localFilename] = newFile;
                 weights[localFilename] = new Weight();
-                weights[localFilename].Writes++;
-                return;
+            }
+            else
+            {
+                files[localFilename] = FileData.Latest(files[localFilename], newFile);
             }
 
-            files[localFilename] = FileData.Latest(files[localFilename], newFile);
             weights[localFilename].Writes++;
             Console.WriteLine("STORED = " + files[localFilename].Version);
+        }
+
+        /**
+         * IDataServerToMetadata
+         */
+
+        public FileData MigrationRead(string localFilename)
+        {
+            if (fail) throw new ProcessFailedException(id);
+            if (freeze)
+            {
+                freezed.Enqueue(() => MigrationRead(localFilename));
+                throw new ProcessFreezedException(id);
+            }
+
+            Console.WriteLine("MIGRATIONR READ " + localFilename);
+
+            return (files.ContainsKey(localFilename)) ? files[localFilename] : new FileData();
+        }
+
+        public void MigrationWrite(string localFilename, FileData newFile, Weight weight)
+        {
+            if (fail) throw new ProcessFailedException(id);
+            if (freeze)
+            {
+                freezed.Enqueue(() => MigrationWrite(localFilename, newFile, weight));
+                throw new ProcessFreezedException(id);
+            }
+
+            Console.WriteLine("MIGRATION WRITE " + localFilename);
+
+            files[localFilename] = newFile;
+            weights[localFilename] = weight;
+        }
+
+
+        public void MigrationDelete(string localFilename)
+        {
+            if (fail) throw new ProcessFailedException(id);
+            if (freeze)
+            {
+                freezed.Enqueue(() => MigrationDelete(localFilename));
+                throw new ProcessFreezedException(id);
+            }
+
+            Console.WriteLine("MIGRATION DELETE " + localFilename);
+
+            FileData ignoredData; files.TryRemove(localFilename, out ignoredData);
+            Weight ignoredStats; weights.TryRemove(localFilename, out ignoredStats);
         }
     }
 }

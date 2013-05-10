@@ -4,6 +4,7 @@ using SharedLibrary.Exceptions;
 using SharedLibrary.Interfaces;
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Runtime.Remoting;
 using System.Runtime.Remoting.Channels;
 using System.Runtime.Remoting.Channels.Tcp;
@@ -21,17 +22,17 @@ namespace Metadata
         // id / interface
         private static ConcurrentDictionary<string, IMetadataToMetadata> metadatas
             = new ConcurrentDictionary<string, IMetadataToMetadata>();
-        private static string master;
+        private static string master = string.Empty;
 
         // file metadata table
-        private static FileMetadataTable table = new FileMetadataTable();
+        private static FileMetadataTable fileTable = new FileMetadataTable();
 
         // data servers
         private static DataServerRegister dataServers = new DataServerRegister();
 
         private static bool fail = false;
         // clock / action
-        private static ConcurrentDictionary<int, Action> pending = new ConcurrentDictionary<int, Action>();
+        private static ConcurrentDictionary<int, Action> outOfOrder = new ConcurrentDictionary<int, Action>();
         // sequence clock
         private static int clock = 0;
 
@@ -46,7 +47,7 @@ namespace Metadata
             if (args.Length != 2)
                 throw new Exception("Wrong Arguments");
 
-            id = master = args[0];
+            id = args[0];
             int port = Convert.ToInt32(args[1]);
 
             Console.SetWindowSize(Helper.WINDOW_WIDTH, Helper.WINDOW_HEIGHT * 5);
@@ -61,33 +62,7 @@ namespace Metadata
 
             Console.WriteLine("Metadata Server " + id + " has started.");
 
-            Thread pending = new Thread(() =>
-            {
-                while (true) {
-                    OrderFix();
-                }
-            });
-            pending.Start();
-
             Console.ReadLine();
-        }
-
-        private static void OrderFix()
-        {
-            if (pending.Count == 0) return;
-
-            if (pending.ContainsKey(clock))
-            {
-                Console.WriteLine("OUT OF ORDER FIX : " + clock);
-                Action action;
-                pending.TryRemove(clock, out action);
-                action();
-            }
-        }
-
-        private bool ImMaster
-        {
-            get { return (id == master); }
         }
 
         /**
@@ -106,6 +81,12 @@ namespace Metadata
             // to avoid multiple locations enter at the same time
             lock (master)
             {
+                // metadata bootup
+                if (master == string.Empty)
+                {
+                    MetadataBootup();
+                }
+
                 // since we are sure one of the metadatas is up
                 // we can just wait for the next metada register to ask for master
                 try
@@ -117,12 +98,36 @@ namespace Metadata
             }
         }
 
+        private void MetadataBootup()
+        {
+            // out of order requests thread
+            Thread outOfOrder = new Thread(() =>
+            {
+                while (true)
+                {
+                    OrderFix();
+                }
+            });
+            outOfOrder.Start();
+
+            // load balancing thread
+            Thread loadBalancing = new Thread(() =>
+            {
+                while (true)
+                {
+                    LoadBalancing();
+                    Thread.Sleep(Helper.LOAD_BALANCING_INTERVAL);
+                }
+            });
+            loadBalancing.Start();
+        }
+
         public void Dump()
         {
             Console.WriteLine("DUMP");
-
+            Console.WriteLine("AVG = " + dataServers.AvgWeight);
             Console.WriteLine("Master = " + master + ":" + clock);
-            Console.WriteLine("Files = " + table);
+            Console.WriteLine("Files = " + fileTable);
             Console.WriteLine("Data Servers = " + dataServers);
         }
 
@@ -137,13 +142,19 @@ namespace Metadata
             Console.WriteLine("--RECEIVING STATE UPDATE--");
 
             log.MergeDiff(this, diff);
-            
+
             Console.WriteLine("--STATE UPDATE FINISHED--");
         }
 
         public void Recover()
         {
             Console.WriteLine("RECOVER");
+
+            // metadata bootup
+            if (master == string.Empty)
+            {
+                MetadataBootup();
+            }
 
             foreach (var entry in metadatas)
             {
@@ -155,7 +166,7 @@ namespace Metadata
                     master = metadata.Master();
                     // sets fail to false so it starts receiving requests
                     fail = false;
-                    
+
                     if (!ImMaster)
                     {
                         MetadataDiff diff = metadatas[master].UpdateMetadata(id);
@@ -169,6 +180,185 @@ namespace Metadata
             // sets fail to false so it starts receiving requests
             master = id;
             fail = false;
+        }
+
+        private void OrderFix()
+        {
+            if (outOfOrder.Count == 0) return;
+
+            if (outOfOrder.ContainsKey(clock))
+            {
+                Console.WriteLine("OUT OF ORDER FIX : " + clock);
+                Action action;
+                outOfOrder.TryRemove(clock, out action);
+                action();
+            }
+        }
+
+        private bool ImMaster
+        {
+            get { return (id == master); }
+        }
+
+        /**
+         * LOAD BALANCING
+         */
+        private void LoadBalancing()
+        {
+            if (fail) return;
+            if (!ImMaster) return;
+
+            HashSet<string> alreadyMigrated = new HashSet<string>();
+            foreach (DataServerFile file in dataServers.FileWeights)
+            {
+                string localFilename = file.LocalFilename;
+                string filename = fileTable.FilenameByLocalFilename(localFilename);
+                Weight fileWeight = file.Weight;
+                string oldDataServerId = file.DataServerId;
+
+                foreach (var entry in dataServers.Weights)
+                {
+                    string newDataServerId = entry.Key;
+                    Weight newDataServerWeight = entry.Value;
+
+                    // BLACK LIST SKIP CASES
+                    // skips if its the old dataServer
+                    if (newDataServerId == oldDataServerId) continue;
+                    // migrates just one file per data server
+                    if (alreadyMigrated.Contains(newDataServerId)) continue;
+                    // if file already is in dataserver
+                    if (fileTable.FileInDataServer(filename, newDataServerId)) continue;
+                    // if data server is known to be down
+                    if (dataServers.Failed(newDataServerId)) continue;
+                    // if its outside threshold
+                    if (!Weight.InsideThreshold(fileWeight + newDataServerWeight, dataServers.AvgWeight, 0.10)) continue;
+                    // if it isnt free
+                    if (!fileTable.Free(filename)) continue;
+
+                    // LOCK
+                    fileTable.Lock(filename);
+                    
+                    // reads from old, writes to new
+                    string newLocalFilename = LocalFilename(filename, newDataServerId);
+                    string oldLocalFilename = fileTable.LocalFilenameByFilename(filename, oldDataServerId);
+
+                    // if swap was false migration failed
+                    if (SwapDataServers(oldDataServerId, newDataServerId, oldLocalFilename, newLocalFilename, fileWeight))
+                    {
+                        Console.WriteLine("MIGRATE " + filename + " TO " + newDataServerId);
+
+                        // log operation
+                        int sequence = clock++;
+                        log.LogOperation(sequence, "MigrateFileOnMetadata", filename, oldDataServerId, newDataServerId, oldLocalFilename, newLocalFilename, sequence);
+
+                        // swap files on data server register
+                        dataServers.AddFile(newDataServerId, newLocalFilename);
+                        dataServers.RemoveFile(oldDataServerId, oldLocalFilename);
+
+                        // swaps data servers on file table
+                        fileTable.RemoveDataServer(filename, oldDataServerId);
+                        fileTable.AddDataServer(filename, newDataServerId, dataServers.Location(newDataServerId), newLocalFilename);
+
+                        // migrate to metadatas
+                        MigrateFileOnMetadatas(filename, oldDataServerId, newDataServerId, oldLocalFilename, newLocalFilename, sequence);
+
+                        // adds file weight to data server weight and removes from previous
+                        dataServers.AddWeight(newDataServerId, fileWeight);
+                        dataServers.RemoveWeight(oldDataServerId, fileWeight);
+
+                        // adds to data servers already migrated
+                        alreadyMigrated.Add(oldDataServerId);
+                    }
+
+                    // UNLOCK
+                    fileTable.Unlock(filename);
+                }
+            }
+        }
+
+        private bool SwapDataServers(string oldDataServerId, string newDataServerId, string oldLocalFilename, string newLocalFilename, Weight fileWeight)
+        {
+            IDataServerToMetadata oldDataServer = (IDataServerToMetadata)Activator.GetObject(
+                typeof(IDataServerToMetadata),
+                dataServers.Location(oldDataServerId));
+
+            IDataServerToMetadata newDataServer = (IDataServerToMetadata)Activator.GetObject(
+                typeof(IDataServerToMetadata),
+                dataServers.Location(newDataServerId));
+
+            FileData file = null;
+
+            try
+            {
+                file = oldDataServer.MigrationRead(oldLocalFilename);
+            }
+            catch (ProcessFreezedException) 
+            {
+                return false;
+            }
+            catch (ProcessFailedException)
+            {
+                return false;
+            }
+
+            try
+            {
+                newDataServer.MigrationWrite(newLocalFilename, file, fileWeight);
+            }
+            catch (ProcessFreezedException) 
+            { 
+                // accepting freezed as valid because write will happen no matter what
+            }
+            catch (ProcessFailedException)
+            {
+                return false;
+            }
+
+            try
+            {
+                oldDataServer.MigrationDelete(oldLocalFilename);
+            }
+            catch (ProcessFreezedException) 
+            {
+                // accepting freezed as valid because write will happen no matter what 
+            }
+            catch (ProcessFailedException)
+            {
+                // if it fails delete of previous write doesnt matter 
+                // garbage collection will take care of it
+                // still we try to delete it
+            }
+
+            return true;
+        }
+
+        private void MigrateFileOnMetadatas(string filename, string oldDataServerId, string newDataServerId, string oldLocalFilename, string newLocalFilename, int sequence)
+        {
+            int requests = metadatas.Count;
+
+            foreach (var entry in metadatas)
+            {
+                string metadataId = entry.Key;
+                IMetadataToMetadata metadata = entry.Value;
+                Thread request = new Thread(() =>
+                {
+                    try
+                    {
+                        metadata.MigrateFileOnMetadata(filename, oldDataServerId, newDataServerId, oldLocalFilename, newLocalFilename, sequence);
+                    }
+                    catch (ProcessFailedException)
+                    {
+                        AddLogMark(metadataId, sequence);
+                    }
+                    finally
+                    {
+                        Interlocked.Decrement(ref requests);
+                    }
+                });
+                request.Start();
+            }
+
+            while (requests > 0) ;
         }
 
         /**
@@ -192,19 +382,24 @@ namespace Metadata
 
             Console.WriteLine("OPEN METADATA FILE " + filename);
 
-            if (!table.Contains(filename))
+            if (!fileTable.Contains(filename))
             {
                 throw new FileDoesNotExistException(filename);
             }
 
-            if (table.Open(clientId, filename))
+            if (fileTable.Locked(filename))
+            {
+                throw new FileUnavailableException(filename);
+            }
+
+            if (fileTable.Open(clientId, filename))
             {
                 int sequence = clock++;
                 log.LogOperation(sequence, "OpenOnMetadata", clientId, filename, sequence);
                 OpenOnMetadatas(clientId, filename, sequence);
             }
 
-            return table.FileMetadata(filename);
+            return fileTable.FileMetadata(filename);
         }
 
         private void OpenOnMetadatas(string clientId, string filename, int sequence)
@@ -243,12 +438,12 @@ namespace Metadata
 
             Console.WriteLine("CLOSE METADATA FILE " + filename);
 
-            if (!table.Contains(filename))
+            if (!fileTable.Contains(filename))
             {
                 throw new FileDoesNotExistException(filename);
             }
 
-            if (table.Close(clientId, filename))
+            if (fileTable.Close(clientId, filename))
             {
                 int sequence = clock++;
                 log.LogOperation(sequence, "CloseOnMetadata", clientId, filename, sequence);
@@ -290,7 +485,7 @@ namespace Metadata
             if (fail) throw new ProcessFailedException(id);
             if (!ImMaster) throw new NotTheMasterException(id);
 
-            if (table.Contains(filename))
+            if (fileTable.Contains(filename))
             {
                 throw new FileAlreadyExistsException(filename);
             }
@@ -302,7 +497,7 @@ namespace Metadata
             log.LogOperation(sequence, "CreateOnMetadata", clientId, filename, nbDataServers, readQuorum, writeQuorum, sequence);
 
             //create file
-            table.Create(clientId, filename, nbDataServers, readQuorum, writeQuorum);
+            fileTable.Create(clientId, filename, nbDataServers, readQuorum, writeQuorum);
             EnqueuePending(filename, nbDataServers);
             CreateOnMetadatas(clientId, filename, nbDataServers, readQuorum, writeQuorum, sequence);
 
@@ -314,29 +509,31 @@ namespace Metadata
                 if (selected++ >= nbDataServers) break;
 
                 // dequeues a request and then selects
-                table.DequeueSelect(filename);
+                fileTable.DequeueSelect(filename);
                 SelectDataServer(dataServerId, filename);
             }
 
-            return table.FileMetadata(filename);
+            return fileTable.FileMetadata(filename);
         }
 
         private void EnqueuePending(string filename, int nbDataServers)
         {
             for (int i = 0; i < nbDataServers; i++)
             {
-                table.EnqueueSelect(filename, (futureId) => SelectDataServer(futureId, filename));
+                fileTable.EnqueueSelect(filename, (futureId) => SelectDataServer(futureId, filename));
             }
         }
 
         private void SelectDataServer(string dataServerId, string filename)
         {
-            string localFilename = LocalFilename(filename);
+            Console.WriteLine("SELECT DATASERVER FOR " + filename);
+
+            string localFilename = LocalFilename(filename, dataServerId);
 
             int sequence = clock++;
             log.LogOperation(sequence, "SelectOnMetadata", filename, dataServerId, localFilename, sequence);
 
-            table.AddDataServer(filename, dataServerId, dataServers.Location(dataServerId), localFilename);
+            fileTable.AddDataServer(filename, dataServerId, dataServers.Location(dataServerId), localFilename);
             dataServers.AddFile(dataServerId, localFilename);
             SelectOnMetadatas(filename, dataServerId, localFilename, sequence);
         }
@@ -370,10 +567,10 @@ namespace Metadata
             while (requests > 0) ;
         }
 
-        private string LocalFilename(string filename)
+        private static string LocalFilename(string filename, string dataServerId)
         {
             // GUID better probably?
-            return filename + "$" + filename.GetHashCode();
+            return filename + '$' + dataServerId + '$' + filename.GetHashCode();
         }
 
         private void CreateOnMetadatas(string clientId, string filename, int nbDataServers, int readQuorum, int writeQuorum, int sequence)
@@ -412,16 +609,21 @@ namespace Metadata
 
             Console.WriteLine("DELETE METADATA FILE " + filename);
 
-            if (!table.Contains(filename))
+            if (!fileTable.Contains(filename))
             {
                 throw new FileDoesNotExistException(filename);
+            }
+
+            if (fileTable.Locked(filename))
+            {
+                throw new FileUnavailableException(filename);
             }
 
             int sequence = clock++;
             log.LogOperation(sequence, "DeleteOnMetadata", filename, sequence);
 
             DeleteOnMetadatas(filename, sequence);
-            FileMetadata removed = table.Remove(filename);
+            FileMetadata removed = fileTable.Remove(filename);
 
             // remove localFilenames from data servers
             foreach (var entry in removed.LocalFilenames)
@@ -512,13 +714,13 @@ namespace Metadata
 
         private void CheckPending(string dataServerId)
         {
-            foreach (var entry in table.Pending)
+            foreach (var entry in fileTable.Pending)
             {
                 string filename = entry;
 
                 Thread pendingRequest = new Thread(() =>
                 {
-                    table.DequeueSelect(filename)(dataServerId);
+                    fileTable.DequeueSelect(filename)(dataServerId);
                 });
                 pendingRequest.Start();
             }
@@ -559,13 +761,6 @@ namespace Metadata
 
             if (dataServers.Contains(dataServerId))
             {
-                /**
-                 * IGNORING HEARTBEAT REPLICATION
-                 */
-                //int sequence = clock++;
-                //log.LogOperation(sequence, "HeartbeatOnMetadata", dataServerId, heartbeat, sequence);
-                //HeartbeatOnMetadatas(dataServerId, heartbeat, sequence);
-
                 GarbageCollected toDelete = new GarbageCollected();
 
                 // update data server weight
@@ -574,28 +769,20 @@ namespace Metadata
                 {
                     string localFilename = entry.Key;
                     Weight fileWeight = entry.Value;
-                    
+
                     // garbage collection
                     if (!dataServers.ContainsFile(dataServerId, localFilename))
                     {
                         toDelete.Add(localFilename);
                     }
-
-                    // lacking load balancing
-                    string filename = table.FilenameByLocalFilename(localFilename);
-                    foreach (var dataServerWeight in dataServers.Weights)
+                    else
                     {
-                        string checkingId = dataServerWeight.Key;
-                        Weight checkingWeight = dataServerWeight.Value;
-
-                        if (Weight.Compare(fileWeight + checkingWeight, dataServers.MedianWeight) <= 0)
-                        {
-                            //Console.WriteLine("MIGRATE TO " + checkingId);
-                        }
+                        // update file weights
+                        dataServers.UpdateFileWeight(dataServerId, localFilename, fileWeight);
                     }
                 }
 
-
+                // pending files if this data server returned
                 if (dataServers.Failed(dataServerId))
                 {
                     CheckPending(dataServerId);
@@ -605,35 +792,6 @@ namespace Metadata
             }
 
             return null;
-        }
-
-        private void HeartbeatOnMetadatas(string dataServerId, Heartbeat heartbeat, int sequence)
-        {
-            int requests = metadatas.Count;
-
-            foreach (var entry in metadatas)
-            {
-                string metadataId = entry.Key;
-                IMetadataToMetadata metadata = entry.Value;
-                Thread request = new Thread(() =>
-                {
-                    try
-                    {
-                        metadata.HeartbeatOnMetadata(dataServerId, heartbeat, sequence);
-                    }
-                    catch (ProcessFailedException)
-                    {
-                        AddLogMark(metadataId, sequence);
-                    }
-                    finally
-                    {
-                        Interlocked.Decrement(ref requests);
-                    }
-                });
-                request.Start();
-            }
-
-            while (requests > 0) ;
         }
 
         /**
@@ -647,14 +805,14 @@ namespace Metadata
             // message out of sequence, adds to queue
             if (sequence != clock)
             {
-                pending[sequence] = () => CreateOnMetadata(clientId, filename, nbDataServers, readQuorum, writeQuorum, sequence);
+                outOfOrder[sequence] = () => CreateOnMetadata(clientId, filename, nbDataServers, readQuorum, writeQuorum, sequence);
                 return;
             }
 
             Console.WriteLine("CREATE FROM MASTER");
 
             log.LogOperation(clock, "CreateOnMetadata", clientId, filename, nbDataServers, readQuorum, writeQuorum, clock);
-            table.Create(clientId, filename, nbDataServers, readQuorum, writeQuorum);
+            fileTable.Create(clientId, filename, nbDataServers, readQuorum, writeQuorum);
             EnqueuePending(filename, nbDataServers);
             clock++;
         }
@@ -666,15 +824,15 @@ namespace Metadata
             // message out of sequence, adds to queue
             if (sequence != clock)
             {
-                pending[sequence] = () => SelectOnMetadata(filename, dataServerId, localFilename, sequence);
+                outOfOrder[sequence] = () => SelectOnMetadata(filename, dataServerId, localFilename, sequence);
                 return;
             }
 
             Console.WriteLine("SELECT FROM MASTER");
 
             log.LogOperation(clock, "SelectOnMetadata", filename, dataServerId, localFilename, clock);
-            table.DequeueSelect(filename);
-            table.AddDataServer(filename, dataServerId, dataServers.Location(dataServerId), localFilename);
+            fileTable.DequeueSelect(filename);
+            fileTable.AddDataServer(filename, dataServerId, dataServers.Location(dataServerId), localFilename);
             dataServers.AddFile(dataServerId, localFilename);
             clock++;
         }
@@ -686,7 +844,7 @@ namespace Metadata
             // message out of sequence, adds to queue
             if (sequence != clock)
             {
-                pending[sequence] = () => DeleteOnMetadata(filename, sequence);
+                outOfOrder[sequence] = () => DeleteOnMetadata(filename, sequence);
                 return;
             }
 
@@ -695,7 +853,7 @@ namespace Metadata
             log.LogOperation(clock, "DeleteOnMetadata", filename, clock);
 
             // remove localFilenames from data servers
-            FileMetadata removed = table.Remove(filename);
+            FileMetadata removed = fileTable.Remove(filename);
             foreach (var entry in removed.LocalFilenames)
             {
                 string dataServerId = entry.Key;
@@ -713,13 +871,13 @@ namespace Metadata
             // message out of sequence, adds to queue
             if (sequence != clock)
             {
-                pending[sequence] = () => OpenOnMetadata(clientId, filename, sequence);
+                outOfOrder[sequence] = () => OpenOnMetadata(clientId, filename, sequence);
                 return;
             }
 
             Console.WriteLine("OPEN FROM MASTER");
 
-            if (table.Open(clientId, filename))
+            if (fileTable.Open(clientId, filename))
             {
                 log.LogOperation(clock, "OpenOnMetadata", clientId, filename, clock);
                 clock++;
@@ -733,13 +891,13 @@ namespace Metadata
             // message out of sequence, adds to queue
             if (sequence != clock)
             {
-                pending[sequence] = () => CloseOnMetadata(clientId, filename, sequence);
+                outOfOrder[sequence] = () => CloseOnMetadata(clientId, filename, sequence);
                 return;
             }
 
             Console.WriteLine("CLOSE FROM MASTER");
 
-            if (table.Close(clientId, filename))
+            if (fileTable.Close(clientId, filename))
             {
                 log.LogOperation(clock, "CloseOnMetadata", clientId, filename, clock);
                 clock++;
@@ -753,7 +911,7 @@ namespace Metadata
             // message out of sequence, adds to queue
             if (sequence != clock)
             {
-                pending[sequence] = () => DataServerOnMetadata(dataServerId, location, sequence);
+                outOfOrder[sequence] = () => DataServerOnMetadata(dataServerId, location, sequence);
                 return;
             }
 
@@ -771,7 +929,7 @@ namespace Metadata
             // message out of sequence, adds to queue
             if (sequence != clock)
             {
-                pending[sequence] = () => AddMarkOnMetadata(mark, markSequence, sequence);
+                outOfOrder[sequence] = () => AddMarkOnMetadata(mark, markSequence, sequence);
                 return;
             }
 
@@ -783,9 +941,30 @@ namespace Metadata
             clock++;
         }
 
-        public void HeartbeatOnMetadata(string dataServerId, Heartbeat heartbeat, int sequence)
+        public void MigrateFileOnMetadata(string filename, string oldDataServerId, string newDataServerId, string oldLocalFilename, string newLocalFilename, int sequence)
         {
-            throw new NotImplementedException();
+            if (fail) throw new ProcessFailedException(id);
+
+            // message out of sequence, adds to queue
+            if (sequence != clock)
+            {
+                outOfOrder[sequence] = () => MigrateFileOnMetadata(filename, oldDataServerId, newDataServerId, oldLocalFilename, newLocalFilename, sequence);
+                return;
+            }
+
+            Console.WriteLine("FILE MIGRATION FROM MASTER");
+
+            log.LogOperation(clock, "MigrateFileOnMetadata", filename, oldDataServerId, newDataServerId, oldLocalFilename, newLocalFilename, clock);
+            
+            // swap files on data server register
+            dataServers.AddFile(newDataServerId, newLocalFilename);
+            dataServers.RemoveFile(oldDataServerId, oldLocalFilename);
+
+            // swaps data servers on file table
+            fileTable.RemoveDataServer(filename, oldDataServerId);
+            fileTable.AddDataServer(filename, newDataServerId, dataServers.Location(newDataServerId), newLocalFilename);
+
+            clock++;
         }
 
         public MasterVote MasterVoting(MasterVote vote)

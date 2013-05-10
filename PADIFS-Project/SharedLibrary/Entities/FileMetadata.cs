@@ -67,11 +67,30 @@ namespace SharedLibrary.Entities
             get { return this.locations; }
         }
 
+        public string LocalFilename(string id)
+        {
+            return this.localFilenames[id];
+        }
+
         public void AddDataServer(string id, string location, string localFilename)
         {
-            this.Locations[id] = location;
-            this.LocalFilenames[id] = localFilename;
+            this.locations[id] = location;
+            this.localFilenames[id] = localFilename;
             this.currentNbDataServers++;
+        }
+
+        public string RemoveDataServer(string id)
+        {
+            string localFilename = this.localFilenames[id];
+            this.localFilenames.Remove(id);
+            this.locations.Remove(id);
+            this.currentNbDataServers--;
+            return localFilename;
+        }
+
+        public bool InDataServer(string dataServerId)
+        {
+            return this.localFilenames.ContainsKey(dataServerId);
         }
 
         public override string ToString()

@@ -164,14 +164,6 @@ namespace Client
                     Console.WriteLine("FILE METADATA => " + fileMetadata.ToString());
                     return;
                 }
-                catch (ProcessFailedException)
-                {
-                    FindMaster();
-                }
-                catch (NotTheMasterException)
-                {
-                    FindMaster();
-                }
                 catch (FileDoesNotExistException e)
                 {
                     Console.WriteLine(e.Message);
@@ -199,6 +191,8 @@ namespace Client
                 {
                     FindMaster();
                 }
+                // keep trying until it opens
+                catch (FileUnavailableException) { }
             }
         }
 
@@ -252,6 +246,8 @@ namespace Client
                 {
                     FindMaster();
                 }
+                // keep trying until it opens
+                catch (FileUnavailableException) { }
                 catch (FileDoesNotExistException e)
                 {
                     Console.WriteLine(e.Message);

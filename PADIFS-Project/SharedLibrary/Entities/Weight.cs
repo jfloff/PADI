@@ -38,10 +38,31 @@ namespace SharedLibrary.Entities
             return new Weight(w1.reads + w2.reads, w1.writes + w2.writes);
         }
 
+        // Declare which operator to overload (-)
+        public static Weight operator -(Weight w1, Weight w2)
+        {
+            int newReads = ((w1.reads - w2.reads) <= 0) ? 0 : w1.reads - w2.reads;
+            int newWrites = ((w1.writes - w2.writes) <= 0) ? 0 : w1.writes - w2.writes;
+
+            return new Weight(newReads, newWrites);
+        }
+
         // Declare which operator to overload (+)
-        public static Weight Median(Weight sum, int n)
+        public static Weight Avg(Weight sum, int n)
         {
             return new Weight(sum.reads/n, sum.writes/n);
+        }
+
+        public static bool InsideThreshold(Weight check, Weight around, double threshold)
+        {
+            int readThreshold = (int) Math.Ceiling(around.reads * threshold);
+            int writeThreshold = (int) Math.Ceiling(around.writes * threshold);
+
+            // if its either inside the threshold in reads or writes says true
+            if (check.reads < (around.reads + readThreshold)) return true;
+            if (check.writes < (around.writes + writeThreshold)) return true;
+
+            return false;
         }
 
         public static int Compare(Weight w1, Weight w2)

@@ -22,14 +22,9 @@ Plataformas para Aplicações Distribuídas na Internet
 ### TODO
 *   Verificações de null objects nos activator get object.
 *   DUMP NO PM + IMPROVED LOG + IMPROVED PM
-*   OPTIMIZACAO DE UPDATE DE DATASERVERS --> PERGUNTA PROF TEORICAS
-*   HEARTBEATS DE DSs --> SE "FAILED" DS RETIRAR DA DECISAO E ATRIBUIR EXISTENTES A OUTROS
-*   TRATAR DOS CASOS DO DELETE DE METADATA
 
 ### DUVIDAS
 ### Esclarecidas
-*   Para que server afinal o nbDataServers?
-    *   Garantir que o ficheiro está sempre naquele numero de servers, >>SE<< tivermos aquele numro de servers
 
 ## A Tirar
 

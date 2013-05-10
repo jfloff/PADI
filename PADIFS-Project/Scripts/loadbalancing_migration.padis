@@ -7,10 +7,13 @@ CREATE c-1, f0, 1, 1, 1
 READ c-1, 0, default, 0
 READ c-1, 0, default, 0
 READ c-1, 0, default, 0
+CLOSE c-1, f0
+
 #file with 3 reads
 CREATE c-1, f1, 1, 1, 1
 READ c-1, 1, default, 1
 READ c-1, 1, default, 1
 READ c-1, 1, default, 1
-
-RECOVER d-2
+CLOSE c-1, f0
+#!
+FAIL d-2

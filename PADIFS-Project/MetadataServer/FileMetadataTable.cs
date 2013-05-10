@@ -13,6 +13,7 @@ namespace Metadata
             public FileMetadata metadata;
             public ConcurrentQueue<Action<string>> pending = new ConcurrentQueue<Action<string>>();
             public ConcurrentDictionary<string, bool> clients = new ConcurrentDictionary<string,bool>();
+            public bool locked = false;
 
             public TableEntry(FileMetadata metadata)
             {
@@ -96,6 +97,12 @@ namespace Metadata
             filenamesByLocal[localFilename] = filename;
         }
 
+        public void RemoveDataServer(string filename, string oldDataServerId)
+        {
+            string localFilename = this.files[filename].metadata.RemoveDataServer(oldDataServerId);
+            string ignored; filenamesByLocal.TryRemove(localFilename, out ignored);
+        }
+
         public void EnqueueSelect(string filename, Action<string> pending)
         {
             this.files[filename].pending.Enqueue(pending);
@@ -113,10 +120,30 @@ namespace Metadata
             return this.filenamesByLocal[localFilename];
         }
 
+        public string LocalFilenameByFilename(string filename, string dataServerid)
+        {
+            return this.files[filename].metadata.LocalFilename(dataServerid);
+        }
+
         // checks if file doesn't have any clients
         public bool Free(string filename)
         {
             return (this.files[filename].clients.Count == 0);
+        }
+
+        public bool Locked(string filename)
+        {
+            return this.files[filename].locked;
+        }
+
+        public void Lock(string filename)
+        {
+            this.files[filename].locked = true;
+        }
+
+        public void Unlock(string filename)
+        {
+            this.files[filename].locked = false;
         }
 
         // returns files that have pending requests
@@ -132,6 +159,11 @@ namespace Metadata
                     }
                 }
             }
+        }
+
+        public bool FileInDataServer(string filename, string dataServerId)
+        {
+            return this.files[filename].metadata.InDataServer(dataServerId);
         }
     }
 }

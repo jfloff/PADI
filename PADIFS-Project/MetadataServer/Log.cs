@@ -150,18 +150,21 @@ namespace Metadata
                             metadata.DataServerOnMetadata(dataServerId, location, sequence);
                             break;
                         }
-                    case ("HeartbeatOnMetadata"):
+                    case ("MigrateFileOnMetadata"):
                         {
-                            string dataServerId = Helper.DeserializeObject<string>(words[1]);
-                            Heartbeat heartbeat = Helper.DeserializeObject<Heartbeat>(words[2]);
-                            int sequence = Helper.DeserializeObject<int>(words[3]);
+                            string filename = Helper.DeserializeObject<string>(words[1]);
+                            string oldDataServerId = Helper.DeserializeObject<string>(words[2]);
+                            string newDataServerId = Helper.DeserializeObject<string>(words[3]);
+                            string oldLocalFilename = Helper.DeserializeObject<string>(words[4]);
+                            string newLocalFilename = Helper.DeserializeObject<string>(words[5]);
+                            int sequence = Helper.DeserializeObject<int>(words[6]);
 
-                            metadata.HeartbeatOnMetadata(dataServerId, heartbeat, sequence);
+                            metadata.MigrateFileOnMetadata(filename, oldDataServerId, newDataServerId, oldLocalFilename, newLocalFilename, sequence);
                             break;
                         }
                     default:
                         {
-                            throw new Exception("NOT SUPPOSED TO REACH HERE" + methodName);
+                            throw new Exception("METHOD CALL NOT SERIALIZABLE: " + methodName);
                         }
                 }
             }

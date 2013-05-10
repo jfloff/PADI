@@ -44,6 +44,7 @@
     <Compile Include="Entities\FileVersion.cs" />
     <Compile Include="Entities\MasterVote.cs" />
     <Compile Include="Entities\MetadataDiff.cs" />
+    <Compile Include="Exceptions\FileUnavailableException.cs" />
     <Compile Include="Exceptions\NotTheMasterException.cs" />
     <Compile Include="Exceptions\ProcessFreezedException.cs" />
     <Compile Include="Exceptions\ProcessFailedException.cs" />
@@ -53,6 +54,7 @@
     <Compile Include="Exceptions\FileDoesNotExistException.cs" />
     <Compile Include="Entities\FileMetadata.cs" />
     <Compile Include="Entities\Heartbeat.cs" />
+    <Compile Include="Interfaces\IDataServerToMetadata.cs" />
     <Compile Include="Interfaces\IMetadataToProcess.cs" />
     <Compile Include="Interfaces\IClientToPM.cs" />
     <Compile Include="Interfaces\IProcessToPM.cs" />
