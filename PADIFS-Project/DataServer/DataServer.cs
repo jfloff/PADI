@@ -326,7 +326,7 @@ namespace DataServer
                 throw new ProcessFreezedException(id);
             }
 
-            Console.WriteLine("MIGRATIONR READ " + localFilename);
+            Console.WriteLine("MIGRATION READ " + localFilename);
 
             return (files.ContainsKey(localFilename)) ? files[localFilename] : new FileData();
         }
@@ -344,22 +344,6 @@ namespace DataServer
 
             files[localFilename] = newFile;
             weights[localFilename] = weight;
-        }
-
-
-        public void MigrationDelete(string localFilename)
-        {
-            if (fail) throw new ProcessFailedException(id);
-            if (freeze)
-            {
-                freezed.Enqueue(() => MigrationDelete(localFilename));
-                throw new ProcessFreezedException(id);
-            }
-
-            Console.WriteLine("MIGRATION DELETE " + localFilename);
-
-            FileData ignoredData; files.TryRemove(localFilename, out ignoredData);
-            Weight ignoredStats; weights.TryRemove(localFilename, out ignoredStats);
         }
     }
 }

@@ -15,7 +15,7 @@ DUMP m-1
 DUMP d-1
 DUMP c-1
 READ c-1, 0, default, 1
-CREATE c-2, f2, 3,1,3
+CREATE c-2, f2, 3,1,2
 OPEN c-1, f2
 COPY c-1, 0, default, 1, " salt example"
 CLOSE c-1, f1

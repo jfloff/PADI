@@ -215,6 +215,11 @@ namespace Metadata
                 string filename = fileTable.FilenameByLocalFilename(localFilename);
                 Weight fileWeight = file.Weight;
                 string oldDataServerId = file.DataServerId;
+                Weight oldDataServerWeight = dataServers.Weight(oldDataServerId);
+                Weight avgWeight = dataServers.AvgWeight;
+
+                // if data server is already balanced
+                if (Weight.InsideThreshold(oldDataServerWeight, avgWeight, Helper.LOAD_BALANCING_THRESHOLD)) continue;
 
                 foreach (var entry in dataServers.Weights)
                 {
@@ -230,8 +235,10 @@ namespace Metadata
                     if (fileTable.FileInDataServer(filename, newDataServerId)) continue;
                     // if data server is known to be down
                     if (dataServers.Failed(newDataServerId)) continue;
+                    // if the data server is already balanced
+                    if (Weight.InsideThreshold(newDataServerWeight, avgWeight, Helper.LOAD_BALANCING_THRESHOLD)) continue;
                     // if its outside threshold
-                    if (!Weight.InsideThreshold(fileWeight + newDataServerWeight, dataServers.AvgWeight, 0.10)) continue;
+                    if (Weight.AboveThreshold(fileWeight + newDataServerWeight, avgWeight, Helper.LOAD_BALANCING_THRESHOLD)) continue;
                     // if it isnt free
                     if (!fileTable.Free(filename)) continue;
 
@@ -243,7 +250,8 @@ namespace Metadata
                     string oldLocalFilename = fileTable.LocalFilenameByFilename(filename, oldDataServerId);
 
                     // if swap was false migration failed
-                    if (SwapDataServers(oldDataServerId, newDataServerId, oldLocalFilename, newLocalFilename, fileWeight))
+                    bool swaped = SwapDataServers(oldDataServerId, newDataServerId, oldLocalFilename, newLocalFilename, fileWeight);
+                    if (swaped)
                     {
                         Console.WriteLine("MIGRATE " + filename + " TO " + newDataServerId);
 
@@ -272,6 +280,9 @@ namespace Metadata
 
                     // UNLOCK
                     fileTable.Unlock(filename);
+
+                    // if migration occured breaks this data server loop file
+                    if (swaped) break;
                 }
             }
         }
@@ -314,20 +325,7 @@ namespace Metadata
                 return false;
             }
 
-            try
-            {
-                oldDataServer.MigrationDelete(oldLocalFilename);
-            }
-            catch (ProcessFreezedException) 
-            {
-                // accepting freezed as valid because write will happen no matter what 
-            }
-            catch (ProcessFailedException)
-            {
-                // if it fails delete of previous write doesnt matter 
-                // garbage collection will take care of it
-                // still we try to delete it
-            }
+            // no need to delete the file since we have garbage collection :)
 
             return true;
         }

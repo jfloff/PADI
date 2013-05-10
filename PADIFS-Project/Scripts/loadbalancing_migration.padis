@@ -14,6 +14,36 @@ CREATE c-1, f1, 1, 1, 1
 READ c-1, 1, default, 1
 READ c-1, 1, default, 1
 READ c-1, 1, default, 1
-CLOSE c-1, f0
+READ c-1, 1, default, 1
+READ c-1, 1, default, 1
+READ c-1, 1, default, 1
+READ c-1, 1, default, 1
+READ c-1, 1, default, 1
+READ c-1, 1, default, 1
+READ c-1, 1, default, 1
+READ c-1, 1, default, 1
+READ c-1, 1, default, 1
+READ c-1, 1, default, 1
+READ c-1, 1, default, 1
+READ c-1, 1, default, 1
+READ c-1, 1, default, 1
+READ c-1, 1, default, 1
+READ c-1, 1, default, 1
+READ c-1, 1, default, 1
+READ c-1, 1, default, 1
+READ c-1, 1, default, 1
+READ c-1, 1, default, 1
+READ c-1, 1, default, 1
+READ c-1, 1, default, 1
+READ c-1, 1, default, 1
+READ c-1, 1, default, 1
+READ c-1, 1, default, 1
+READ c-1, 1, default, 1
+READ c-1, 1, default, 1
+READ c-1, 1, default, 1
+READ c-1, 1, default, 1
+READ c-1, 1, default, 1
+READ c-1, 1, default, 1
+CLOSE c-1, f1
 #!
-FAIL d-2
+RECOVER d-2

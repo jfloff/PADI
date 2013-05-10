@@ -50,17 +50,40 @@ namespace SharedLibrary.Entities
         // Declare which operator to overload (+)
         public static Weight Avg(Weight sum, int n)
         {
-            return new Weight(sum.reads/n, sum.writes/n);
+            return new Weight(sum.reads / n, sum.writes / n);
+        }
+
+        public static bool BelowThreshold(Weight check, Weight around, double threshold)
+        {
+            int readThreshold = (int)Math.Ceiling(around.reads * threshold);
+            int writeThreshold = (int)Math.Ceiling(around.writes * threshold);
+
+            // if its either inside the threshold in reads or writes says true
+            if ((check.reads <= (around.reads + readThreshold)) || (check.writes <= (around.writes + writeThreshold))) return true;
+
+            return false;
+        }
+
+        public static bool AboveThreshold(Weight check, Weight around, double threshold)
+        {
+            int readThreshold = (int)Math.Ceiling(around.reads * threshold);
+            int writeThreshold = (int)Math.Ceiling(around.writes * threshold);
+
+            // if its either inside the threshold in reads or writes says true
+            if ((check.reads >= (around.reads + readThreshold)) || (check.writes >= (around.writes + writeThreshold))) return true;
+
+            return false;
         }
 
         public static bool InsideThreshold(Weight check, Weight around, double threshold)
         {
-            int readThreshold = (int) Math.Ceiling(around.reads * threshold);
-            int writeThreshold = (int) Math.Ceiling(around.writes * threshold);
+            int readThreshold = (int)Math.Ceiling(around.reads * threshold);
+            int writeThreshold = (int)Math.Ceiling(around.writes * threshold);
 
             // if its either inside the threshold in reads or writes says true
-            if (check.reads < (around.reads + readThreshold)) return true;
-            if (check.writes < (around.writes + writeThreshold)) return true;
+            if ((((around.reads - readThreshold) <= check.reads) && (check.reads <= (around.writes + writeThreshold)))
+                || (((around.writes - writeThreshold) <= check.writes) && (check.writes <= (around.writes + writeThreshold))))
+                return true;
 
             return false;
         }
@@ -122,6 +145,12 @@ namespace SharedLibrary.Entities
         public int CompareTo(Weight other)
         {
             return Compare(this, other);
+        }
+
+        public void Decay(double factor)
+        {
+            this.reads = (int)Math.Ceiling(this.reads * (1 - factor));
+            this.writes = (int)Math.Ceiling(this.writes * (1 - factor));
         }
     }
 }
