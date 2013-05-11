@@ -30,7 +30,7 @@ namespace Metadata
         // data servers
         private static DataServerRegister dataServers = new DataServerRegister();
 
-        private static bool fail = false;
+        private static bool fail = true;
         // clock / action
         private static ConcurrentDictionary<int, Action> outOfOrder = new ConcurrentDictionary<int, Action>();
         // sequence clock
@@ -77,25 +77,88 @@ namespace Metadata
                 typeof(IMetadataToMetadata),
                 location);
             metadatas[metadataId] = metadata;
+        }
 
-            // to avoid multiple locations enter at the same time
-            lock (master)
+        public void Dump()
+        {
+            Console.WriteLine("DUMP");
+            Console.WriteLine("AVG = " + dataServers.AvgWeight);
+            Console.WriteLine("Master = " + master + ":" + clock);
+            Console.WriteLine("Files = " + fileTable);
+            Console.WriteLine("Data Servers = " + dataServers);
+        }
+
+        public void Fail()
+        {
+            Console.WriteLine("FAIL");
+            fail = true;
+        }
+
+        public void Recover()
+        {
+            Console.WriteLine("RECOVER");
+
+            // metadata bootup
+            // since we force a metadata to start with recover
+            if (master == string.Empty)
             {
-                // metadata bootup
-                if (master == string.Empty)
-                {
-                    MetadataBootup();
-                }
+                MetadataBootup();
+            }
 
-                // since we are sure one of the metadatas is up
-                // we can just wait for the next metada register to ask for master
+            foreach (var entry in metadatas)
+            {
                 try
                 {
-                    // needs to ask for master since its doing a register
+                    IMetadataToMetadata metadata = entry.Value;
+
+                    // stops on the first not failed metadata
                     master = metadata.Master();
+                    // sets fail to false so it starts receiving requests
+                    int sequence = clock;
+                    fail = false;
+                    // updates its state with the master
+                    if (!ImMaster)
+                    {
+                        MetadataDiff diff = metadatas[master].UpdateMetadata(id);
+
+                        Console.WriteLine("--RECEIVING STATE UPDATE--");
+                        log.MergeDiff(this, diff);
+                        Console.WriteLine("--STATE UPDATE FINISHED--");
+                    }
+                    return;
                 }
                 catch (ProcessFailedException) { }
             }
+
+            // sets fail to false so it starts receiving requests
+            master = id;
+            fail = false;
+        }
+
+        private bool ImMaster
+        {
+            get { return (id == master); }
+        }
+
+        private bool CheckMaster()
+        {
+            bool ret = ImMaster;
+            if (!ret)
+            {
+                try
+                {
+                    master = metadatas[master].Master();
+                }
+                catch (ProcessFailedException)
+                {
+                    master = Master();
+                }
+                finally
+                {
+                    ret = ImMaster;
+                }
+            }
+            return !ret;
         }
 
         private void MetadataBootup()
@@ -122,66 +185,6 @@ namespace Metadata
             loadBalancing.Start();
         }
 
-        public void Dump()
-        {
-            Console.WriteLine("DUMP");
-            Console.WriteLine("AVG = " + dataServers.AvgWeight);
-            Console.WriteLine("Master = " + master + ":" + clock);
-            Console.WriteLine("Files = " + fileTable);
-            Console.WriteLine("Data Servers = " + dataServers);
-        }
-
-        public void Fail()
-        {
-            Console.WriteLine("FAIL");
-            fail = true;
-        }
-
-        private void UpdateMyself(MetadataDiff diff)
-        {
-            Console.WriteLine("--RECEIVING STATE UPDATE--");
-
-            log.MergeDiff(this, diff);
-
-            Console.WriteLine("--STATE UPDATE FINISHED--");
-        }
-
-        public void Recover()
-        {
-            Console.WriteLine("RECOVER");
-
-            // metadata bootup
-            if (master == string.Empty)
-            {
-                MetadataBootup();
-            }
-
-            foreach (var entry in metadatas)
-            {
-                try
-                {
-                    IMetadataToMetadata metadata = entry.Value;
-
-                    // stops on the first not failed metadata
-                    master = metadata.Master();
-                    // sets fail to false so it starts receiving requests
-                    fail = false;
-
-                    if (!ImMaster)
-                    {
-                        MetadataDiff diff = metadatas[master].UpdateMetadata(id);
-                        UpdateMyself(diff);
-                    }
-                    return;
-                }
-                catch (ProcessFailedException) { }
-            }
-
-            // sets fail to false so it starts receiving requests
-            master = id;
-            fail = false;
-        }
-
         private void OrderFix()
         {
             if (outOfOrder.Count == 0) return;
@@ -189,15 +192,13 @@ namespace Metadata
             if (outOfOrder.ContainsKey(clock))
             {
                 Console.WriteLine("OUT OF ORDER FIX : " + clock);
-                Action action;
-                outOfOrder.TryRemove(clock, out action);
-                action();
-            }
-        }
 
-        private bool ImMaster
-        {
-            get { return (id == master); }
+                Action action;
+                if (outOfOrder.TryRemove(clock, out action))
+                {
+                    action();
+                }
+            }
         }
 
         /**
@@ -332,8 +333,6 @@ namespace Metadata
 
         private void MigrateFileOnMetadatas(string filename, string oldDataServerId, string newDataServerId, string oldLocalFilename, string newLocalFilename, int sequence)
         {
-            int requests = metadatas.Count;
-
             foreach (var entry in metadatas)
             {
                 string metadataId = entry.Key;
@@ -348,15 +347,9 @@ namespace Metadata
                     {
                         AddLogMark(metadataId, sequence);
                     }
-                    finally
-                    {
-                        Interlocked.Decrement(ref requests);
-                    }
                 });
                 request.Start();
             }
-
-            while (requests > 0) ;
         }
 
         /**
@@ -376,7 +369,7 @@ namespace Metadata
         public FileMetadata Open(string clientId, string filename)
         {
             if (fail) throw new ProcessFailedException(id);
-            if (!ImMaster) throw new NotTheMasterException(id);
+            if (CheckMaster()) throw new NotTheMasterException(id, master);
 
             Console.WriteLine("OPEN METADATA FILE " + filename);
 
@@ -402,8 +395,6 @@ namespace Metadata
 
         private void OpenOnMetadatas(string clientId, string filename, int sequence)
         {
-            int requests = metadatas.Count;
-
             foreach (var entry in metadatas)
             {
                 string metadataId = entry.Key;
@@ -418,21 +409,15 @@ namespace Metadata
                     {
                         AddLogMark(metadataId, sequence);
                     }
-                    finally
-                    {
-                        Interlocked.Decrement(ref requests);
-                    }
                 });
                 request.Start();
             }
-
-            while (requests > 0) ;
         }
 
         public void Close(string clientId, string filename)
         {
             if (fail) throw new ProcessFailedException(id);
-            if (!ImMaster) throw new NotTheMasterException(id);
+            if (CheckMaster()) throw new NotTheMasterException(id, master);
 
             Console.WriteLine("CLOSE METADATA FILE " + filename);
 
@@ -451,8 +436,6 @@ namespace Metadata
 
         private void CloseOnMetadatas(string clientId, string filename, int sequence)
         {
-            int requests = metadatas.Count;
-
             foreach (var entry in metadatas)
             {
                 string metadataId = entry.Key;
@@ -467,21 +450,15 @@ namespace Metadata
                     {
                         AddLogMark(metadataId, sequence);
                     }
-                    finally
-                    {
-                        Interlocked.Decrement(ref requests);
-                    }
                 });
                 request.Start();
             }
-
-            while (requests > 0) ;
         }
 
         public FileMetadata Create(string clientId, string filename, int nbDataServers, int readQuorum, int writeQuorum)
         {
             if (fail) throw new ProcessFailedException(id);
-            if (!ImMaster) throw new NotTheMasterException(id);
+            if (CheckMaster()) throw new NotTheMasterException(id, master);
 
             if (fileTable.Contains(filename))
             {
@@ -538,8 +515,6 @@ namespace Metadata
 
         private void SelectOnMetadatas(string filename, string dataServerId, string localFilename, int sequence)
         {
-            int requests = metadatas.Count;
-
             foreach (var entry in metadatas)
             {
                 string metadataId = entry.Key;
@@ -554,15 +529,9 @@ namespace Metadata
                     {
                         AddLogMark(metadataId, sequence);
                     }
-                    finally
-                    {
-                        Interlocked.Decrement(ref requests);
-                    }
                 });
                 request.Start();
             }
-
-            while (requests > 0) ;
         }
 
         private static string LocalFilename(string filename, string dataServerId)
@@ -573,8 +542,6 @@ namespace Metadata
 
         private void CreateOnMetadatas(string clientId, string filename, int nbDataServers, int readQuorum, int writeQuorum, int sequence)
         {
-            int requests = metadatas.Count;
-
             foreach (var entry in metadatas)
             {
                 string metadataId = entry.Key;
@@ -589,21 +556,15 @@ namespace Metadata
                     {
                         AddLogMark(metadataId, sequence);
                     }
-                    finally
-                    {
-                        Interlocked.Decrement(ref requests);
-                    }
                 });
                 request.Start();
             }
-
-            while (requests > 0) ;
         }
 
         public void Delete(string clientId, string filename)
         {
             if (fail) throw new ProcessFailedException(id);
-            if (!ImMaster) throw new NotTheMasterException(id);
+            if (CheckMaster()) throw new NotTheMasterException(id, master);
 
             Console.WriteLine("DELETE METADATA FILE " + filename);
 
@@ -635,7 +596,6 @@ namespace Metadata
 
         private void DeleteOnMetadatas(string filename, int sequence)
         {
-            int requests = metadatas.Count;
             foreach (var entry in metadatas)
             {
                 string metadataId = entry.Key;
@@ -650,20 +610,13 @@ namespace Metadata
                     {
                         AddLogMark(metadataId, sequence);
                     }
-                    finally
-                    {
-                        Interlocked.Decrement(ref requests);
-                    }
                 });
                 request.Start();
             }
-
-            while (requests > 0) ;
         }
 
         private void AddMarkOnMetadatas(string mark, int markSequence, int sequence)
         {
-            int requests = metadatas.Count;
             foreach (var entry in metadatas)
             {
                 string id = entry.Key;
@@ -677,15 +630,9 @@ namespace Metadata
                     }
                     // already failed before no need to log again
                     catch (ProcessFailedException) { }
-                    finally
-                    {
-                        Interlocked.Decrement(ref requests);
-                    }
                 });
                 request.Start();
             }
-
-            while (requests > 0) ;
         }
 
         /**
@@ -695,7 +642,7 @@ namespace Metadata
         public void DataServer(string dataServerId, string location)
         {
             if (fail) throw new ProcessFailedException(id);
-            if (!ImMaster) throw new NotTheMasterException(id);
+            if (CheckMaster()) throw new NotTheMasterException(id, master);
 
             Console.WriteLine("REGISTER DATA SERVER " + dataServerId);
 
@@ -726,8 +673,6 @@ namespace Metadata
 
         private void DataServerOnMetadatas(string dataServerId, string location, int sequence)
         {
-            int requests = metadatas.Count;
-
             foreach (var entry in metadatas)
             {
                 string metadataId = entry.Key;
@@ -742,20 +687,17 @@ namespace Metadata
                     {
                         AddLogMark(metadataId, sequence);
                     }
-                    finally
-                    {
-                        Interlocked.Decrement(ref requests);
-                    }
                 });
                 request.Start();
             }
-
-            while (requests > 0) ;
         }
 
         public GarbageCollected Heartbeat(string dataServerId, Heartbeat heartbeat)
         {
             if (fail) throw new ProcessFailedException(id);
+            if (CheckMaster()) throw new NotTheMasterException(id, master);
+
+            //Console.WriteLine("HEARTBEAT FROM " + dataServerId);
 
             if (dataServers.Contains(dataServerId))
             {
@@ -800,6 +742,9 @@ namespace Metadata
         {
             if (fail) throw new ProcessFailedException(id);
 
+            // repeated operation, ignores
+            if (sequence < clock) return;
+
             // message out of sequence, adds to queue
             if (sequence != clock)
             {
@@ -818,6 +763,9 @@ namespace Metadata
         public void SelectOnMetadata(string filename, string dataServerId, string localFilename, int sequence)
         {
             if (fail) throw new ProcessFailedException(id);
+
+            // repeated operation, ignores
+            if (sequence < clock) return;
 
             // message out of sequence, adds to queue
             if (sequence != clock)
@@ -838,6 +786,9 @@ namespace Metadata
         public void DeleteOnMetadata(string filename, int sequence)
         {
             if (fail) throw new ProcessFailedException(id);
+
+            // repeated operation, ignores
+            if (sequence < clock) return;
 
             // message out of sequence, adds to queue
             if (sequence != clock)
@@ -866,6 +817,9 @@ namespace Metadata
         {
             if (fail) throw new ProcessFailedException(id);
 
+            // repeated operation, ignores
+            if (sequence < clock) return;
+
             // message out of sequence, adds to queue
             if (sequence != clock)
             {
@@ -875,16 +829,17 @@ namespace Metadata
 
             Console.WriteLine("OPEN FROM MASTER");
 
-            if (fileTable.Open(clientId, filename))
-            {
-                log.LogOperation(clock, "OpenOnMetadata", clientId, filename, clock);
-                clock++;
-            }
+            fileTable.Open(clientId, filename);
+            log.LogOperation(clock, "OpenOnMetadata", clientId, filename, clock);
+            clock++;
         }
 
         public void CloseOnMetadata(string clientId, string filename, int sequence)
         {
             if (fail) throw new ProcessFailedException(id);
+
+            // repeated operation, ignores
+            if (sequence < clock) return;
 
             // message out of sequence, adds to queue
             if (sequence != clock)
@@ -895,16 +850,17 @@ namespace Metadata
 
             Console.WriteLine("CLOSE FROM MASTER");
 
-            if (fileTable.Close(clientId, filename))
-            {
-                log.LogOperation(clock, "CloseOnMetadata", clientId, filename, clock);
-                clock++;
-            }
+            fileTable.Close(clientId, filename);
+            log.LogOperation(clock, "CloseOnMetadata", clientId, filename, clock);
+            clock++;
         }
 
         public void DataServerOnMetadata(string dataServerId, string location, int sequence)
         {
             if (fail) throw new ProcessFailedException(id);
+
+            // repeated operation, ignores
+            if (sequence < clock) return;
 
             // message out of sequence, adds to queue
             if (sequence != clock)
@@ -924,6 +880,9 @@ namespace Metadata
         {
             if (fail) throw new ProcessFailedException(id);
 
+            // repeated operation, ignores
+            if (sequence < clock) return;
+
             // message out of sequence, adds to queue
             if (sequence != clock)
             {
@@ -942,6 +901,9 @@ namespace Metadata
         public void MigrateFileOnMetadata(string filename, string oldDataServerId, string newDataServerId, string oldLocalFilename, string newLocalFilename, int sequence)
         {
             if (fail) throw new ProcessFailedException(id);
+
+            // repeated operation, ignores
+            if (sequence < clock) return;
 
             // message out of sequence, adds to queue
             if (sequence != clock)
@@ -965,25 +927,10 @@ namespace Metadata
             clock++;
         }
 
-        public MasterVote MasterVoting(MasterVote vote)
-        {
-            if (fail) throw new ProcessFailedException(id);
-
-            Console.WriteLine("TAKE MY MASTER VOTE");
-
-            MasterVote newMaster = MasterVote.Choose(new MasterVote(id, clock), vote);
-            master = newMaster.Id;
-            return newMaster;
-        }
-
         public MetadataDiff UpdateMetadata(string metadataId)
         {
-            return log.BuildDiff(metadataId, clock);
+            return log.BuildDiff(metadataId);
         }
-
-        /**
-         * IMetadataToProcess
-         */
 
         // Tries to elect himself as the new master sending a vote to
         // each alive metadata with its id:clock
@@ -993,8 +940,12 @@ namespace Metadata
         {
             if (fail) throw new ProcessFailedException(id);
 
-            Console.WriteLine("MASTER VOTING");
+            Console.WriteLine("MASTER ELECTION");
 
+            // if they are masters
+            if (ImMaster) return id;
+            
+            // tries to elect itself
             MasterVote masterVote = new MasterVote(id, clock);
             foreach (var entry in metadatas)
             {
@@ -1002,12 +953,48 @@ namespace Metadata
                 try
                 {
                     // chooses better vote between previous master and the one from the metadata
-                    masterVote = MasterVote.Choose(metadata.MasterVoting(masterVote), masterVote);
+                    masterVote = MasterVote.Choose(metadata.Uprising(masterVote), masterVote);
+                }
+                catch (ProcessFailedException) { }
+            }
+            // second round to confirm votes
+            foreach (var entry in metadatas)
+            {
+                IMetadataToMetadata metadata = entry.Value;
+                try
+                {
+                    // chooses better vote between previous master and the one from the metadata
+                    metadata.Uprising(masterVote, true);
                 }
                 catch (ProcessFailedException) { }
             }
 
-            return master = masterVote.Id;
+            master = masterVote.Id;
+
+            return master;
+        }
+
+        public MasterVote Uprising(MasterVote vote, bool force = false)
+        {
+            if (fail) throw new ProcessFailedException(id);
+
+            Console.WriteLine("UPRISING");
+
+            MasterVote newMaster;
+
+            // if force writes the vote id as master
+            if (force)
+            {
+                master = vote.Id;
+                newMaster = vote;
+            }
+            else
+            {
+                MasterVote myVote = new MasterVote(id, clock);
+                newMaster = MasterVote.Choose(myVote, vote);
+            }
+
+            return newMaster;
         }
     }
 }

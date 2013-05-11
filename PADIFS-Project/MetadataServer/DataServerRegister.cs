@@ -51,6 +51,10 @@ namespace Metadata
             get
             {
                 Weight sum = new Weight();
+
+                // no data servers
+                if (dataServers.Count == 0) return sum;
+
                 foreach (var entry in dataServers)
                 {
                     sum += entry.Value.weight;

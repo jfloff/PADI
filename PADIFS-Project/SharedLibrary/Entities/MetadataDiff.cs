@@ -10,14 +10,14 @@ namespace SharedLibrary.Entities
     public class MetadataDiff
     {
         // action queue
-        private Stack<string> operations = new Stack<string>();
+        private Queue<string> operations = new Queue<string>();
 
         public void AddOperation(string operation)
         {
-            this.operations.Push(operation);
+            this.operations.Enqueue(operation);
         }
 
-        public Stack<string> Operations
+        public Queue<string> Operations
         {
             get { return this.operations; }
         }

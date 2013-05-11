@@ -81,11 +81,11 @@ namespace Client
 
         public void Remove(string filename)
         {
-            if (infos.ContainsKey(filename))
+            RegisterInfo info;
+            bool removedInfo = infos.TryRemove(filename, out info);
+            if (removedInfo)
             {
-                int i = infos[filename].index;
-                RegisterInfo ignoredRegisterInfo;  infos.TryRemove(filename, out ignoredRegisterInfo);
-                string ignoredFilename; filenames.TryRemove(i, out ignoredFilename);
+                string ignoredFilename; filenames.TryRemove(info.index, out ignoredFilename);
                 Interlocked.Decrement(ref count);
             }
         }

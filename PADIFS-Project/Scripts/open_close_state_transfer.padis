@@ -1,0 +1,5 @@
+RECOVER m-0
+RECOVER m-1
+CREATE c-2, f1, 2, 1, 1
+OPEN c-1, f1
+CLOSE c-1, f1

@@ -49,40 +49,30 @@ namespace Metadata
         // returns true if it signal was really made (not duplicate)
         public bool Open(string clientId, string filename)
         {
-            if (!files[filename].clients.ContainsKey(clientId))
-            {
-                files[filename].clients[clientId] = true;
-                return true;
-            }
-            // already open before
-            return false;
+            return files[filename].clients.TryAdd(clientId, true);
         }
 
         // returns true if it signal was really made (not duplicate)
         public bool Close(string clientId, string filename)
         {
-            if (files[filename].clients.ContainsKey(clientId))
-            {
-                bool ignored; files[filename].clients.TryRemove(clientId, out ignored);
-                return true;
-            }
-            // never opened the file
-            return false;
+            bool ignored; return files[filename].clients.TryRemove(clientId, out ignored);
         }
 
         public FileMetadata Remove(string filename)
         {
             TableEntry tableEntry;
-            this.files.TryRemove(filename, out tableEntry);
-
-            // remove localfilenames
-            foreach (var entry in tableEntry.metadata.LocalFilenames)
+            if (this.files.TryRemove(filename, out tableEntry))
             {
-                string localFilename = entry.Value;
-                string ingoredFilename; this.filenamesByLocal.TryRemove(localFilename, out ingoredFilename);
-            }
+                // remove localfilenames
+                foreach (var entry in tableEntry.metadata.LocalFilenames)
+                {
+                    string localFilename = entry.Value;
+                    string ingoredFilename; this.filenamesByLocal.TryRemove(localFilename, out ingoredFilename);
+                }
 
-            return tableEntry.metadata;
+                return tableEntry.metadata;
+            }
+            return null;
         }
 
         public void Create(string clientId, string filename, int nbDataServers, int readQuorum, int writeQuorum)

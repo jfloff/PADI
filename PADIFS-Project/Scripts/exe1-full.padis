@@ -1,4 +1,6 @@
 RECOVER m-0
+RECOVER m-1
+RECOVER m-2
 CREATE c-1,f551,5,5,1
 CREATE c-2,f515,5,1,5
 CREATE c-3,f555,5,5,5
@@ -7,7 +9,7 @@ UNFREEZE d-2
 UNFREEZE d-3
 UNFREEZE d-4
 UNFREEZE d-5
-OPEN c-1, f551
+OPEN c-1, f545
 OPEN c-1, f515
 OPEN c-1, f555
 WRITE c-1,0,"f551-1"
@@ -27,6 +29,22 @@ COPY c-1,0,monotonic,1,";c-1D"
 COPY c-1,1,monotonic,2,";c-1E"
 COPY c-1,2,monotonic,1,";c-1F"
 COPY c-1,1,monotonic,0,";c-1G"
+COPY c-1,0,monotonic,1,";c-1H"
+COPY c-1,1,monotonic,2,";c-1I"
+COPY c-1,2,monotonic,1,";c-1J"
+COPY c-1,1,monotonic,0,";c-1K"
+COPY c-1,0,monotonic,1,";c-1L"
+COPY c-1,1,monotonic,2,";c-1M"
+COPY c-1,2,monotonic,1,";c-1N"
+COPY c-1,1,monotonic,0,";c-1P"
+COPY c-1,0,monotonic,1,";c-1Q"
+COPY c-1,1,monotonic,2,";c-1R"
+COPY c-1,2,monotonic,1,";c-1S"
+COPY c-1,1,monotonic,0,";c-1T"
+COPY c-1,0,monotonic,1,";c-1U"
+COPY c-1,1,monotonic,2,";c-1V"
+COPY c-1,2,monotonic,1,";c-1X"
+COPY c-1,1,monotonic,0,";c-1Z"
 CLOSE c-1,f551
 CLOSE c-1,f515
 CLOSE c-1,f555

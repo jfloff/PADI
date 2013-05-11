@@ -4,27 +4,33 @@ using System.Runtime.Serialization;
 namespace SharedLibrary.Exceptions
 {
     [Serializable]
-    public class NotTheMasterException : ApplicationException
+    public class NotTheMasterException : ApplicationException, ISerializable
     {
-        private string id;
+        private string newMaster;
 
         public NotTheMasterException() { }
 
-        public NotTheMasterException(string id)
-            : base("Process " + id + " is not the master.")
+        public NotTheMasterException(string id, string newMaster)
+            : base("Process is no longer the master. New master is " + newMaster)
         {
-            this.id = id;
+            this.newMaster = newMaster;
         }
 
         public NotTheMasterException(SerializationInfo info, StreamingContext context)
             : base(info, context)
         {
+            this.newMaster = info.GetString("newMaster");
         }
 
-        public string Id
+        void ISerializable.GetObjectData(SerializationInfo info, StreamingContext context)
         {
-            get { return this.id; }
+            base.GetObjectData(info, context);
+            info.AddValue("newMaster", this.newMaster);
+        }
+
+        public string NewMaster
+        {
+            get { return this.newMaster; }
         }
     }
 }
-

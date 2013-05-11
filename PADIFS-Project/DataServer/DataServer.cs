@@ -22,6 +22,7 @@ namespace DataServer
         // id / interface
         private static ConcurrentDictionary<string, IMetadataToDataServer> metadatas
             = new ConcurrentDictionary<string, IMetadataToDataServer>();
+        private static IEnumerator<KeyValuePair<string, IMetadataToDataServer>> metadatasEnumerator;
         private static string master = string.Empty;
 
         private static string id;
@@ -46,7 +47,7 @@ namespace DataServer
             id = args[0];
             port = Convert.ToInt32(args[1]);
 
-            Console.SetWindowSize(Helper.WINDOW_WIDTH, Helper.WINDOW_HEIGHT*3);
+            Console.SetWindowSize(Helper.WINDOW_WIDTH, Helper.WINDOW_HEIGHT*2);
             Console.Title = id;
 
             TcpChannel channel = new TcpChannel(port);
@@ -75,6 +76,7 @@ namespace DataServer
                 try
                 {
                     Heartbeat heartbeat = new Heartbeat(MyWeight(), new Dictionary<string, Weight>(weights));
+                    //Console.WriteLine("HEARTBEAT TO " + master);
                     GarbageCollected toDelete = metadatas[master].Heartbeat(id, heartbeat);
 
                     foreach (string localFilename in toDelete)
@@ -87,7 +89,30 @@ namespace DataServer
                 }
                 catch (ProcessFailedException)
                 {
-                    FindMaster();
+                    RandomMaster();
+                }
+                catch (NotTheMasterException e)
+                {
+                    master = e.NewMaster;
+                }
+            }
+        }
+
+        // can't be in loop since we know for sure 1 metadata is up
+        private void RandomMaster()
+        {
+            while (true)
+            {
+                if (!metadatasEnumerator.MoveNext())
+                {
+                    metadatasEnumerator = metadatas.GetEnumerator();
+                    continue;
+                }
+
+                if (master != metadatasEnumerator.Current.Key)
+                {
+                    master = metadatasEnumerator.Current.Key;
+                    return;
                 }
             }
         }
@@ -108,28 +133,6 @@ namespace DataServer
             return weight;
         }
 
-        public void FindMaster()
-        {
-            // keeps looping in the metadatas
-            while (true)
-            {
-                foreach (var entry in metadatas)
-                {
-                    string tryMaster = entry.Key;
-
-                    if (tryMaster != master)
-                    {
-                        try
-                        {
-                            master = metadatas[tryMaster].Master();
-                            return;
-                        }
-                        catch (ProcessFailedException) { }
-                    }
-                }
-            }
-        }
-
         /**
          * IDataServerToPM Methods
          */
@@ -143,34 +146,33 @@ namespace DataServer
                 typeof(IMetadataToDataServer),
                 location);
             metadatas[id] = metadata;
+            metadatasEnumerator = metadatas.GetEnumerator();
 
-            // to avoid multiple locations enter at the same time
-            lock (master)
+            // in case data server is booting up
+            if (master == string.Empty)
             {
-                // in case data server is booting up
-                if (master == string.Empty)
+                // since we are sure one of the metadatas is up
+                // we can just wait for the correct data server
+                // to appear so we can register with it
+                try
                 {
-                    // since we are sure one of the metadatas is up
-                    // we can just wait for the next metada register to ask for master
-                    try
+                    metadata.DataServer(DataServer.id, Helper.GetUrl(DataServer.id, DataServer.port));
+                    
+                    // if it was neither down, or it isnt the master ... it is the master
+                    master = id;
+                    // starts heartbeating
+                    Thread heartbeat = new Thread(() =>
                     {
-                        // needs to ask for master since its doing a register
-                        master = metadata.Master();
-                        metadatas[master].DataServer(DataServer.id, Helper.GetUrl(DataServer.id, DataServer.port));
-                        // start heartbeating
-                        Thread heartbeat = new Thread(() =>
+                        while (true)
                         {
-                            while (true)
-                            {
-                                SendHeartbeat();
-                                Thread.Sleep(Helper.DATASERVER_HEARTBEAT_INTERVAL);
-                            }
-                        });
-                        heartbeat.Start();
-                    }
-                    catch (ProcessFailedException) { }
-                    catch (NotTheMasterException) { }
+                            SendHeartbeat();
+                            Thread.Sleep(Helper.DATASERVER_HEARTBEAT_INTERVAL);
+                        }
+                    });
+                    heartbeat.Start();
                 }
+                catch (ProcessFailedException) { }
+                catch (NotTheMasterException) { }
             }
         }
 

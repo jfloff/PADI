@@ -2,7 +2,7 @@
 
 namespace SharedLibrary.Interfaces
 {
-    public interface IMetadataToClient : IMetadataToProcess
+    public interface IMetadataToClient
     {
         FileMetadata Open(string id, string filename);
         void Close(string id, string filename);

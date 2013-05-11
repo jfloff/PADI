@@ -2,10 +2,11 @@
 
 namespace SharedLibrary.Interfaces
 {
-    public interface IMetadataToMetadata : IMetadataToProcess
+    public interface IMetadataToMetadata
     {
-        MasterVote MasterVoting(MasterVote vote);
-        MetadataDiff UpdateMetadata(string id);
+        MasterVote Uprising(MasterVote vote, bool force = false);
+        string Master();
+        MetadataDiff UpdateMetadata(string metadataId);
         void SelectOnMetadata(string filename, string dataServerId, string localFilename, int sequence);
         void CreateOnMetadata(string clientId, string filename, int nbDataServers, int readQuorum, int writeQuorum, int sequence);
         void DeleteOnMetadata(string filename, int sequence);

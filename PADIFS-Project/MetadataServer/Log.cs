@@ -2,8 +2,6 @@
 using SharedLibrary.Entities;
 using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Reflection;
 
 namespace Metadata
 {
@@ -44,35 +42,29 @@ namespace Metadata
             operations[sequence] = serialize;
         }
 
-        public MetadataDiff BuildDiff(string mark, int clock)
+        public MetadataDiff BuildDiff(string mark)
         {
             MetadataDiff diff = new MetadataDiff();
 
-            // if no operations logged
-            if (operations.Count == 0) return diff;
-
-            // starts at clock to discount for last increment
-            int startAt = clock - 1;
             // either has a mark, or we need the whole state
-            int stopAt = GetMarkSequence(mark);
-
-            // adds operations missing to the diff
-            for (int i = startAt; i >= stopAt; i--)
-            {
-                diff.AddOperation(operations[i]);
+            int stopAt = MarkSequence(mark);
+            
+            foreach (var entry in operations)
+            {   
+                // skips marks that don't need
+                if (entry.Key >= stopAt)
+                {
+                    diff.AddOperation(entry.Value);
+                }
             }
 
             return diff;
         }
 
-        private int GetMarkSequence(string mark)
+        private int MarkSequence(string mark)
         {
-            int sequence = 0;
-            if (marks.ContainsKey(mark))
-            {
-                marks.TryRemove(mark, out sequence);
-            }
-            return sequence;
+            int sequence;
+            return (marks.TryRemove(mark, out sequence)) ? sequence : 0;
         }
 
         public void MergeDiff(Metadata metadata, MetadataDiff diff)

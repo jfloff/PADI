@@ -35,13 +35,19 @@ namespace SharedLibrary.Entities
                 {
                     return v2;
                 }
+                else
+                {
+                    return v1;
+                }
             }
             else if (v1.clock > v2.clock)
             {
                 return v1;
             }
-
-            return v2;
+            else
+            {
+                return v2;
+            }
         }
     }
 }

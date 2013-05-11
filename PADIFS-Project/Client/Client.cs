@@ -31,15 +31,15 @@ namespace Client
         // metadataId / Proxy to metadata
         private static ConcurrentDictionary<string, IMetadataToClient> metadatas
             = new ConcurrentDictionary<string, IMetadataToClient>();
+        private static IEnumerator<KeyValuePair<string, IMetadataToClient>> metadatasEnumerator;
+        private static string master = string.Empty;
 
         // index / fileregister struct
         FileRegister fileRegister = new FileRegister();
         // index / byte contents
         private static ConcurrentDictionary<int, byte[]> byteRegister = new ConcurrentDictionary<int, byte[]>();
 
-        private static string master = string.Empty;
         private static string id;
-
 
         // infinite lease
         public override object InitializeLifetimeService()
@@ -69,28 +69,6 @@ namespace Client
             Console.ReadLine();
         }
 
-        public void FindMaster()
-        {
-            // keeps looping in the metadatas
-            while (true)
-            {
-                foreach (var entry in metadatas)
-                {
-                    string tryMaster = entry.Key;
-
-                    if (tryMaster != master)
-                    {
-                        try
-                        {
-                            master = metadatas[tryMaster].Master();
-                            return;
-                        }
-                        catch (ProcessFailedException) { }
-                    }
-                }
-            }
-        }
-
         /**
          * IClientToPM Methods
          */
@@ -103,21 +81,28 @@ namespace Client
                 typeof(IMetadataToClient),
                 location);
             metadatas[id] = metadata;
+            metadatasEnumerator = metadatas.GetEnumerator();
 
-            // to avoid multiple locations enter at the same time
-            lock (master)
+            // doesn't master who is the master now, just assign to it
+            // when the first request is made, we will fix this
+            master = id;
+        }
+
+        // can't be in loop since we know for sure 1 metadata is up
+        private void RandomMaster()
+        {
+            while (true)
             {
-                // in case client is booting up
-                if (master == string.Empty)
+                if (!metadatasEnumerator.MoveNext())
                 {
-                    // since we are sure one of the metadatas is up
-                    // we can just wait for the next metada register to ask for master
-                    try
-                    {
-                        // needs to ask for master since its doing a register
-                        master = metadata.Master();
-                    }
-                    catch (ProcessFailedException) { }
+                    metadatasEnumerator = metadatas.GetEnumerator();
+                    continue;
+                }
+
+                if (master != metadatasEnumerator.Current.Key)
+                {
+                    master = metadatasEnumerator.Current.Key;
+                    return;
                 }
             }
         }
@@ -135,13 +120,13 @@ namespace Client
                     fileRegister.AddOrUpdate(filename, fileMetadata);
                     return;
                 }
-                catch (ProcessFailedException)
+                catch (ProcessFailedException) 
                 {
-                    FindMaster();
+                    RandomMaster();
                 }
-                catch (NotTheMasterException)
+                catch (NotTheMasterException e)
                 {
-                    FindMaster();
+                    master = e.NewMaster;
                 }
                 catch (FileAlreadyExistsException e)
                 {
@@ -155,20 +140,16 @@ namespace Client
         {
             Console.WriteLine("OPEN CLIENT FILE " + filename);
             
-            // keeps looping untill a master answers
-            while (true)
+            try
             {
-                try
-                {
-                    FileMetadata fileMetadata = OpenFileMetadata(filename);
-                    Console.WriteLine("FILE METADATA => " + fileMetadata.ToString());
-                    return;
-                }
-                catch (FileDoesNotExistException e)
-                {
-                    Console.WriteLine(e.Message);
-                    return;
-                }
+                FileMetadata fileMetadata = OpenFileMetadata(filename);
+                Console.WriteLine("FILE METADATA => " + fileMetadata.ToString());
+                return;
+            }
+            catch (FileDoesNotExistException e)
+            {
+                Console.WriteLine(e.Message);
+                return;
             }
         }
 
@@ -185,11 +166,11 @@ namespace Client
                 }
                 catch (ProcessFailedException)
                 {
-                    FindMaster();
+                    RandomMaster();
                 }
-                catch (NotTheMasterException)
+                catch (NotTheMasterException e)
                 {
-                    FindMaster();
+                    master = e.NewMaster;
                 }
                 // keep trying until it opens
                 catch (FileUnavailableException) { }
@@ -205,17 +186,17 @@ namespace Client
             {
                 try
                 {
-                    fileRegister.Remove(filename);
                     metadatas[master].Close(id, filename);
+                    fileRegister.Remove(filename);
                     return;
                 }
                 catch (ProcessFailedException)
                 {
-                    FindMaster();
+                    RandomMaster();
                 }
-                catch (NotTheMasterException)
+                catch (NotTheMasterException e)
                 {
-                    FindMaster();
+                    master = e.NewMaster;
                 }
                 catch (FileDoesNotExistException e)
                 {
@@ -234,17 +215,17 @@ namespace Client
             {
                 try
                 {
-                    fileRegister.Remove(filename);
                     metadatas[master].Delete(id, filename);
+                    fileRegister.Remove(filename);
                     return;
                 }
                 catch (ProcessFailedException)
                 {
-                    FindMaster();
+                    RandomMaster();
                 }
-                catch (NotTheMasterException)
+                catch (NotTheMasterException e)
                 {
-                    FindMaster();
+                    master = e.NewMaster;
                 }
                 // keep trying until it opens
                 catch (FileUnavailableException) { }
