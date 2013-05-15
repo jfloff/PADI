@@ -16,16 +16,6 @@ CREATE c-1,f7,1,1,1
 CREATE c-1,f8,1,1,1
 CREATE c-1,f9,1,1,1
 CREATE c-1,f0,1,1,1
-OPEN c-1,f1
-OPEN c-1,f2
-OPEN c-1,f3
-OPEN c-1,f4
-OPEN c-1,f5
-OPEN c-1,f6
-OPEN c-1,f7
-OPEN c-1,f8
-OPEN c-1,f9
-OPEN c-1,f0
 DUMP d-1
 DUMP d-2
 DUMP d-3
@@ -44,6 +34,16 @@ WRITE c-1,6,"Text contents of the file. Contents are a string delimited by doubl
 WRITE c-1,7,"Text contents of the file. Contents are a string delimited by double quotes as this one"
 WRITE c-1,8,"Text contents of the file. Contents are a string delimited by double quotes as this one"
 WRITE c-1,9,"Text contents of the file. Contents are a string delimited by double quotes as this one"
+CLOSE c-1,f1
+CLOSE c-1,f2
+CLOSE c-1,f3
+CLOSE c-1,f4
+CLOSE c-1,f5
+CLOSE c-1,f6
+CLOSE c-1,f7
+CLOSE c-1,f8
+CLOSE c-1,f9
+CLOSE c-1,f0
 DUMP d-1
 DUMP d-2
 DUMP d-3

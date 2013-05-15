@@ -54,3 +54,13 @@ DUMP d-5
 DUMP m-0
 DUMP m-1
 DUMP m-2
+CLOSE c-1,f1
+CLOSE c-1,f2
+CLOSE c-1,f3
+CLOSE c-1,f4
+CLOSE c-1,f5
+CLOSE c-1,f6
+CLOSE c-1,f7
+CLOSE c-1,f8
+CLOSE c-1,f9
+CLOSE c-1,f0

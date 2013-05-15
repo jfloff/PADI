@@ -276,7 +276,7 @@ namespace Metadata
                         dataServers.RemoveWeight(oldDataServerId, fileWeight);
 
                         // adds to data servers already migrated
-                        alreadyMigrated.Add(oldDataServerId);
+                        alreadyMigrated.Add(newDataServerId);
                     }
 
                     // UNLOCK

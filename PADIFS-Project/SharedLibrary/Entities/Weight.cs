@@ -70,7 +70,7 @@ namespace SharedLibrary.Entities
             int writeThreshold = (int)Math.Ceiling(around.writes * threshold);
 
             // if its either inside the threshold in reads or writes says true
-            if ((check.reads >= (around.reads + readThreshold)) || (check.writes >= (around.writes + writeThreshold))) return true;
+            if ((check.reads >= (around.reads + readThreshold)) && (check.writes >= (around.writes + writeThreshold))) return true;
 
             return false;
         }
@@ -82,7 +82,7 @@ namespace SharedLibrary.Entities
 
             // if its either inside the threshold in reads or writes says true
             if ((((around.reads - readThreshold) <= check.reads) && (check.reads <= (around.writes + writeThreshold)))
-                || (((around.writes - writeThreshold) <= check.writes) && (check.writes <= (around.writes + writeThreshold))))
+                && (((around.writes - writeThreshold) <= check.writes) && (check.writes <= (around.writes + writeThreshold))))
                 return true;
 
             return false;
