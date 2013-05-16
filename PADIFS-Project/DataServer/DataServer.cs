@@ -81,6 +81,7 @@ namespace DataServer
 
                     foreach (string localFilename in toDelete)
                     {
+                        Console.WriteLine("GARBAGE COLLECTOR = " + localFilename);
                         FileData ignoredFileData; files.TryRemove(localFilename, out ignoredFileData);
                         Weight ignoredStats; weights.TryRemove(localFilename, out ignoredStats);
                     }

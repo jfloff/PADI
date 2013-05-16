@@ -869,10 +869,17 @@ namespace Metadata
 
             Console.WriteLine("MASTER ELECTION");
 
-            // if they are masters
+            // if I'm the master
             if (ImMaster) return id;
+
+            // checks if the master I know is down
+            try
+            {
+                return metadatas[master].Master();
+            }
+            catch (ProcessFailedException) { }
             
-            // tries to elect itself
+            // previous master is down, starting Uprising
             MasterVote masterVote = new MasterVote(id, clock);
             foreach (var entry in metadatas)
             {
