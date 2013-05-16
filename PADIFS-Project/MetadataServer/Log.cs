@@ -7,52 +7,29 @@ namespace Metadata
 {
     public class Log
     {
-        private static readonly char separator = '\n';
+        private static readonly char SEPARATOR = '\n';
 
-        // marked medata id / snapshots
-        private ConcurrentDictionary<string, int> marks = new ConcurrentDictionary<string, int>();
         // sequence / operation
         private ConcurrentDictionary<int, string> operations = new ConcurrentDictionary<int, string>();
 
-        // overwrites mark even if there is a new one -- to avoid creating a RemoveMarkOnMetadata
-        public void ForceAddMark(string mark, int sequence)
-        {
-            marks[mark] = sequence;
-        }
-
-        // adds mark to start keeping states
-        public bool AddMark(string mark, int sequence)
-        {
-            // keeps older marks
-            if (!marks.ContainsKey(mark) || (marks[mark] > sequence))
-            {
-                marks[mark] = sequence;
-                return true;
-            }
-            return false;
-        }
-
         public void LogOperation(int sequence, string operation, params object[] args)
         {
-            string serialize = operation + separator;
+            string serialize = operation + SEPARATOR;
             foreach (object arg in args)
             {
-                serialize += Helper.SerializeObject<object>(arg) + separator;
+                serialize += Helper.SerializeObject<object>(arg) + SEPARATOR;
             }
             operations[sequence] = serialize;
         }
 
-        public MetadataDiff BuildDiff(string mark)
+        public MetadataDiff BuildDiff(string mark, int sequence)
         {
             MetadataDiff diff = new MetadataDiff();
-
-            // either has a mark, or we need the whole state
-            int stopAt = MarkSequence(mark);
             
             foreach (var entry in operations)
             {   
                 // skips marks that don't need
-                if (entry.Key >= stopAt)
+                if (entry.Key >= sequence)
                 {
                     diff.AddOperation(entry.Value);
                 }
@@ -61,30 +38,15 @@ namespace Metadata
             return diff;
         }
 
-        private int MarkSequence(string mark)
-        {
-            int sequence;
-            return (marks.TryRemove(mark, out sequence)) ? sequence : 0;
-        }
-
         public void MergeDiff(Metadata metadata, MetadataDiff diff)
         {
             foreach (string operation in diff.Operations)
             {
-                string[] words = operation.Split(separator);
+                string[] words = operation.Split(SEPARATOR);
                 string methodName = words[0];
 
                 switch (methodName)
                 {
-                    case ("AddMarkOnMetadata"):
-                        {
-                            string mark = Helper.DeserializeObject<string>(words[1]);
-                            int markSequence = Helper.DeserializeObject<int>(words[2]);
-                            int sequence = Helper.DeserializeObject<int>(words[3]);
-
-                            metadata.AddMarkOnMetadata(mark, markSequence, sequence);
-                            break;
-                        }
                     case ("OpenOnMetadata"):
                         {
                             string clientId = Helper.DeserializeObject<string>(words[1]);

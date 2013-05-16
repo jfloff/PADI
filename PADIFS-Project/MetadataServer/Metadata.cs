@@ -119,7 +119,7 @@ namespace Metadata
                     // updates its state with the master
                     if (!ImMaster)
                     {
-                        MetadataDiff diff = metadatas[master].UpdateMetadata(id);
+                        MetadataDiff diff = metadatas[master].UpdateMetadata(id, sequence);
 
                         Console.WriteLine("--RECEIVING STATE UPDATE--");
                         log.MergeDiff(this, diff);
@@ -343,10 +343,7 @@ namespace Metadata
                     {
                         metadata.MigrateFileOnMetadata(filename, oldDataServerId, newDataServerId, oldLocalFilename, newLocalFilename, sequence);
                     }
-                    catch (ProcessFailedException)
-                    {
-                        AddLogMark(metadataId, sequence);
-                    }
+                    catch (ProcessFailedException) { }
                 });
                 request.Start();
             }
@@ -355,16 +352,6 @@ namespace Metadata
         /**
          * IMetadataToClient
          */
-
-        private void AddLogMark(string mark, int markSequence)
-        {
-            if (log.AddMark(mark, markSequence))
-            {
-                int sequence = clock++;
-                log.LogOperation(sequence, "AddMarkOnMetadata", mark, markSequence, sequence);
-                AddMarkOnMetadatas(mark, markSequence, sequence);
-            }
-        }
 
         public FileMetadata Open(string clientId, string filename)
         {
@@ -405,10 +392,7 @@ namespace Metadata
                     {
                         metadata.OpenOnMetadata(clientId, filename, sequence);
                     }
-                    catch (ProcessFailedException)
-                    {
-                        AddLogMark(metadataId, sequence);
-                    }
+                    catch (ProcessFailedException) { }
                 });
                 request.Start();
             }
@@ -446,10 +430,7 @@ namespace Metadata
                     {
                         metadata.CloseOnMetadata(clientId, filename, sequence);
                     }
-                    catch (ProcessFailedException)
-                    {
-                        AddLogMark(metadataId, sequence);
-                    }
+                    catch (ProcessFailedException) { }
                 });
                 request.Start();
             }
@@ -525,10 +506,7 @@ namespace Metadata
                     {
                         metadata.SelectOnMetadata(filename, dataServerId, localFilename, sequence);
                     }
-                    catch (ProcessFailedException)
-                    {
-                        AddLogMark(metadataId, sequence);
-                    }
+                    catch (ProcessFailedException) { }
                 });
                 request.Start();
             }
@@ -552,10 +530,7 @@ namespace Metadata
                     {
                         metadata.CreateOnMetadata(clientId, filename, nbDataServers, readQuorum, writeQuorum, sequence);
                     }
-                    catch (ProcessFailedException)
-                    {
-                        AddLogMark(metadataId, sequence);
-                    }
+                    catch (ProcessFailedException) { }
                 });
                 request.Start();
             }
@@ -606,29 +581,6 @@ namespace Metadata
                     {
                         metadata.DeleteOnMetadata(filename, sequence);
                     }
-                    catch (ProcessFailedException)
-                    {
-                        AddLogMark(metadataId, sequence);
-                    }
-                });
-                request.Start();
-            }
-        }
-
-        private void AddMarkOnMetadatas(string mark, int markSequence, int sequence)
-        {
-            foreach (var entry in metadatas)
-            {
-                string id = entry.Key;
-                IMetadataToMetadata metadata = entry.Value;
-
-                Thread request = new Thread(() =>
-                {
-                    try
-                    {
-                        metadata.AddMarkOnMetadata(mark, markSequence, sequence);
-                    }
-                    // already failed before no need to log again
                     catch (ProcessFailedException) { }
                 });
                 request.Start();
@@ -683,10 +635,7 @@ namespace Metadata
                     {
                         metadata.DataServerOnMetadata(dataServerId, location, sequence);
                     }
-                    catch (ProcessFailedException)
-                    {
-                        AddLogMark(metadataId, sequence);
-                    }
+                    catch (ProcessFailedException) { }
                 });
                 request.Start();
             }
@@ -876,28 +825,6 @@ namespace Metadata
             clock++;
         }
 
-        public void AddMarkOnMetadata(string mark, int markSequence, int sequence)
-        {
-            if (fail) throw new ProcessFailedException(id);
-
-            // repeated operation, ignores
-            if (sequence < clock) return;
-
-            // message out of sequence, adds to queue
-            if (sequence != clock)
-            {
-                outOfOrder[sequence] = () => AddMarkOnMetadata(mark, markSequence, sequence);
-                return;
-            }
-
-            Console.WriteLine("ADD LOG MARK FROM MASTER");
-
-            // also update its own mark ... for consistency purposes
-            log.ForceAddMark(mark, markSequence);
-            log.LogOperation(clock, "AddMarkOnMetadata", mark, markSequence, clock);
-            clock++;
-        }
-
         public void MigrateFileOnMetadata(string filename, string oldDataServerId, string newDataServerId, string oldLocalFilename, string newLocalFilename, int sequence)
         {
             if (fail) throw new ProcessFailedException(id);
@@ -927,9 +854,9 @@ namespace Metadata
             clock++;
         }
 
-        public MetadataDiff UpdateMetadata(string metadataId)
+        public MetadataDiff UpdateMetadata(string metadataId, int sequence)
         {
-            return log.BuildDiff(metadataId);
+            return log.BuildDiff(metadataId, sequence);
         }
 
         // Tries to elect himself as the new master sending a vote to
