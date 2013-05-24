@@ -59,7 +59,7 @@ namespace SharedLibrary.Entities
             int writeThreshold = (int)Math.Ceiling(around.writes * threshold);
 
             // if its either inside the threshold in reads or writes says true
-            if ((check.reads <= (around.reads + readThreshold)) || (check.writes <= (around.writes + writeThreshold))) return true;
+            if ((check.reads <= (around.reads + readThreshold)) && (check.writes <= (around.writes + writeThreshold))) return true;
 
             return false;
         }
@@ -75,17 +75,9 @@ namespace SharedLibrary.Entities
             return false;
         }
 
-        public static bool InsideThreshold(Weight check, Weight around, double threshold)
+        public static bool Empty(Weight weight)
         {
-            int readThreshold = (int)Math.Ceiling(around.reads * threshold);
-            int writeThreshold = (int)Math.Ceiling(around.writes * threshold);
-
-            // if its either inside the threshold in reads or writes says true
-            if ((((around.reads - readThreshold) <= check.reads) && (check.reads <= (around.writes + writeThreshold)))
-                && (((around.writes - writeThreshold) <= check.writes) && (check.writes <= (around.writes + writeThreshold))))
-                return true;
-
-            return false;
+            return (weight.reads == 0 && weight.writes == 0);
         }
 
         public static int Compare(Weight w1, Weight w2)

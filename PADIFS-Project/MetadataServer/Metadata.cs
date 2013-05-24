@@ -219,6 +219,8 @@ namespace Metadata
                 Weight oldDataServerWeight = dataServers.Weight(oldDataServerId);
                 Weight avgWeight = dataServers.AvgWeight;
 
+                // if the file has no reads or writes
+                if (Weight.Empty(fileWeight)) continue;
                 // if data server is already balanced
                 if (Weight.BelowThreshold(oldDataServerWeight, avgWeight, Helper.LOAD_BALANCING_THRESHOLD)) continue;
 
@@ -236,9 +238,9 @@ namespace Metadata
                     if (fileTable.FileInDataServer(filename, newDataServerId)) continue;
                     // if data server is known to be down
                     if (dataServers.Failed(newDataServerId)) continue;
-                    // if the data server is already balanced
-                    if (Weight.InsideThreshold(newDataServerWeight, avgWeight, Helper.LOAD_BALANCING_THRESHOLD)) continue;
-                    // if its outside threshold
+                    // if the data server is already overweight
+                    if (Weight.AboveThreshold(newDataServerWeight, avgWeight, Helper.LOAD_BALANCING_THRESHOLD)) continue;
+                    // if placing the new file would put that server above threshold
                     if (Weight.AboveThreshold(fileWeight + newDataServerWeight, avgWeight, Helper.LOAD_BALANCING_THRESHOLD)) continue;
                     // if it isnt free
                     if (!fileTable.Free(filename)) continue;
@@ -482,7 +484,7 @@ namespace Metadata
 
         private void SelectDataServer(string dataServerId, string filename)
         {
-            Console.WriteLine("SELECT DATASERVER FOR " + filename);
+            Console.WriteLine("SELECT DATASERVER " + dataServerId + " FOR " + filename);
 
             string localFilename = LocalFilename(filename, dataServerId);
 

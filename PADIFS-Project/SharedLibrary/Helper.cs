@@ -22,7 +22,7 @@ namespace SharedLibrary
         public const int DATASERVER_HEARTBEAT_INTERVAL = 3000;
         public const int HEARTBEAT_EXPIRE = 3;
         public const int LOAD_BALANCING_INTERVAL = 4500;
-        public const double LOAD_BALANCING_THRESHOLD = 0.1;
+        public const double LOAD_BALANCING_THRESHOLD = 0.50;
 
         public static string GetUrl(string id, int port)
         {
