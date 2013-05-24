@@ -38,7 +38,6 @@ namespace Metadata
             }
         };
 
-        // CREATE DICTIONARY FOR FAILED METADATAS
         // id / location
         private ConcurrentDictionary<string, DataServerInfo> dataServers = new ConcurrentDictionary<string, DataServerInfo>();
         // score / set of ids
@@ -168,6 +167,7 @@ namespace Metadata
             value = default(string);
             bool skipped = (last == null) ? true : false;
 
+            //Missing: Verifying if data server has failed
             lock (padlock)
             {
                 foreach (var weight in weights)

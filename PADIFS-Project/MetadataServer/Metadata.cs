@@ -42,6 +42,7 @@ namespace Metadata
             return null;
         }
 
+        #region
         public static void Main(string[] args)
         {
             if (args.Length != 2)
@@ -140,7 +141,7 @@ namespace Metadata
             get { return (id == master); }
         }
 
-        private bool CheckMaster()
+        private bool ImNotMaster()
         {
             bool ret = ImMaster;
             if (!ret)
@@ -155,7 +156,7 @@ namespace Metadata
                 }
                 finally
                 {
-                    ret = ImMaster;
+                    ret = ImMaster; 
                 }
             }
             return !ret;
@@ -200,6 +201,7 @@ namespace Metadata
                 }
             }
         }
+        #endregion
 
         /**
          * LOAD BALANCING
@@ -220,7 +222,7 @@ namespace Metadata
                 Weight avgWeight = dataServers.AvgWeight;
 
                 // if data server is already balanced
-                if (Weight.InsideThreshold(oldDataServerWeight, avgWeight, Helper.LOAD_BALANCING_THRESHOLD)) continue;
+                if (Weight.BelowThreshold(oldDataServerWeight, avgWeight, Helper.LOAD_BALANCING_THRESHOLD)) continue;
 
                 foreach (var entry in dataServers.Weights)
                 {
@@ -356,7 +358,7 @@ namespace Metadata
         public FileMetadata Open(string clientId, string filename)
         {
             if (fail) throw new ProcessFailedException(id);
-            if (CheckMaster()) throw new NotTheMasterException(id, master);
+            if (ImNotMaster()) throw new NotTheMasterException(id, master);
 
             Console.WriteLine("OPEN METADATA FILE " + filename);
 
@@ -401,7 +403,7 @@ namespace Metadata
         public void Close(string clientId, string filename)
         {
             if (fail) throw new ProcessFailedException(id);
-            if (CheckMaster()) throw new NotTheMasterException(id, master);
+            if (ImNotMaster()) throw new NotTheMasterException(id, master);
 
             Console.WriteLine("CLOSE METADATA FILE " + filename);
 
@@ -439,7 +441,7 @@ namespace Metadata
         public FileMetadata Create(string clientId, string filename, int nbDataServers, int readQuorum, int writeQuorum)
         {
             if (fail) throw new ProcessFailedException(id);
-            if (CheckMaster()) throw new NotTheMasterException(id, master);
+            if (ImNotMaster()) throw new NotTheMasterException(id, master);
 
             if (fileTable.Contains(filename))
             {
@@ -539,7 +541,7 @@ namespace Metadata
         public void Delete(string clientId, string filename)
         {
             if (fail) throw new ProcessFailedException(id);
-            if (CheckMaster()) throw new NotTheMasterException(id, master);
+            if (ImNotMaster()) throw new NotTheMasterException(id, master);
 
             Console.WriteLine("DELETE METADATA FILE " + filename);
 
@@ -594,7 +596,7 @@ namespace Metadata
         public void DataServer(string dataServerId, string location)
         {
             if (fail) throw new ProcessFailedException(id);
-            if (CheckMaster()) throw new NotTheMasterException(id, master);
+            if (ImNotMaster()) throw new NotTheMasterException(id, master);
 
             Console.WriteLine("REGISTER DATA SERVER " + dataServerId);
 
@@ -644,7 +646,7 @@ namespace Metadata
         public GarbageCollected Heartbeat(string dataServerId, Heartbeat heartbeat)
         {
             if (fail) throw new ProcessFailedException(id);
-            if (CheckMaster()) throw new NotTheMasterException(id, master);
+            if (ImNotMaster()) throw new NotTheMasterException(id, master);
 
             //Console.WriteLine("HEARTBEAT FROM " + dataServerId);
 

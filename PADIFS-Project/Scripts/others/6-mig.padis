@@ -1,0 +1,66 @@
+RECOVER m-0
+RECOVER m-1
+RECOVER m-2
+UNFREEZE d-1
+CREATE c-1,f1,1,1,1
+CREATE c-1,f2,1,1,1
+CREATE c-1,f3,1,1,1
+CREATE c-1,f4,1,1,1
+CREATE c-1,f5,1,1,1
+UNFREEZE d-2
+UNFREEZE d-3
+CREATE c-1,f6,3,2,2
+CREATE c-1,f7,3,2,2
+CREATE c-1,f8,3,2,2
+CREATE c-1,f9,3,2,2
+CREATE c-1,f0,3,2,2
+OPEN c-1,f1
+OPEN c-2,f2
+UNFREEZE d-4
+UNFREEZE d-5
+DUMP d-1
+DUMP d-2
+DUMP d-3
+DUMP d-4
+DUMP d-5
+DUMP m-0
+DUMP m-1
+DUMP m-2
+WRITE c-1,0,"Text contents of the file. Contents are a string delimited by double quotes as this one"
+WRITE c-1,0,"Text contents of the file. Contents are a string delimited by double quotes as this one"
+WRITE c-1,0,"Text contents of the file. Contents are a string delimited by double quotes as this one"
+WRITE c-1,0,"Text contents of the file. Contents are a string delimited by double quotes as this one"
+WRITE c-1,0,"Text contents of the file. Contents are a string delimited by double quotes as this one"
+WRITE c-1,0,"Text contents of the file. Contents are a string delimited by double quotes as this one"
+WRITE c-1,0,"Text contents of the file. Contents are a string delimited by double quotes as this one"
+WRITE c-1,0,"Text contents of the file. Contents are a string delimited by double quotes as this one"
+WRITE c-1,0,"Text contents of the file. Contents are a string delimited by double quotes as this one"
+WRITE c-1,0,"Text contents of the file. Contents are a string delimited by double quotes as this one"
+WRITE c-2,0,"Text contents of the file. Contents are a string delimited by double quotes as this one"
+WRITE c-2,0,"Text contents of the file. Contents are a string delimited by double quotes as this one"
+WRITE c-2,0,"Text contents of the file. Contents are a string delimited by double quotes as this one"
+WRITE c-2,0,"Text contents of the file. Contents are a string delimited by double quotes as this one"
+WRITE c-2,0,"Text contents of the file. Contents are a string delimited by double quotes as this one"
+WRITE c-2,0,"Text contents of the file. Contents are a string delimited by double quotes as this one"
+WRITE c-2,0,"Text contents of the file. Contents are a string delimited by double quotes as this one"
+WRITE c-2,0,"Text contents of the file. Contents are a string delimited by double quotes as this one"
+WRITE c-2,0,"Text contents of the file. Contents are a string delimited by double quotes as this one"
+WRITE c-2,0,"Text contents of the file. Contents are a string delimited by double quotes as this one"
+DUMP d-1
+DUMP d-2
+DUMP d-3
+DUMP d-4
+DUMP d-5
+DUMP m-0
+DUMP m-1
+DUMP m-2
+CLOSE c-1,f1
+CLOSE c-1,f2
+CLOSE c-1,f3
+CLOSE c-1,f4
+CLOSE c-1,f5
+CLOSE c-1,f6
+CLOSE c-1,f7
+CLOSE c-1,f8
+CLOSE c-1,f9
+CLOSE c-1,f0
