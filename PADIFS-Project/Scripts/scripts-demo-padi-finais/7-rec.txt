@@ -1,0 +1,33 @@
+RECOVER m-0
+RECOVER m-1
+RECOVER m-2
+UNFREEZE d-1
+#create file on all servers
+CREATE c-1,f1,1,1,1
+OPEN c-1,f1
+DUMP m-0
+DUMP m-1
+DUMP m-2
+# fail m-0 (primary?)
+FAIL m-0
+DUMP m-1
+DUMP m-2
+CREATE c-1,f2,1,1,1
+OPEN c-1,f1
+OPEN c-1,f2
+# fail another MDS
+FAIL m-1
+DUMP m-1
+CREATE c-1,f3,1,1,1
+OPEN c-1,f3
+DUMP m-2
+# recover MDS in a different order
+RECOVER m-0
+DUMP m-0
+DUMP m-2
+CREATE c-1,f4,1,1,1
+# recover MDS in a different order
+RECOVER m-1
+DUMP m-0
+DUMP m-1
+DUMP m-2

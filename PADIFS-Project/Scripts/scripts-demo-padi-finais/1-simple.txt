@@ -1,0 +1,36 @@
+# PADI-FS, PADI Project 2012-13
+# Sample script
+# This script should be executable by all projects that complete 
+# the checkpoint.
+# First start a metadata server. 
+# The first command to any node starts it!
+RECOVER m-0
+RECOVER m-1
+# Start a data server
+UNFREEZE d-1
+# Start a client and create a file f1 with 2 data servers and 
+# read and write quora of 1
+CREATE c-1,f1,1,1,1
+UNFREEZE d-2
+UNFREEZE d-3
+# another file
+CREATE c-1,f2,3,2,2
+#open files
+OPEN c-1,f1
+OPEN c-1,f2
+#more operations...
+WRITE c-1,0,"Text contents of the file. Contents are a string delimited by double quotes as this one"
+READ c-1,0,monotonic,0
+FREEZE d-2
+COPY c-1,0,default,1," salt example"
+DUMP d-1
+DUMP d-2
+DUMP d-3
+CLOSE c-1,f1
+OPEN c-2,f2
+DUMP c-2
+CLOSE c-2,f2
+DUMP m-0
+DUMP m-1
+DELETE c-2,f2
+CLOSE c-1,f2
