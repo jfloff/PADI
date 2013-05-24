@@ -42,7 +42,6 @@ namespace Metadata
             return null;
         }
 
-        #region
         public static void Main(string[] args)
         {
             if (args.Length != 2)
@@ -141,7 +140,7 @@ namespace Metadata
             get { return (id == master); }
         }
 
-        private bool ImNotMaster()
+        private bool ImNoMaster()
         {
             bool ret = ImMaster;
             if (!ret)
@@ -201,7 +200,6 @@ namespace Metadata
                 }
             }
         }
-        #endregion
 
         /**
          * LOAD BALANCING
@@ -358,7 +356,7 @@ namespace Metadata
         public FileMetadata Open(string clientId, string filename)
         {
             if (fail) throw new ProcessFailedException(id);
-            if (ImNotMaster()) throw new NotTheMasterException(id, master);
+            if (ImNoMaster()) throw new NotTheMasterException(id, master);
 
             Console.WriteLine("OPEN METADATA FILE " + filename);
 
@@ -403,7 +401,7 @@ namespace Metadata
         public void Close(string clientId, string filename)
         {
             if (fail) throw new ProcessFailedException(id);
-            if (ImNotMaster()) throw new NotTheMasterException(id, master);
+            if (ImNoMaster()) throw new NotTheMasterException(id, master);
 
             Console.WriteLine("CLOSE METADATA FILE " + filename);
 
@@ -441,7 +439,7 @@ namespace Metadata
         public FileMetadata Create(string clientId, string filename, int nbDataServers, int readQuorum, int writeQuorum)
         {
             if (fail) throw new ProcessFailedException(id);
-            if (ImNotMaster()) throw new NotTheMasterException(id, master);
+            if (ImNoMaster()) throw new NotTheMasterException(id, master);
 
             if (fileTable.Contains(filename))
             {
@@ -541,7 +539,7 @@ namespace Metadata
         public void Delete(string clientId, string filename)
         {
             if (fail) throw new ProcessFailedException(id);
-            if (ImNotMaster()) throw new NotTheMasterException(id, master);
+            if (ImNoMaster()) throw new NotTheMasterException(id, master);
 
             Console.WriteLine("DELETE METADATA FILE " + filename);
 
@@ -596,7 +594,7 @@ namespace Metadata
         public void DataServer(string dataServerId, string location)
         {
             if (fail) throw new ProcessFailedException(id);
-            if (ImNotMaster()) throw new NotTheMasterException(id, master);
+            if (ImNoMaster()) throw new NotTheMasterException(id, master);
 
             Console.WriteLine("REGISTER DATA SERVER " + dataServerId);
 
@@ -646,7 +644,7 @@ namespace Metadata
         public GarbageCollected Heartbeat(string dataServerId, Heartbeat heartbeat)
         {
             if (fail) throw new ProcessFailedException(id);
-            if (ImNotMaster()) throw new NotTheMasterException(id, master);
+            if (ImNoMaster()) throw new NotTheMasterException(id, master);
 
             //Console.WriteLine("HEARTBEAT FROM " + dataServerId);
 
