@@ -548,7 +548,7 @@ namespace PuppetMaster
                         break;
                     }
 
-                // DELTE ID FILENAME
+                // DELETE ID FILENAME
                 case "DELETE":
                     {
                         if (steps.Length != 3)
