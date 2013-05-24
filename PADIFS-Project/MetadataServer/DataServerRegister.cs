@@ -101,6 +101,7 @@ namespace Metadata
             Weight ignored; this.dataServers[id].files.TryRemove(localFilename, out ignored);
         }
 
+        // returns true if data server missing the last heartbeats
         public bool Failed(string id)
         {
             double elapsed = Math.Abs(this.dataServers[id].lastHeartbeat.Subtract(DateTime.Now).TotalMilliseconds);
@@ -167,7 +168,6 @@ namespace Metadata
             value = default(string);
             bool skipped = (last == null) ? true : false;
 
-            //Missing: Verifying if data server has failed
             lock (padlock)
             {
                 foreach (var weight in weights)
@@ -176,9 +176,12 @@ namespace Metadata
                     {
                         if (skipped)
                         {
-                            value = id;
-                            ret = true;
-                            break;
+                            if (!Failed(id))
+                            {
+                                value = id;
+                                ret = true;
+                                break;
+                            }
                         }
 
                         if (id == last) skipped = true;
